@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Magically — Your Agent OS</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: {
+        sans: ['DM Sans', 'sans-serif'],
+        serif: ['Instrument Serif', 'serif'],
+        mono: ['JetBrains Mono', 'monospace'],
+      },
+      colors: {
+        shell: {
+          bg: '#0a0a0b',
+          surface: '#141416',
+          elevated: '#1c1c20',
+          border: '#2a2a2f',
+          muted: '#6b6b76',
+          text: '#e8e8ed',
+          accent: '#f97316',
+        },
+        warm: {
+          50: '#fef7f0',
+          100: '#fdebd5',
+          200: '#fad4a8',
+          300: '#f6b56e',
+          400: '#f29538',
+          500: '#ef7d15',
+          600: '#e0640b',
+          700: '#ba4c0b',
+          800: '#943d10',
+          900: '#783411',
+        }
+      }
+    }
+  }
+}
+</script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body, #root { height: 100%; width: 100%; overflow: hidden; }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #2a2a2f; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #3a3a40; }
+
+  /* Animations */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes slideInRight {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes slideInLeft {
+    from { opacity: 0; transform: translateX(-100%); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes pulseGlow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.2); }
+    50% { box-shadow: 0 0 20px 4px rgba(249, 115, 22, 0.15); }
+  }
+  @keyframes breathe {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+  }
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-4px); }
+  }
+  @keyframes typewriter {
+    from { width: 0; }
+    to { width: 100%; }
+  }
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+  @keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  @keyframes widgetAppear {
+    from { opacity: 0; transform: scale(0.9) translateY(8px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  .animate-fade-in-up { animation: fadeInUp 0.5s ease-out forwards; }
+  .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+  .animate-slide-right { animation: slideInRight 0.4s ease-out forwards; }
+  .animate-scale-in { animation: scaleIn 0.3s ease-out forwards; }
+  .animate-widget { animation: widgetAppear 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+  .stagger-1 { animation-delay: 0.05s; opacity: 0; }
+  .stagger-2 { animation-delay: 0.1s; opacity: 0; }
+  .stagger-3 { animation-delay: 0.15s; opacity: 0; }
+  .stagger-4 { animation-delay: 0.2s; opacity: 0; }
+  .stagger-5 { animation-delay: 0.25s; opacity: 0; }
+  .stagger-6 { animation-delay: 0.3s; opacity: 0; }
+  .stagger-7 { animation-delay: 0.35s; opacity: 0; }
+  .stagger-8 { animation-delay: 0.4s; opacity: 0; }
+
+  /* Glass morphism */
+  .glass {
+    background: rgba(20, 20, 22, 0.85);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+  }
+  .glass-light {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(12px);
+  }
+
+  /* Noise texture overlay */
+  .noise::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    border-radius: inherit;
+  }
+
+  /* Widget hover */
+  .widget-card {
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .widget-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.05);
+  }
+
+  /* Sidebar icon hover */
+  .sidebar-icon {
+    transition: all 0.2s ease;
+  }
+  .sidebar-icon:hover {
+    transform: scale(1.1);
+  }
+  .sidebar-icon.active {
+    transform: scale(1.05);
+  }
+
+  /* Sidekick panel */
+  .sidekick-panel {
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Agent view overlay */
+  .agent-overlay {
+    animation: fadeIn 0.2s ease-out;
+  }
+  .agent-overlay .agent-content {
+    animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Feed item */
+  .feed-item {
+    transition: all 0.2s ease;
+  }
+  .feed-item:hover {
+    background: rgba(255,255,255,0.03);
+  }
+
+  /* Gradient mesh background */
+  .mesh-gradient {
+    background:
+      radial-gradient(ellipse at 20% 50%, rgba(249, 115, 22, 0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 20%, rgba(59, 130, 246, 0.04) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 80%, rgba(168, 85, 247, 0.04) 0%, transparent 50%);
+  }
+
+  /* Status dot pulse */
+  .status-pulse {
+    animation: pulseGlow 3s ease-in-out infinite;
+  }
+
+  /* Typing indicator */
+  .typing-dot {
+    animation: float 1.4s ease-in-out infinite;
+  }
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+</style>
+</head>
+<body class="bg-shell-bg text-shell-text font-sans antialiased">
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+// ============================================
+// DATA / STATE
+// ============================================
+
+const AGENTS = [
+  { id: 'calendar', name: 'Calendar Hero', icon: '📅', color: '#3b82f6', description: 'Meeting prep & daily briefings', hasWidget: true },
+  { id: 'superdo', name: 'SuperDo', icon: '⚡', color: '#f97316', description: 'Smart to-do with deep research', hasWidget: true },
+  { id: 'groceries', name: 'Smart Groceries', icon: '🥬', color: '#22c55e', description: 'Fridge scan → Instacart cart', hasWidget: true },
+  { id: 'finance', name: 'Attain Finance', icon: '💰', color: '#10b981', description: 'Unified financial dashboard', hasWidget: true },
+  { id: 'health', name: 'Health Coach', icon: '🏋️', color: '#ec4899', description: 'Wellness tracking & meal logging', hasWidget: true },
+  { id: 'news', name: 'TechNews Pro', icon: '📰', color: '#8b5cf6', description: 'Personalized tech news feed', hasWidget: true },
+  { id: 'commute', name: 'Caltrain', icon: '🚂', color: '#64748b', description: 'Train schedules & alerts', hasWidget: true },
+  { id: 'gallery', name: 'Wizard Gallery', icon: '🧙', color: '#a855f7', description: 'AI family portraits', hasWidget: true },
+];
+
+const FEED_ITEMS = [
+  { id: 1, agent: 'Calendar Hero', icon: '📅', time: '2m ago', message: 'Prepared briefing for your 2pm with Ali Rougani — last discussed Dreamer onboarding', type: 'info' },
+  { id: 2, agent: 'SuperDo', icon: '⚡', time: '15m ago', message: 'Researched Monster Jam for Mateo — Oakland Arena, Apr 3-5, tickets from $15', type: 'action' },
+  { id: 3, agent: 'Smart Groceries', icon: '🥬', time: '1h ago', message: 'Detected 5 eggs remaining. Added eggs + milk + berries to your Instacart cart', type: 'action' },
+  { id: 4, agent: 'Attain Finance', icon: '💰', time: '3h ago', message: 'Found forgotten Hulu subscription ($17.99/mo). Cancel it?', type: 'alert' },
+  { id: 5, agent: 'Health Coach', icon: '🏋️', time: '5h ago', message: 'Weekly report sent to your trainer. You hit protein goals 5/7 days 💪', type: 'success' },
+  { id: 6, agent: 'TechNews Pro', icon: '📰', time: '6h ago', message: 'Morning digest ready — 3 articles about Claude\'s new agent SDK', type: 'info' },
+];
+
+const CALENDAR_EVENTS = [
+  { time: '1:00 PM', title: 'Community check-in', duration: '30m', status: 'now', color: '#1e6091' },
+  { time: '1:45 PM', title: 'Get set up on Dreamer', duration: '45m', status: 'next', color: '#2980b9' },
+  { time: '5:00 PM', title: 'FYSK Showcase Rehearsal', duration: '1h', status: 'later', color: '#85c1e9' },
+  { time: '5:00 PM', title: 'PoSoc Focus Group', duration: '2h', status: 'conflict', color: '#e8a0a0' },
+];
+
+const TODO_ITEMS = [
+  { text: 'Confirm Ben & Helena visit this weekend', done: false, priority: 'high', researched: true },
+  { text: 'Take Mateo to see monster trucks', done: false, priority: 'medium', researched: true },
+  { text: 'Follow up with ops about the feature', done: false, priority: 'medium', researched: false },
+  { text: 'RSVP to Ben & Helena wedding', done: false, priority: 'high', researched: true },
+  { text: 'Check in on Erika\'s mum', done: true, priority: 'low', researched: false },
+];
+
+// ============================================
+// COMPONENTS
+// ============================================
+
+// --- Sidebar (the OS dock) ---
+function Sidebar({ activeView, onNavigate, onToggleSidekick, sidekickOpen, agents }) {
+  return (
+    <div className="w-[68px] h-full flex flex-col items-center py-4 border-r border-shell-border/50 bg-shell-surface/50 relative z-50">
+      {/* Logo / mascot */}
+      <button
+        onClick={() => onNavigate('home')}
+        className="sidebar-icon w-10 h-10 rounded-xl bg-gradient-to-br from-warm-500 to-warm-600 flex items-center justify-center mb-1 shadow-lg shadow-warm-500/20"
+      >
+        <span className="text-lg">✦</span>
+      </button>
+
+      {/* Notification badge */}
+      <div className="w-5 h-1 rounded-full bg-warm-500/60 mb-4"></div>
+
+      {/* Nav icons */}
+      <div className="flex flex-col items-center gap-1 flex-1">
+        <NavIcon icon="🏠" label="Home" active={activeView === 'home'} onClick={() => onNavigate('home')} />
+        <NavIcon icon="📋" label="Feed" active={activeView === 'feed'} onClick={() => onNavigate('feed')} />
+
+        <div className="w-8 h-px bg-shell-border/50 my-2"></div>
+
+        {/* Agent icons */}
+        {agents.slice(0, 6).map((agent, i) => (
+          <button
+            key={agent.id}
+            onClick={() => onNavigate('agent', agent.id)}
+            className={`sidebar-icon w-10 h-10 rounded-xl flex items-center justify-center text-base transition-all
+              ${activeView === 'agent-' + agent.id
+                ? 'bg-shell-elevated ring-1 ring-shell-border shadow-md active'
+                : 'hover:bg-shell-elevated/60'}`}
+            title={agent.name}
+          >
+            {agent.icon}
+          </button>
+        ))}
+
+        <button
+          onClick={() => onNavigate('gallery')}
+          className="sidebar-icon w-10 h-10 rounded-xl flex items-center justify-center text-shell-muted hover:text-shell-text hover:bg-shell-elevated/60 transition-all mt-1"
+          title="Browse Gallery"
+        >
+          <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+            <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+            <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+            <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+            <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+          </svg>
+        </button>
+      </div>
+
+      {/* Bottom actions */}
+      <div className="flex flex-col items-center gap-2 mt-auto">
+        {/* Build / Create */}
+        <button
+          onClick={() => onNavigate('build')}
+          className={`sidebar-icon w-10 h-10 rounded-xl flex items-center justify-center transition-all
+            ${activeView === 'build'
+              ? 'bg-warm-500/20 text-warm-400 ring-1 ring-warm-500/30'
+              : 'text-shell-muted hover:text-warm-400 hover:bg-shell-elevated/60'}`}
+          title="Build Agent"
+        >
+          <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+            <path d="M12 4v16m-8-8h16"/>
+          </svg>
+        </button>
+
+        {/* Sidekick toggle */}
+        <button
+          onClick={onToggleSidekick}
+          className={`sidebar-icon w-10 h-10 rounded-xl flex items-center justify-center transition-all
+            ${sidekickOpen
+              ? 'bg-warm-500 text-white shadow-lg shadow-warm-500/30 status-pulse'
+              : 'bg-shell-elevated text-shell-muted hover:text-warm-400 hover:bg-shell-elevated'}`}
+          title="Sidekick"
+        >
+          <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+            <path d="M8 10h.01M12 10h.01M16 10h.01M9 16h6M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </button>
+
+        {/* Profile */}
+        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-xs font-semibold mt-1 cursor-pointer hover:ring-2 ring-shell-border transition-all">
+          R
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function NavIcon({ icon, label, active, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`sidebar-icon w-10 h-10 rounded-xl flex items-center justify-center text-base transition-all
+        ${active ? 'bg-shell-elevated ring-1 ring-shell-border shadow-md active' : 'hover:bg-shell-elevated/60'}`}
+      title={label}
+    >
+      {icon}
+    </button>
+  );
+}
+
+// --- Home View ---
+function HomeView({ onOpenAgent, feedItems }) {
+  const now = new Date();
+  const greeting = now.getHours() < 12 ? 'Good morning' : now.getHours() < 17 ? 'Good afternoon' : 'Good evening';
+
+  return (
+    <div className="h-full overflow-y-auto mesh-gradient">
+      <div className="max-w-[1200px] mx-auto px-8 py-8">
+        {/* Header */}
+        <div className="mb-8 animate-fade-in-up stagger-1">
+          <h1 className="font-serif text-4xl text-shell-text/90 italic mb-1">{greeting}, Rajat</h1>
+          <p className="text-shell-muted text-sm">Monday, March 24 · 3 agents working in background</p>
+        </div>
+
+        {/* Feed ticker */}
+        <div className="animate-fade-in-up stagger-2 mb-8">
+          <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-shell-surface/80 border border-shell-border/40">
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-warm-500 animate-pulse"></div>
+              <span className="text-xs font-medium text-warm-400 uppercase tracking-wider">Live</span>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <div className="text-sm text-shell-text/80">
+                <span className="text-shell-muted">Calendar Hero:</span> Prepared briefing for your 2pm with Ali Rougani
+              </div>
+            </div>
+            <button onClick={() => {}} className="text-xs text-shell-muted hover:text-shell-text transition-colors">View all →</button>
+          </div>
+        </div>
+
+        {/* Widget Grid */}
+        <div className="grid grid-cols-12 gap-4 auto-rows-[140px]">
+
+          {/* Calendar Widget — large */}
+          <div className="col-span-5 row-span-3 animate-widget stagger-3">
+            <div className="widget-card h-full rounded-2xl bg-shell-surface border border-shell-border/40 p-5 cursor-pointer relative overflow-hidden noise" onClick={() => onOpenAgent('calendar')}>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">📅</span>
+                  <span className="text-xs font-medium text-shell-muted uppercase tracking-wider">Calendar Hero</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-blue-400"></div>
+                  <span className="text-[10px] text-blue-400 font-medium">LIVE</span>
+                </div>
+              </div>
+
+              <div className="space-y-2.5">
+                {CALENDAR_EVENTS.map((event, i) => (
+                  <div key={i} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all
+                    ${event.status === 'now' ? 'bg-blue-500/15 border border-blue-500/20' :
+                      event.status === 'conflict' ? 'bg-red-400/10 border border-red-400/15' :
+                      'bg-shell-elevated/50 border border-transparent'}`}>
+                    <div className={`w-1 h-8 rounded-full`} style={{ background: event.color }}></div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-shell-text/90 truncate">{event.title}</div>
+                      <div className="text-xs text-shell-muted">{event.time} · {event.duration}</div>
+                    </div>
+                    {event.status === 'now' && (
+                      <span className="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-semibold uppercase whitespace-nowrap">Now · 8m left</span>
+                    )}
+                    {event.status === 'next' && (
+                      <span className="px-2 py-0.5 rounded-full bg-blue-400/15 text-blue-300/70 text-[10px] font-semibold uppercase whitespace-nowrap">Next · 23m</span>
+                    )}
+                    {event.status === 'conflict' && (
+                      <span className="px-2 py-0.5 rounded-full bg-red-400/15 text-red-300/70 text-[10px] font-semibold uppercase whitespace-nowrap">Conflict</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <div className="absolute bottom-4 left-5 right-5">
+                <div className="flex items-center gap-2 text-xs text-shell-muted">
+                  <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424"/><circle cx="8" cy="12" r="2"/></svg>
+                  Morning briefing ready in Apple Podcasts
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Clock / Weather Widget — small */}
+          <div className="col-span-3 row-span-1 animate-widget stagger-4">
+            <div className="widget-card h-full rounded-2xl bg-gradient-to-br from-shell-surface to-shell-elevated border border-shell-border/40 p-4 flex items-center justify-between relative overflow-hidden noise">
+              <div>
+                <div className="text-3xl font-light text-shell-text tracking-tight font-mono">13:58</div>
+                <div className="text-xs text-shell-muted mt-0.5">Mon, Jan 21</div>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl mb-0.5">🌤️</div>
+                <div className="text-sm font-medium text-shell-text">53°F</div>
+                <div className="text-[10px] text-shell-muted">San Francisco</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Commute Widget */}
+          <div className="col-span-4 row-span-1 animate-widget stagger-4">
+            <div className="widget-card h-full rounded-2xl bg-shell-surface border border-shell-border/40 p-4 cursor-pointer relative overflow-hidden noise" onClick={() => onOpenAgent('commute')}>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-sm">🚂</span>
+                <span className="text-[10px] font-medium text-shell-muted uppercase tracking-wider">Morning Commute</span>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-shell-text/80">Train 507</span>
+                    <span className="text-emerald-400 font-medium">7:46 AM</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs mt-1.5">
+                    <span className="text-shell-text/80">Train 409</span>
+                    <span className="text-shell-muted">8:16 AM</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs mt-1.5">
+                    <span className="text-shell-text/80">Train 511</span>
+                    <span className="text-shell-muted">8:46 AM</span>
+                  </div>
+                </div>
+                <div className="w-px h-12 bg-shell-border/40"></div>
+                <div className="text-center">
+                  <div className="text-[10px] text-emerald-400 font-medium">ON TIME</div>
+                  <div className="text-lg mt-0.5">🟢</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* SuperDo Widget */}
+          <div className="col-span-4 row-span-2 animate-widget stagger-5">
+            <div className="widget-card h-full rounded-2xl bg-shell-surface border border-shell-border/40 p-5 cursor-pointer relative overflow-hidden noise" onClick={() => onOpenAgent('superdo')}>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">⚡</span>
+                  <span className="text-xs font-medium text-shell-muted uppercase tracking-wider">SuperDo</span>
+                </div>
+                <span className="text-[10px] text-warm-400 bg-warm-500/10 px-2 py-0.5 rounded-full font-medium">2 researched</span>
+              </div>
+              <div className="space-y-2">
+                {TODO_ITEMS.slice(0, 4).map((item, i) => (
+                  <div key={i} className="flex items-start gap-2.5">
+                    <div className={`mt-1 w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center flex-shrink-0
+                      ${item.done ? 'bg-emerald-500/20 border-emerald-500' :
+                        item.priority === 'high' ? 'border-warm-500' : 'border-shell-border'}`}>
+                      {item.done && <svg width="8" height="8" fill="none" stroke="#22c55e" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className={`text-sm leading-tight ${item.done ? 'text-shell-muted line-through' : 'text-shell-text/85'}`}>{item.text}</span>
+                      {item.researched && !item.done && (
+                        <div className="flex items-center gap-1 mt-1">
+                          <div className="w-1 h-1 rounded-full bg-blue-400"></div>
+                          <span className="text-[10px] text-blue-400">Insights ready</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* News Widget */}
+          <div className="col-span-3 row-span-2 animate-widget stagger-5">
+            <div className="widget-card h-full rounded-2xl bg-shell-surface border border-shell-border/40 p-5 cursor-pointer relative overflow-hidden noise" onClick={() => onOpenAgent('news')}>
+              <div className="flex items-center gap-2 mb-4">
+                <span className="text-lg">📰</span>
+                <span className="text-[10px] font-medium text-shell-muted uppercase tracking-wider">TechNews Pro</span>
+              </div>
+              <div className="space-y-3">
+                {[
+                  { title: 'Claude\'s new Agent SDK enables autonomous coding', source: 'TechCrunch', time: '2h' },
+                  { title: 'ElevenLabs launches AI music generation', source: 'The Verge', time: '4h' },
+                  { title: 'OpenAI restructures enterprise push', source: 'The Information', time: '5h' },
+                ].map((article, i) => (
+                  <div key={i} className="group">
+                    <div className="text-sm text-shell-text/80 leading-snug group-hover:text-shell-text transition-colors">{article.title}</div>
+                    <div className="text-[10px] text-shell-muted mt-0.5">{article.source} · {article.time}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Sports Widget */}
+          <div className="col-span-4 row-span-2 animate-widget stagger-6">
+            <div className="widget-card h-full rounded-2xl bg-gradient-to-br from-[#1d428a] to-[#1d428a]/80 border border-blue-500/20 p-5 cursor-pointer relative overflow-hidden">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-lg">🏀</span>
+                <span className="text-[10px] font-semibold text-blue-200/60 uppercase tracking-wider">Golden State Warriors</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-2xl font-bold text-white">GSW 112</div>
+                  <div className="text-lg text-blue-200/60">LAL 108</div>
+                  <div className="text-xs text-emerald-300 mt-2 font-medium">W · Final</div>
+                </div>
+                <div className="text-6xl opacity-30">🏆</div>
+              </div>
+              <div className="absolute bottom-4 left-5 right-5 flex items-center gap-2">
+                <div className="text-[10px] text-blue-200/50">Next: vs PHX · Thu 7:30 PM</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Health Widget */}
+          <div className="col-span-4 row-span-2 animate-widget stagger-6">
+            <div className="widget-card h-full rounded-2xl bg-shell-surface border border-shell-border/40 p-5 cursor-pointer relative overflow-hidden noise" onClick={() => onOpenAgent('health')}>
+              <div className="flex items-center gap-2 mb-4">
+                <span className="text-lg">🏋️</span>
+                <span className="text-[10px] font-medium text-shell-muted uppercase tracking-wider">Health Coach</span>
+              </div>
+              <div className="grid grid-cols-3 gap-3 mb-4">
+                {[
+                  { label: 'Calories', value: '1,840', target: '2,100', pct: 87, color: '#f97316' },
+                  { label: 'Protein', value: '142g', target: '160g', pct: 89, color: '#3b82f6' },
+                  { label: 'Water', value: '2.1L', target: '3L', pct: 70, color: '#22d3ee' },
+                ].map((stat, i) => (
+                  <div key={i} className="text-center">
+                    <div className="relative w-14 h-14 mx-auto mb-1.5">
+                      <svg className="w-14 h-14 -rotate-90" viewBox="0 0 36 36">
+                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#2a2a2f" strokeWidth="2.5"/>
+                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke={stat.color} strokeWidth="2.5" strokeDasharray={`${stat.pct}, 100`} strokeLinecap="round"/>
+                      </svg>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-[10px] font-semibold text-shell-text">{stat.pct}%</span>
+                      </div>
+                    </div>
+                    <div className="text-[10px] text-shell-muted">{stat.label}</div>
+                    <div className="text-xs font-medium text-shell-text/80">{stat.value}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="text-xs text-emerald-400/70 flex items-center gap-1.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
+                Protein goal hit 5/7 days this week
+              </div>
+            </div>
+          </div>
+
+          {/* Finance Widget */}
+          <div className="col-span-4 row-span-2 animate-widget stagger-7">
+            <div className="widget-card h-full rounded-2xl bg-shell-surface border border-shell-border/40 p-5 cursor-pointer relative overflow-hidden noise" onClick={() => onOpenAgent('finance')}>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">💰</span>
+                  <span className="text-[10px] font-medium text-shell-muted uppercase tracking-wider">Attain Finance</span>
+                </div>
+                <span className="text-[10px] text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full font-medium">1 alert</span>
+              </div>
+              <div className="mb-3">
+                <div className="text-xs text-shell-muted mb-0.5">Net Worth</div>
+                <div className="text-2xl font-semibold text-emerald-400">$185,031</div>
+                <div className="text-xs text-emerald-400/60 mt-0.5">↑ $1.06 from early January</div>
+              </div>
+              <div className="flex items-end gap-1 h-10 mb-2">
+                {[40, 55, 60, 52, 65, 58, 70, 62, 75, 68, 78, 72, 80, 85, 82, 88].map((h, i) => (
+                  <div key={i} className="flex-1 rounded-sm bg-emerald-500/30" style={{ height: `${h}%` }}></div>
+                ))}
+              </div>
+              <div className="text-xs text-shell-muted">Jan spending: $1,860 · ↓ 69% from Dec</div>
+            </div>
+          </div>
+
+          {/* Gallery Widget — photo carousel */}
+          <div className="col-span-4 row-span-2 animate-widget stagger-8">
+            <div className="widget-card h-full rounded-2xl bg-gradient-to-br from-purple-900/40 to-shell-surface border border-purple-500/20 p-5 cursor-pointer relative overflow-hidden" onClick={() => onOpenAgent('gallery')}>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-lg">🧙</span>
+                <span className="text-[10px] font-medium text-purple-300/50 uppercase tracking-wider">Wizard Gallery</span>
+              </div>
+              <div className="grid grid-cols-3 gap-2 h-[calc(100%-48px)]">
+                {['🧙‍♂️', '🧙‍♀️', '🧒'].map((emoji, i) => (
+                  <div key={i} className="rounded-xl bg-purple-800/30 border border-purple-500/10 flex items-center justify-center text-3xl">
+                    {emoji}
+                  </div>
+                ))}
+              </div>
+              <div className="absolute bottom-4 left-5 text-xs text-purple-300/40 italic font-serif">All dressed as wizards ✨</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- Feed View ---
+function FeedView({ items, onOpenAgent }) {
+  return (
+    <div className="h-full overflow-y-auto mesh-gradient">
+      <div className="max-w-[680px] mx-auto px-6 py-8">
+        <div className="flex items-center justify-between mb-6 animate-fade-in-up stagger-1">
+          <h2 className="font-serif text-2xl italic text-shell-text/90">Agent Activity</h2>
+          <div className="flex items-center gap-2 text-xs text-shell-muted">
+            <div className="w-2 h-2 rounded-full bg-warm-500 animate-pulse"></div>
+            3 agents active
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          {items.map((item, i) => (
+            <div
+              key={item.id}
+              className={`feed-item rounded-xl p-4 border border-shell-border/30 bg-shell-surface/60 cursor-pointer animate-fade-in-up stagger-${Math.min(i + 2, 8)}`}
+              onClick={() => onOpenAgent(item.agent.toLowerCase().replace(/\s+/g, ''))}
+            >
+              <div className="flex items-start gap-3">
+                <div className="text-xl mt-0.5 flex-shrink-0">{item.icon}</div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs font-semibold text-shell-text/70">{item.agent}</span>
+                    <span className="text-[10px] text-shell-muted">{item.time}</span>
+                  </div>
+                  <p className="text-sm text-shell-text/80 leading-relaxed">{item.message}</p>
+                  {item.type === 'action' && (
+                    <div className="flex items-center gap-2 mt-2.5">
+                      <button className="px-3 py-1 rounded-lg bg-warm-500/15 text-warm-400 text-xs font-medium hover:bg-warm-500/25 transition-colors">View Details</button>
+                      <button className="px-3 py-1 rounded-lg bg-shell-elevated text-shell-muted text-xs font-medium hover:bg-shell-border transition-colors">Dismiss</button>
+                    </div>
+                  )}
+                  {item.type === 'alert' && (
+                    <div className="flex items-center gap-2 mt-2.5">
+                      <button className="px-3 py-1 rounded-lg bg-red-500/15 text-red-400 text-xs font-medium hover:bg-red-500/25 transition-colors">Cancel Subscription</button>
+                      <button className="px-3 py-1 rounded-lg bg-shell-elevated text-shell-muted text-xs font-medium hover:bg-shell-border transition-colors">Keep It</button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- Agent View (the iframe / React artifact container) ---
+function AgentView({ agent, onClose }) {
+  if (!agent) return null;
+
+  const agentData = AGENTS.find(a => a.id === agent);
+  if (!agentData) return null;
+
+  return (
+    <div className="agent-overlay fixed inset-0 z-40 flex">
+      <div className="absolute inset-0 bg-black/60" onClick={onClose}></div>
+      <div className="agent-content relative ml-[68px] flex-1 m-3 rounded-2xl bg-shell-bg border border-shell-border/50 overflow-hidden flex flex-col shadow-2xl shadow-black/50">
+        {/* Agent header bar */}
+        <div className="flex items-center justify-between px-5 py-3 border-b border-shell-border/40 bg-shell-surface/80">
+          <div className="flex items-center gap-3">
+            <span className="text-xl">{agentData.icon}</span>
+            <div>
+              <h3 className="text-sm font-semibold text-shell-text">{agentData.name}</h3>
+              <p className="text-[10px] text-shell-muted">{agentData.description}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button className="p-1.5 rounded-lg hover:bg-shell-elevated transition-colors text-shell-muted hover:text-shell-text">
+              <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+            <button className="p-1.5 rounded-lg hover:bg-shell-elevated transition-colors text-shell-muted hover:text-shell-text">
+              <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+            </button>
+            <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-shell-elevated transition-colors text-shell-muted hover:text-shell-text">
+              <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Agent content (where the React artifact / iframe would go) */}
+        <div className="flex-1 flex items-center justify-center bg-shell-bg relative">
+          <div className="text-center animate-fade-in">
+            <div className="text-6xl mb-4">{agentData.icon}</div>
+            <h3 className="text-xl font-semibold text-shell-text mb-2">{agentData.name}</h3>
+            <p className="text-sm text-shell-muted mb-6 max-w-sm">{agentData.description}</p>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-shell-surface border border-shell-border/40 text-xs text-shell-muted">
+              <span>Agent UI renders here</span>
+              <span className="text-shell-border">·</span>
+              <span className="text-warm-400">React artifact in iframe</span>
+            </div>
+          </div>
+
+          {/* Decorative grid */}
+          <div className="absolute inset-0 opacity-[0.015]" style={{
+            backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)',
+            backgroundSize: '32px 32px'
+          }}></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- Build View ---
+function BuildView() {
+  const [prompt, setPrompt] = useState('');
+
+  return (
+    <div className="h-full overflow-y-auto mesh-gradient">
+      <div className="max-w-[640px] mx-auto px-6 py-12">
+        <div className="text-center mb-10 animate-fade-in-up stagger-1">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-warm-500 to-warm-600 mb-4 shadow-lg shadow-warm-500/20">
+            <svg width="28" height="28" fill="none" stroke="white" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M12 4v16m-8-8h16"/></svg>
+          </div>
+          <h2 className="font-serif text-3xl italic text-shell-text/90 mb-2">Build something new</h2>
+          <p className="text-sm text-shell-muted max-w-sm mx-auto">Describe what you want in plain language. Sidekick will build it for you — UI, logic, tools, everything.</p>
+        </div>
+
+        <div className="animate-fade-in-up stagger-2">
+          <div className="relative rounded-2xl bg-shell-surface border border-shell-border/50 overflow-hidden focus-within:border-warm-500/30 focus-within:shadow-lg focus-within:shadow-warm-500/5 transition-all">
+            <textarea
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="Make me an agent called Ramble Wrangler. When an audio file is shared with it, transcribe the audio verbatim, format it into a Google Doc, and show a live processing UI..."
+              className="w-full bg-transparent px-5 py-4 text-sm text-shell-text placeholder:text-shell-muted/50 resize-none outline-none min-h-[140px]"
+              rows={5}
+            />
+            <div className="flex items-center justify-between px-4 py-3 border-t border-shell-border/30">
+              <div className="flex items-center gap-2 text-xs text-shell-muted">
+                <span>Tip: Be specific about the UI and tools you want</span>
+              </div>
+              <button className={`px-5 py-2 rounded-xl text-sm font-medium transition-all ${
+                prompt.length > 10
+                  ? 'bg-warm-500 text-white shadow-lg shadow-warm-500/20 hover:bg-warm-600'
+                  : 'bg-shell-elevated text-shell-muted cursor-not-allowed'
+              }`}>
+                Build with Sidekick →
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Example agents */}
+        <div className="mt-10 animate-fade-in-up stagger-3">
+          <div className="text-xs text-shell-muted uppercase tracking-wider mb-4 font-medium">Or start from an example</div>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { icon: '🎙️', name: 'Voice Note Transcriber', desc: 'Audio → text → Google Docs' },
+              { icon: '📸', name: 'Image Upscaler', desc: 'Low-res → high-res with AI' },
+              { icon: '📊', name: 'Expense Tracker', desc: 'Photo receipts → spreadsheet' },
+              { icon: '🎯', name: 'Habit Tracker', desc: 'Daily check-ins with streaks' },
+            ].map((example, i) => (
+              <button key={i} className="flex items-start gap-3 p-4 rounded-xl bg-shell-surface/60 border border-shell-border/30 hover:border-shell-border/60 hover:bg-shell-surface transition-all text-left group">
+                <span className="text-xl mt-0.5">{example.icon}</span>
+                <div>
+                  <div className="text-sm font-medium text-shell-text/80 group-hover:text-shell-text transition-colors">{example.name}</div>
+                  <div className="text-xs text-shell-muted mt-0.5">{example.desc}</div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- Sidekick Panel ---
+function SidekickPanel({ open }) {
+  const [messages, setMessages] = useState([
+    { role: 'assistant', content: 'Good afternoon! I see you have a meeting with Ali Rougani in 23 minutes. I\'ve already prepared a briefing — want me to pull it up?' },
+  ]);
+  const [input, setInput] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+
+  const handleSend = () => {
+    if (!input.trim()) return;
+    setMessages(prev => [...prev, { role: 'user', content: input }]);
+    setInput('');
+    setIsTyping(true);
+
+    setTimeout(() => {
+      setIsTyping(false);
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: 'I\'ll pull up the Calendar Hero briefing for Ali. He was last onboarded to the design system last Tuesday. I also found 2 related Slack threads you might want to reference. Want me to send him tonight\'s dinner menu too? 😄',
+        tools: ['Calendar Hero', 'Slack']
+      }]);
+    }, 2000);
+  };
+
+  if (!open) return null;
+
+  return (
+    <div className="sidekick-panel w-[380px] h-full border-l border-shell-border/50 bg-shell-surface/95 flex flex-col animate-slide-right relative z-30">
+      {/* Header */}
+      <div className="px-5 py-4 border-b border-shell-border/40">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-warm-500 to-warm-600 flex items-center justify-center shadow-md shadow-warm-500/20">
+            <span className="text-sm">✦</span>
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-shell-text">Sidekick</h3>
+            <p className="text-[10px] text-shell-muted">Access to all your agents & tools</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+        {messages.map((msg, i) => (
+          <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}>
+            <div className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm leading-relaxed
+              ${msg.role === 'user'
+                ? 'bg-warm-500/20 text-shell-text rounded-br-md'
+                : 'bg-shell-elevated/80 text-shell-text/85 rounded-bl-md border border-shell-border/20'}`}>
+              {msg.content}
+              {msg.tools && (
+                <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-shell-border/20">
+                  <span className="text-[10px] text-shell-muted">Used:</span>
+                  {msg.tools.map((tool, j) => (
+                    <span key={j} className="text-[10px] px-2 py-0.5 rounded-full bg-shell-border/30 text-shell-muted">{tool}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+        {isTyping && (
+          <div className="flex justify-start animate-fade-in">
+            <div className="px-4 py-3 rounded-2xl rounded-bl-md bg-shell-elevated/80 border border-shell-border/20">
+              <div className="flex items-center gap-1.5">
+                <div className="typing-dot w-1.5 h-1.5 rounded-full bg-shell-muted"></div>
+                <div className="typing-dot w-1.5 h-1.5 rounded-full bg-shell-muted"></div>
+                <div className="typing-dot w-1.5 h-1.5 rounded-full bg-shell-muted"></div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Input */}
+      <div className="px-4 py-3 border-t border-shell-border/40">
+        <div className="flex items-end gap-2 bg-shell-elevated rounded-xl border border-shell-border/30 focus-within:border-warm-500/30 transition-colors">
+          <textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }}}
+            placeholder="Ask Sidekick anything..."
+            className="flex-1 bg-transparent px-4 py-3 text-sm text-shell-text placeholder:text-shell-muted/40 resize-none outline-none max-h-[100px]"
+            rows={1}
+          />
+          <button
+            onClick={handleSend}
+            className={`p-2.5 m-1 rounded-lg transition-all ${
+              input.trim()
+                ? 'bg-warm-500 text-white hover:bg-warm-600'
+                : 'text-shell-muted/30'
+            }`}
+          >
+            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+        <div className="flex items-center gap-3 mt-2 px-1">
+          <button className="text-[10px] text-shell-muted hover:text-shell-text transition-colors">📎 Attach</button>
+          <button className="text-[10px] text-shell-muted hover:text-shell-text transition-colors">🎤 Voice</button>
+          <button className="text-[10px] text-shell-muted hover:text-shell-text transition-colors">📷 Photo</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- Gallery View ---
+function GalleryView({ onOpenAgent }) {
+  return (
+    <div className="h-full overflow-y-auto mesh-gradient">
+      <div className="max-w-[800px] mx-auto px-6 py-8">
+        <div className="mb-8 animate-fade-in-up stagger-1">
+          <h2 className="font-serif text-2xl italic text-shell-text/90 mb-2">Agent Gallery</h2>
+          <p className="text-sm text-shell-muted">Discover agents built by the community. Use them as-is or remix them.</p>
+        </div>
+
+        <div className="mb-6 animate-fade-in-up stagger-2">
+          <div className="flex items-center gap-2">
+            <div className="flex-1 relative">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-shell-muted" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <input className="w-full bg-shell-surface border border-shell-border/40 rounded-xl pl-10 pr-4 py-2.5 text-sm text-shell-text placeholder:text-shell-muted/50 outline-none focus:border-warm-500/30 transition-colors" placeholder="Search agents..." />
+            </div>
+            <select className="bg-shell-surface border border-shell-border/40 rounded-xl px-3 py-2.5 text-sm text-shell-muted outline-none">
+              <option>All Categories</option>
+              <option>Productivity</option>
+              <option>Finance</option>
+              <option>Health</option>
+              <option>Entertainment</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          {[...AGENTS,
+            { id: 'burrito', name: 'BurritoQuest', icon: '🌯', color: '#f59e0b', description: '100% completion on SF burritos' },
+            { id: 'ramble', name: 'Ramble Wrangler', icon: '🎙️', color: '#6366f1', description: 'Voice notes → structured Google Docs' },
+            { id: 'enhance', name: 'Enhance', icon: '🖼️', color: '#ec4899', description: 'AI image upscaling with pirate theme' },
+            { id: 'storytime', name: 'StoryTime', icon: '📖', color: '#8b5cf6', description: 'Personalized bedtime stories for kids' },
+          ].map((agent, i) => (
+            <div key={agent.id} className={`animate-widget stagger-${Math.min(i % 8 + 1, 8)}`}>
+              <button
+                onClick={() => onOpenAgent(agent.id)}
+                className="w-full flex items-start gap-4 p-5 rounded-xl bg-shell-surface/60 border border-shell-border/30 hover:border-shell-border/60 hover:bg-shell-surface transition-all text-left group"
+              >
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0" style={{ background: agent.color + '20' }}>
+                  {agent.icon}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-semibold text-shell-text/85 group-hover:text-shell-text transition-colors">{agent.name}</div>
+                  <div className="text-xs text-shell-muted mt-0.5 leading-relaxed">{agent.description}</div>
+                  <div className="flex items-center gap-3 mt-2">
+                    <span className="text-[10px] text-shell-muted">⭐ 4.8</span>
+                    <span className="text-[10px] text-shell-muted">👥 1.2k users</span>
+                    <span className="text-[10px] text-warm-400 font-medium cursor-pointer hover:text-warm-300">Remix →</span>
+                  </div>
+                </div>
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================
+// APP SHELL
+// ============================================
+function App() {
+  const [activeView, setActiveView] = useState('home');
+  const [sidekickOpen, setSidekickOpen] = useState(false);
+  const [openAgent, setOpenAgent] = useState(null);
+
+  const handleNavigate = useCallback((view, agentId) => {
+    if (view === 'agent') {
+      setOpenAgent(agentId);
+    } else {
+      setActiveView(view);
+      setOpenAgent(null);
+    }
+  }, []);
+
+  const renderView = () => {
+    switch (activeView) {
+      case 'home': return <HomeView onOpenAgent={setOpenAgent} feedItems={FEED_ITEMS} />;
+      case 'feed': return <FeedView items={FEED_ITEMS} onOpenAgent={(id) => setOpenAgent(id)} />;
+      case 'build': return <BuildView />;
+      case 'gallery': return <GalleryView onOpenAgent={setOpenAgent} />;
+      default: return <HomeView onOpenAgent={setOpenAgent} feedItems={FEED_ITEMS} />;
+    }
+  };
+
+  return (
+    <div className="h-screen w-screen flex overflow-hidden bg-shell-bg">
+      {/* Sidebar — the OS dock */}
+      <Sidebar
+        activeView={activeView}
+        onNavigate={handleNavigate}
+        onToggleSidekick={() => setSidekickOpen(!sidekickOpen)}
+        sidekickOpen={sidekickOpen}
+        agents={AGENTS}
+      />
+
+      {/* Main content */}
+      <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 overflow-hidden">
+          {renderView()}
+        </div>
+
+        {/* Sidekick panel */}
+        <SidekickPanel open={sidekickOpen} />
+      </div>
+
+      {/* Agent overlay */}
+      {openAgent && (
+        <AgentView agent={openAgent} onClose={() => setOpenAgent(null)} />
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
