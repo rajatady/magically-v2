@@ -75,7 +75,7 @@ export function LoginPage() {
         </p>
 
         <a
-          href={auth.googleUrl + (cliRedirect ? `?cli_redirect=${encodeURIComponent(cliRedirect)}` : '')}
+          href={auth.googleUrl() + (cliRedirect ? `?cli_redirect=${encodeURIComponent(cliRedirect)}` : '')}
           style={{
             display: 'flex',
             alignItems: 'center',
