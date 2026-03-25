@@ -1,0 +1,57 @@
+{
+  "id": "coding-tips-pro",
+  "name": "Coding Tips Pro",
+  "version": "1.0.0",
+  "description": "Autonomous Instagram content engine — generates, renders, publishes, and tracks programming tip carousels",
+  "icon": "💻",
+  "color": "#6366f1",
+  "author": "kumar",
+
+  "secrets": [
+    "IG_CT_ACCESS_TOKEN",
+    "IG_CT_ACCOUNT_ID",
+    "BLOB_READ_WRITE_TOKEN"
+  ],
+
+  "runtime": {
+    "base": "python:3.12-slim",
+    "system": ["chromium", "fonts-noto-cjk", "fonts-noto"],
+    "install": "pip install playwright Pillow requests && playwright install chromium --with-deps"
+  },
+
+  "triggers": [
+    {
+      "type": "cron",
+      "name": "Growth Cycle",
+      "entrypoint": "growthCycle",
+      "schedule": "17 */4 * * *"
+    },
+    {
+      "type": "cron",
+      "name": "Refresh Analytics",
+      "entrypoint": "fetchInsights",
+      "schedule": "0 */6 * * *"
+    }
+  ],
+
+  "functions": [
+    {
+      "name": "growthCycle",
+      "description": "Full autonomous cycle: analyze → plan → create → render → publish → track",
+      "parameters": { "type": "object", "properties": { "count": { "type": "number" } } },
+      "run": "node functions/growthCycle.js"
+    },
+    {
+      "name": "fetchInsights",
+      "description": "Fetch latest Instagram analytics and save snapshot",
+      "parameters": {},
+      "run": "python insights.py"
+    },
+    {
+      "name": "publish",
+      "description": "Publish a rendered carousel to Instagram",
+      "parameters": { "type": "object", "properties": { "contentPath": { "type": "string" } }, "required": ["contentPath"] },
+      "run": "python publish_carousel.py"
+    }
+  ]
+}

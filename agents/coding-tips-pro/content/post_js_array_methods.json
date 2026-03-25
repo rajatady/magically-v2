@@ -1,0 +1,79 @@
+{
+  "topic": "js_array_methods",
+  "template": "tutorial_reveal",
+  "caption": "5 JavaScript array methods you probably never used.\n\nThey've been in every browser since 2023. No polyfills. No libraries.\n\nStop writing verbose loops when a one-liner exists.\n\n📌 SAVE this — you'll need it.\n\nWhich one surprised you? Comment 👇\n\n#javascript #webdev #coding #programming #frontend #developer #codingtips #es2023 #arrays #cleancode",
+  "slides": [
+    {
+      "type": "title",
+      "title": "JS Array Methods <em>Nobody Uses</em>",
+      "subtitle": "Built-in since ES2023. Zero polyfills needed.",
+      "tag": "JAVASCRIPT",
+      "number": "5",
+      "hooks": [".findLast()", ".at()", ".with()", ".toSorted()", ".toReversed()"]
+    },
+    {
+      "type": "item",
+      "number": "01",
+      "tag": "JAVASCRIPT",
+      "title": "<em>.findLast( )</em> — search from the end",
+      "desc": "Like .find() but starts from the last element. No more .reverse().find().",
+      "code": "const transactions = [\n  { id: 1, type: 'deposit' },\n  { id: 2, type: 'withdrawal' },\n  { id: 3, type: 'deposit' },\n  { id: 4, type: 'withdrawal' },\n];\n\n// Old way\nconst last = [...transactions]\n  .reverse()\n  .find(t =&gt; t.type === 'deposit');\n\n// New way\nconst last = transactions\n  .findLast(t =&gt; t.type === 'deposit');\n// { id: 3, type: 'deposit' }",
+      "punchline": "No copy. No reverse. One method."
+    },
+    {
+      "type": "item",
+      "number": "02",
+      "tag": "JAVASCRIPT",
+      "title": "<em>.at( )</em> — negative indexing",
+      "desc": "Access elements from the end without arr[arr.length - 1].",
+      "code": "const colors = ['red', 'green', 'blue'];\n\n// Old way\ncolors[colors.length - 1]; // 'blue'\ncolors[colors.length - 2]; // 'green'\n\n// New way\ncolors.at(-1);  // 'blue'\ncolors.at(-2);  // 'green'\ncolors.at(0);   // 'red'\n\n// Works on strings too\n'hello'.at(-1); // 'o'",
+      "punchline": "Python had this for 30 years. JS finally caught up."
+    },
+    {
+      "type": "item",
+      "number": "03",
+      "tag": "JAVASCRIPT",
+      "title": "<em>.with( )</em> — immutable replace",
+      "desc": "Replace an element at an index without mutating the original array.",
+      "code": "const arr = [1, 2, 3, 4, 5];\n\n// Old way (mutates!)\nconst copy = [...arr];\ncopy[2] = 99;\n\n// New way (immutable)\nconst updated = arr.with(2, 99);\n// [1, 2, 99, 4, 5]\n\n// Original unchanged\nconsole.log(arr);\n// [1, 2, 3, 4, 5]",
+      "punchline": "React state updates just got cleaner."
+    },
+    {
+      "type": "item",
+      "number": "04",
+      "tag": "JAVASCRIPT",
+      "title": "<em>.toSorted( )</em> — sort without mutating",
+      "desc": ".sort() mutates the original. .toSorted() returns a new array.",
+      "code": "const scores = [40, 10, 90, 30];\n\n// Old way (mutates!)\nconst sorted = [...scores].sort(\n  (a, b) =&gt; a - b\n);\n\n// New way (immutable)\nconst sorted = scores.toSorted(\n  (a, b) =&gt; a - b\n);\n// [10, 30, 40, 90]\n\n// Original unchanged\nconsole.log(scores);\n// [40, 10, 90, 30]",
+      "punchline": "No more spread-then-sort. One method."
+    },
+    {
+      "type": "item",
+      "number": "05",
+      "tag": "JAVASCRIPT",
+      "title": "<em>.toReversed( )</em> — reverse without mutating",
+      "desc": ".reverse() mutates. .toReversed() returns a new reversed array.",
+      "code": "const steps = ['start', 'process', 'end'];\n\n// Old way (mutates!)\nconst reversed = [...steps].reverse();\n\n// New way (immutable)\nconst reversed = steps.toReversed();\n// ['end', 'process', 'start']\n\n// Original unchanged\nconsole.log(steps);\n// ['start', 'process', 'end']",
+      "punchline": "The immutable trio: toSorted, toReversed, with."
+    },
+    {
+      "type": "save",
+      "title": "ES2023 Array <em>Cheat Sheet</em>",
+      "badge": "📌 SAVE THIS",
+      "tag": "CHEAT SHEET",
+      "items": [
+        {"label": ".findLast()", "desc": "Search from end of array"},
+        {"label": ".at(-1)", "desc": "Negative indexing"},
+        {"label": ".with(i, val)", "desc": "Immutable element replace"},
+        {"label": ".toSorted()", "desc": "Sort without mutating"},
+        {"label": ".toReversed()", "desc": "Reverse without mutating"}
+      ],
+      "question": "Which one are you using first? 👇"
+    },
+    {
+      "type": "cta",
+      "teaser": "Next: <em>Iterator helpers</em> — map and filter without arrays",
+      "tagline": "Pro snippets. Zero fluff."
+    }
+  ]
+}

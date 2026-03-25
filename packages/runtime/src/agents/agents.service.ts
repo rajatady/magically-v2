@@ -1,0 +1,138 @@
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  OnModuleInit,
+} from '@nestjs/common';
+import { join, resolve } from 'path';
+import { readFileSync, readdirSync, existsSync } from 'fs';
+import { eq } from 'drizzle-orm';
+import { DatabaseService } from '../db/database.service.js';
+import { agents as agentsTable } from '../db/schema.js';
+import {
+  AgentInstance,
+  AgentManifest,
+  AgentManifestSchema,
+} from './types.js';
+import { randomUUID } from 'crypto';
+
+@Injectable()
+export class AgentsService implements OnModuleInit {
+  private readonly logger = new Logger(AgentsService.name);
+  private instances = new Map<string, AgentInstance>();
+
+  constructor(private readonly db: DatabaseService) {}
+
+  onModuleInit() {
+    this.scanAgentsDir();
+  }
+
+  // ─── Discovery ─────────────────────────────────────────────────────────────
+
+  /** Scan the `agents/` directory at project root and load all manifests */
+  scanAgentsDir(agentsDir?: string) {
+    const dir = agentsDir ?? resolve(process.cwd(), '..', '..', 'agents');
+    if (!existsSync(dir)) {
+      this.logger.warn(`Agents directory not found: ${dir}`);
+      return;
+    }
+
+    const entries = readdirSync(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue;
+      const agentDir = join(dir, entry.name);
+      const manifestPath = join(agentDir, 'manifest.json');
+      if (!existsSync(manifestPath)) continue;
+
+      try {
+        this.loadAgent(agentDir, manifestPath);
+      } catch (err) {
+        this.logger.error(`Failed to load agent at ${agentDir}: ${err}`);
+      }
+    }
+
+    this.logger.log(`Loaded ${this.instances.size} agents`);
+  }
+
+  loadAgent(agentDir: string, manifestPath: string): AgentInstance {
+    const raw = JSON.parse(readFileSync(manifestPath, 'utf-8'));
+    const manifest = AgentManifestSchema.parse(raw);
+
+    const now = new Date();
+    const instance: AgentInstance = {
+      manifest,
+      dir: agentDir,
+      enabled: true,
+      installedAt: now,
+    };
+
+    this.instances.set(manifest.id, instance);
+
+    // Upsert into DB
+    const existing = this.db.db
+      .select()
+      .from(agentsTable)
+      .where(eq(agentsTable.id, manifest.id))
+      .get();
+
+    if (existing) {
+      this.db.db
+        .update(agentsTable)
+        .set({ name: manifest.name, version: manifest.version, updatedAt: now })
+        .where(eq(agentsTable.id, manifest.id))
+        .run();
+    } else {
+      this.db.db.insert(agentsTable).values({
+        id: manifest.id,
+        name: manifest.name,
+        version: manifest.version,
+        description: manifest.description,
+        icon: manifest.icon,
+        color: manifest.color,
+        author: manifest.author,
+        manifestPath,
+        enabled: true,
+        installedAt: now,
+        updatedAt: now,
+      }).run();
+    }
+
+    return instance;
+  }
+
+  // ─── CRUD ──────────────────────────────────────────────────────────────────
+
+  findAll(): AgentInstance[] {
+    return Array.from(this.instances.values());
+  }
+
+  findOne(id: string): AgentInstance {
+    const instance = this.instances.get(id);
+    if (!instance) throw new NotFoundException(`Agent '${id}' not found`);
+    return instance;
+  }
+
+  enable(id: string) {
+    const inst = this.findOne(id);
+    inst.enabled = true;
+    this.db.db
+      .update(agentsTable)
+      .set({ enabled: true, updatedAt: new Date() })
+      .where(eq(agentsTable.id, id))
+      .run();
+  }
+
+  disable(id: string) {
+    const inst = this.findOne(id);
+    inst.enabled = false;
+    this.db.db
+      .update(agentsTable)
+      .set({ enabled: false, updatedAt: new Date() })
+      .where(eq(agentsTable.id, id))
+      .run();
+  }
+
+  getManifest(id: string): AgentManifest {
+    return this.findOne(id).manifest;
+  }
+}

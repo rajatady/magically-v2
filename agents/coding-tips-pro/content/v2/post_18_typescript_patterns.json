@@ -1,0 +1,26 @@
+{
+  "topic": "v2_18_typescript_patterns",
+  "slides": [
+    {
+      "type": "title",
+      "bg": "#dde0ff",
+      "accent": "#3451b2",
+      "badge": "TYPESCRIPT",
+      "number": "4",
+      "title": "TypeScript patterns that make your code <em>bulletproof</em>",
+      "subtitle": "satisfies, discriminated unions, type guards, infer.",
+      "hooks": [
+        "satisfies",
+        "unions",
+        "guards",
+        "infer"
+      ]
+    },
+    {
+      "type": "cta",
+      "bg": "#dde0ff",
+      "accent": "#3451b2",
+      "teaser": "Next: fetch vs axios"
+    }
+  ]
+}

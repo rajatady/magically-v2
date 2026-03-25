@@ -1,0 +1,59 @@
+{
+  "topic": "css_layers",
+  "template": "snippet_battle",
+  "caption": "Stop fighting CSS specificity.\n\n@layer lets you control which styles win — regardless of selector specificity. No more !important. No more BEM workarounds.\n\nAll browsers since 2022.\n\nWhich approach do you use? A or B?\n\n#css #csslayers #webdev #coding #programming #developer #frontend #specificity #cleancode #codingtips",
+  "slides": [
+    {
+      "type": "hook",
+      "badge": "CSS",
+      "title": "Which <em>specificity</em> fix is better?",
+      "problem": "Override third-party CSS without !important",
+      "a": {
+        "label": "Specificity hacks",
+        "code": "/* Fight with specificity */\n.card.card.card {\n  padding: 1rem;\n}\n\n/* Or the nuclear option */\n.card {\n  padding: 1rem !important;\n}"
+      },
+      "b": {
+        "label": "@layer",
+        "code": "@layer base, components, overrides;\n\n@layer base {\n  .card { padding: 2rem; }\n}\n\n@layer overrides {\n  .card { padding: 1rem; }\n  /* Always wins. No !important */\n}"
+      },
+      "cta": "Pick one. Then swipe."
+    },
+    {
+      "type": "answer",
+      "badge": "CSS",
+      "title": "B wins. <em>You control the cascade.</em>",
+      "verdicts": [
+        {"tag": "Option A", "result": "bad", "title": "Hacks that break later", "text": "Repeating selectors or !important creates an arms race. Every override needs MORE specificity. It never ends."},
+        {"tag": "Option B", "result": "good", "title": "Layers define priority", "text": "The order of @layer declarations determines which layer wins. Lower specificity in a higher layer beats higher specificity in a lower layer."}
+      ],
+      "takeaway": "@layer solves the problem !important was invented for."
+    },
+    {
+      "type": "deep_dive",
+      "badge": "CSS",
+      "title": "The <em>real</em> power: third-party CSS.",
+      "sub": "Put Tailwind, Bootstrap, or any library in a low-priority layer.",
+      "code": "/* Declare layer order */\n@layer framework, app;\n\n/* Import Tailwind into a layer */\n@import url('tailwind.css') layer(framework);\n\n/* Your CSS always wins */\n@layer app {\n  .btn {\n    /* Beats Tailwind automatically */\n    /* No !important needed */\n    border-radius: 0;\n  }\n}"
+    },
+    {
+      "type": "save",
+      "badge": "CSS",
+      "tag": "📌 SAVE THIS",
+      "title": "CSS @layer Cheat Sheet",
+      "items": [
+        {"icon": "🔹", "text": "@layer name { } — define a layer"},
+        {"icon": "🔹", "text": "@layer a, b, c; — declare priority order"},
+        {"icon": "🔹", "text": "Last declared layer has highest priority"},
+        {"icon": "🔹", "text": "@import url() layer(name); — import into layer"},
+        {"icon": "🔹", "text": "Unlayered CSS beats all layers"},
+        {"icon": "🔹", "text": "All browsers since 2022"}
+      ]
+    },
+    {
+      "type": "cta",
+      "badge": "CSS",
+      "teaser": "Next: CSS <em>:has()</em> — the parent selector that killed JavaScript",
+      "tagline": "Pro snippets. Zero fluff."
+    }
+  ]
+}

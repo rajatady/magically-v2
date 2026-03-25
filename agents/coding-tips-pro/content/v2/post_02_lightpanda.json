@@ -1,0 +1,22 @@
+{
+  "topic": "v2_02_lightpanda",
+  "slides": [
+    {
+      "type": "title",
+      "bg": "#0a0a0a",
+      "accent": "#2997ff",
+      "deco": "circle-top",
+      "badge": "LIGHTPANDA",
+      "number": "11\u00d7",
+      "title": "Faster",
+      "subtitle": "Than Chrome. Written in Zig. Open source.",
+      "hooks": []
+    },
+    {
+      "type": "cta",
+      "bg": "#0a0a0a",
+      "accent": "#2997ff",
+      "teaser": "Next: Control any website with English"
+    }
+  ]
+}

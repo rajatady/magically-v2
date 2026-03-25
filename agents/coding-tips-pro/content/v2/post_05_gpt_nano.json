@@ -1,0 +1,22 @@
+{
+  "topic": "v2_05_gpt_nano",
+  "slides": [
+    {
+      "type": "title",
+      "bg": "#0a0a0a",
+      "accent": "#30d158",
+      "deco": "glow-center",
+      "badge": "OPENAI",
+      "number": "$0.20",
+      "title": "",
+      "subtitle": "Per million tokens. GPT-5.4 nano just dropped.",
+      "hooks": []
+    },
+    {
+      "type": "cta",
+      "bg": "#0a0a0a",
+      "accent": "#30d158",
+      "teaser": "Next: 100K stars in one week"
+    }
+  ]
+}

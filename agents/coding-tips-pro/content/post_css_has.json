@@ -1,0 +1,79 @@
+{
+  "topic": "css_has_selector",
+  "template": "tutorial_reveal",
+  "caption": "CSS :has() replaced 50 lines of JavaScript.\n\nParent selectors were impossible for 25 years.\nNow it's one line of CSS.\n\n5 real patterns you can use today.\n\n📌 SAVE this — your JS files are about to get lighter.\n\nWhich pattern surprised you? Comment the number 👇\n\n#css #webdev #frontend #javascript #coding #programming #html #design #uidesign #codingtips",
+  "slides": [
+    {
+      "type": "title",
+      "title": "CSS <em>:has( )</em> killed 50 lines of JS",
+      "subtitle": "The parent selector. 25 years in the making.",
+      "tag": "CSS · 2026",
+      "number": "5",
+      "hooks": [":has(img)", ":has(:focus)", ":has(> .active)", ":has(+ .error)"]
+    },
+    {
+      "type": "item",
+      "number": "01",
+      "tag": "CSS",
+      "title": "Style a card <em>that has</em> an image",
+      "desc": "If the card contains an image, change its layout. No JavaScript class toggling.",
+      "code": "/* Cards WITH images get horizontal layout */\n.card:has(img) {\n  display: grid;\n  grid-template-columns: 200px 1fr;\n}\n\n/* Cards WITHOUT images stay vertical */\n.card {\n  display: flex;\n  flex-direction: column;\n}",
+      "punchline": "CSS reads the children. Styles the parent."
+    },
+    {
+      "type": "item",
+      "number": "02",
+      "tag": "CSS",
+      "title": "Highlight a label when <em>input is focused</em>",
+      "desc": "The label lights up when its input gets focus. Zero JS event listeners.",
+      "code": "/* Label glows when its sibling input has focus */\nlabel:has(+ input:focus) {\n  color: #2563eb;\n  font-weight: 700;\n}\n\n/* Form group gets a border when active */\n.form-group:has(input:focus) {\n  border-color: #2563eb;\n  box-shadow: 0 0 0 3px rgba(37,99,235,0.1);\n}",
+      "punchline": "Replaced addEventListener('focus') entirely."
+    },
+    {
+      "type": "item",
+      "number": "03",
+      "tag": "CSS",
+      "title": "Hide empty <em>sections</em> automatically",
+      "desc": "If a container has no children, hide it. No JS isEmpty() check needed.",
+      "code": "/* Hide sections with no content */\nsection:not(:has(*)) {\n  display: none;\n}\n\n/* Gray out nav items with no dropdown */\n.nav-item:not(:has(.dropdown)) {\n  pointer-events: none;\n  opacity: 0.4;\n}",
+      "punchline": "CSS detects empty. CSS hides empty."
+    },
+    {
+      "type": "item",
+      "number": "04",
+      "tag": "CSS",
+      "title": "Style forms with <em>invalid</em> fields",
+      "desc": "The submit button disables visually when any field is invalid. Pure CSS.",
+      "code": "/* Dim the button if ANY field is invalid */\nform:has(:invalid) button[type=\"submit\"] {\n  opacity: 0.4;\n  cursor: not-allowed;\n}\n\n/* Red border on the form itself */\nform:has(:invalid) {\n  border: 2px solid #ef4444;\n}",
+      "punchline": "Form validation UI with zero JavaScript."
+    },
+    {
+      "type": "item",
+      "number": "05",
+      "tag": "CSS",
+      "title": "Dark mode <em>without</em> JS toggle",
+      "desc": "If a checkbox is checked anywhere on the page, switch the entire theme.",
+      "code": "/* The checkbox toggles dark mode */\nbody:has(#dark-toggle:checked) {\n  --bg: #0a0a0a;\n  --text: #e0e0e0;\n  --card: #1a1a1a;\n}\n\n/* No JavaScript. No localStorage.\n   Just CSS reading a checkbox state. */",
+      "punchline": "A theme toggle in pure CSS. Really."
+    },
+    {
+      "type": "save",
+      "title": "CSS <em>:has( )</em> patterns",
+      "badge": "📌 SAVE THIS",
+      "tag": "CHEAT SHEET",
+      "items": [
+        {"label": ":has(img)", "desc": "Style parent based on child content"},
+        {"label": ":has(+ input:focus)", "desc": "Style siblings based on state"},
+        {"label": ":not(:has(*))", "desc": "Target empty containers"},
+        {"label": ":has(:invalid)", "desc": "Form-level validation styling"},
+        {"label": ":has(#id:checked)", "desc": "Global state from a checkbox"}
+      ],
+      "question": "How much JS can you delete now? 👇"
+    },
+    {
+      "type": "cta",
+      "teaser": "Next: <em>Container queries</em> — the end of media queries",
+      "tagline": "Pro snippets. Zero fluff. Daily."
+    }
+  ]
+}

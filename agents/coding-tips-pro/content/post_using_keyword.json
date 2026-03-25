@@ -1,0 +1,66 @@
+{
+  "topic": "using_keyword",
+  "caption": "JavaScript just got a new keyword: using\n\nIt auto-cleans resources when they go out of scope.\nNo more try/finally. No more forgotten .close() calls.\n\nThis changes how you write JS in 2026.\n\n📌 SAVE this — you'll need it soon.\n\n#javascript #typescript #es2025 #coding #programming #webdev #frontend #backend #nodejs #newfeature #codingtips",
+  "slides": [
+    {
+      "type": "ab_question",
+      "question": "Which is <em>cleaner</em>?",
+      "subtitle": "Managing database connections in JavaScript",
+      "badge": "ES2025 · NEW",
+      "option_a": {
+        "label": "try/finally (old way)",
+        "code": "const db = openConnection();\ntry {\n  await db.query(\"SELECT * ...\");\n} finally {\n  db.close(); // easy to forget\n}"
+      },
+      "option_b": {
+        "label": "using keyword (new way)",
+        "code": "using db = openConnection();\nawait db.query(\"SELECT * ...\");\n// db.close() called automatically\n// when scope exits"
+      },
+      "cta": "One of these is the future. Swipe →"
+    },
+    {
+      "type": "reveal",
+      "title": "B is the <em>future</em> of JS.",
+      "badge": "THE ANSWER",
+      "cards": [
+        {
+          "verdict": "loser",
+          "label": "Option A — try/finally",
+          "title": "Works, but fragile",
+          "text": "Developers forget .close() constantly. If an error throws before finally, resources leak. It's boilerplate that shouldn't exist."
+        },
+        {
+          "verdict": "winner",
+          "label": "Option B — using keyword",
+          "title": "Automatic cleanup. Zero boilerplate.",
+          "text": "Part of the TC39 Explicit Resource Management proposal (Stage 3). Works in TypeScript 5.2+ today. Coming to V8. The resource's [Symbol.dispose]() method runs automatically."
+        }
+      ],
+      "takeaway": "Like Python's 'with', C#'s 'using', or Go's 'defer' — but for JavaScript."
+    },
+    {
+      "type": "code_showcase",
+      "title": "Build your own <em>disposable</em>",
+      "badge": "HOW IT WORKS",
+      "intro": "Any object with Symbol.dispose works with using:",
+      "code": "class TempFile {\n  constructor(path) {\n    this.path = path;\n    this.handle = fs.openSync(path, 'w');\n  }\n\n  write(data) {\n    fs.writeSync(this.handle, data);\n  }\n\n  [Symbol.dispose]() {\n    fs.closeSync(this.handle);\n    fs.unlinkSync(this.path);\n    console.log('Cleaned up!');\n  }\n}\n\nusing file = new TempFile('/tmp/data');\nfile.write('hello');\n// Auto-deleted when scope exits",
+      "explanation": "Define <strong>[Symbol.dispose]()</strong> → use <strong>using</strong> → never leak resources again."
+    },
+    {
+      "type": "save_card",
+      "title": "<em>using</em> keyword cheat sheet",
+      "badge_text": "📌 SAVE THIS",
+      "items": [
+        {"icon": "✨", "text": "using → sync disposal via Symbol.dispose"},
+        {"icon": "⚡", "text": "await using → async disposal via Symbol.asyncDispose"},
+        {"icon": "🔧", "text": "Works in TypeScript 5.2+ right now"},
+        {"icon": "🎯", "text": "Perfect for DB connections, file handles, locks, timers"}
+      ],
+      "prompt": "Will you use this in your next project? 👇"
+    },
+    {
+      "type": "follow_cta",
+      "teaser": "Next: The <em>3 Array methods</em> added in 2025 you missed",
+      "tagline": "Pro snippets. Zero fluff. Daily."
+    }
+  ]
+}

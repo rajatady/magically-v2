@@ -1,0 +1,26 @@
+{
+  "topic": "v2_20_react_features",
+  "slides": [
+    {
+      "type": "title",
+      "bg": "#c4ecff",
+      "accent": "#0880a8",
+      "badge": "REACT 19",
+      "number": "6",
+      "title": "React 19 features you're <em>not using yet</em>",
+      "subtitle": "use(), Server Components, Actions, Compiler, and more.",
+      "hooks": [
+        "use()",
+        "RSC",
+        "Actions",
+        "Compiler"
+      ]
+    },
+    {
+      "type": "cta",
+      "bg": "#c4ecff",
+      "accent": "#0880a8",
+      "teaser": "Next: Grid vs Flexbox"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "topic": "v2_04_page_agent",
+  "slides": [
+    {
+      "type": "title",
+      "bg": "#0a0a0a",
+      "accent": "#ff9f0a",
+      "deco": "glow-top",
+      "badge": "PAGE-AGENT \u00b7 12K \u2b50",
+      "number": "",
+      "title": "Control Any Website <em>With English.</em>",
+      "subtitle": "One script tag. By Alibaba.",
+      "hooks": []
+    },
+    {
+      "type": "cta",
+      "bg": "#0a0a0a",
+      "accent": "#ff9f0a",
+      "teaser": "Next: $0.20 per million tokens"
+    }
+  ]
+}

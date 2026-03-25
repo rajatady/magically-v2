@@ -1,0 +1,23 @@
+{
+  "name": "@magically/cli",
+  "version": "0.1.0",
+  "description": "Magically CLI — build, push, run, and manage agents",
+  "bin": {
+    "magically": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "jest --no-coverage"
+  },
+  "dependencies": {
+    "commander": "^13.1.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.13.9",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.2"
+  }
+}

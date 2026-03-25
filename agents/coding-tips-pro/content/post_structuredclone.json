@@ -1,0 +1,66 @@
+{
+  "topic": "structuredclone",
+  "caption": "Stop using JSON.parse(JSON.stringify()) to deep clone objects.\n\nThere's a native way now, and it handles things JSON can't.\n\n📌 SAVE this for your next project.\n\nWhich method were you using? Comment below 👇\n\n#javascript #webdev #coding #programming #frontend #tips #dev #react #nodejs #typescript #codingtips",
+  "slides": [
+    {
+      "type": "ab_question",
+      "question": "Which <em>clone</em> is better?",
+      "subtitle": "Deep copying objects in JavaScript",
+      "badge": "JS · 2026",
+      "option_a": {
+        "label": "The JSON trick",
+        "code": "const copy = JSON.parse(\n  JSON.stringify(original)\n);"
+      },
+      "option_b": {
+        "label": "The native way",
+        "code": "const copy = structuredClone(\n  original\n);"
+      },
+      "cta": "Pick one. Then swipe."
+    },
+    {
+      "type": "reveal",
+      "title": "B wins. <em>Every time.</em>",
+      "badge": "THE ANSWER",
+      "cards": [
+        {
+          "verdict": "loser",
+          "label": "Option A — JSON trick",
+          "title": "Breaks on Date, Map, Set, RegExp",
+          "text": "JSON.stringify can't handle circular references, undefined values, Dates (converts to string), Maps, Sets, or RegExp. It silently corrupts your data."
+        },
+        {
+          "verdict": "winner",
+          "label": "Option B — structuredClone",
+          "title": "Handles everything natively",
+          "text": "Built into every browser and Node 17+. Copies Date, Map, Set, ArrayBuffer, RegExp, Error objects, and even circular references. Zero dependencies."
+        }
+      ],
+      "takeaway": "If you're still using the JSON trick in 2026, stop today."
+    },
+    {
+      "type": "code_showcase",
+      "title": "What <em>structuredClone</em> handles",
+      "badge": "PRO TIP",
+      "intro": "Everything the JSON trick silently breaks:",
+      "code": "const original = {\n  date: new Date(),\n  pattern: /^hello/gi,\n  data: new Map([[\"key\", \"value\"]]),\n  tags: new Set([\"js\", \"ts\"]),\n  buffer: new ArrayBuffer(8)\n};\n\nconst copy = structuredClone(original);\n\ncopy.date instanceof Date     // true\ncopy.pattern instanceof RegExp // true\ncopy.data instanceof Map       // true",
+      "explanation": "All types preserved. <strong>No serialization. No data loss.</strong>"
+    },
+    {
+      "type": "save_card",
+      "title": "Deep clone <em>cheat sheet</em>",
+      "badge_text": "📌 SAVE THIS",
+      "items": [
+        {"icon": "✅", "text": "structuredClone() → native, handles everything"},
+        {"icon": "⚠️", "text": "JSON trick → breaks on Date, Map, Set, RegExp"},
+        {"icon": "⚠️", "text": "Spread {...obj} → shallow only, nested refs shared"},
+        {"icon": "✅", "text": "structuredClone works in all browsers + Node 17+"}
+      ],
+      "prompt": "Which method were you using? Comment 👇"
+    },
+    {
+      "type": "follow_cta",
+      "teaser": "Next: The <em>one-liner</em> that replaces lodash.debounce",
+      "tagline": "Pro snippets. Zero fluff. Daily."
+    }
+  ]
+}

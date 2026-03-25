@@ -1,0 +1,89 @@
+{
+  "topic": "edge_runtime",
+  "template": "tutorial_reveal",
+  "caption": "6 edge runtime patterns every Next.js dev should know.\n\nVercel Edge, Cloudflare Workers, Deno Deploy — your API runs in 300+ locations worldwide. 0ms cold start. But the rules are different.\n\n📌 SAVE this edge runtime reference.\n\nAre you deploying to the edge yet? 👇\n\n#nextjs #vercel #cloudflare #edge #webdev #coding #programming #developer #serverless #codingtips",
+  "slides": [
+    {
+      "type": "title",
+      "title": "<em>Edge runtime</em> patterns every Next.js dev should know",
+      "subtitle": "0ms cold start. 300+ locations. Different rules.",
+      "tag": "NEXT.JS · EDGE",
+      "number": "6",
+      "hooks": ["edge config", "middleware", "streaming", "KV store", "geo routing", "limits"]
+    },
+    {
+      "type": "item",
+      "number": "01",
+      "tag": "EDGE",
+      "title": "<em>Edge Config</em> — instant global config",
+      "desc": "Read configuration in <1ms from the edge. No database round trip.",
+      "code": "import { get } from '@vercel/edge-config';\n\nexport default async function middleware() {\n  const maintenance = await get('maintenance');\n  if (maintenance) {\n    return new Response(\n      'Be right back', { status: 503 }\n    );\n  }\n}",
+      "punchline": "Feature flags at the speed of light."
+    },
+    {
+      "type": "item",
+      "number": "02",
+      "tag": "EDGE",
+      "title": "<em>Middleware</em> — intercept every request",
+      "desc": "Runs before your page loads. Auth, redirects, A/B tests — globally.",
+      "code": "// middleware.ts\nexport function middleware(req: NextRequest) {\n  const country = req.geo?.country;\n\n  if (country === 'DE')\n    return NextResponse.redirect('/de');\n\n  if (!req.cookies.get('session'))\n    return NextResponse.redirect('/login');\n}",
+      "punchline": "Auth check in 0ms. Not 200ms."
+    },
+    {
+      "type": "item",
+      "number": "03",
+      "tag": "EDGE",
+      "title": "<em>Streaming</em> — send HTML as it's ready",
+      "desc": "Don't wait for the whole page. Stream components as they resolve.",
+      "code": "// app/page.tsx\nimport { Suspense } from 'react';\n\nexport default function Page() {\n  return (\n    &lt;main&gt;\n      &lt;Header /&gt;\n      &lt;Suspense fallback={&lt;Skeleton /&gt;}&gt;\n        &lt;SlowDataComponent /&gt;\n      &lt;/Suspense&gt;\n    &lt;/main&gt;\n  );\n}\n\nexport const runtime = 'edge';",
+      "punchline": "TTFB drops from 2s to 50ms."
+    },
+    {
+      "type": "item",
+      "number": "04",
+      "tag": "EDGE",
+      "title": "<em>KV Store</em> — key-value at the edge",
+      "desc": "Cloudflare KV or Vercel KV. Read globally in <10ms.",
+      "code": "import { kv } from '@vercel/kv';\n\nexport async function GET(req: Request) {\n  const cached = await kv.get('popular-posts');\n  if (cached) return Response.json(cached);\n\n  const posts = await db.query(...);\n  await kv.set('popular-posts', posts,\n    { ex: 3600 });\n  return Response.json(posts);\n}",
+      "punchline": "Global cache. No Redis cluster to manage."
+    },
+    {
+      "type": "item",
+      "number": "05",
+      "tag": "EDGE",
+      "title": "<em>Geo routing</em> — personalize by location",
+      "desc": "req.geo gives you country, city, latitude, longitude. Free.",
+      "code": "export function middleware(req: NextRequest) {\n  const { country, city } = req.geo ?? {};\n\n  // Show local pricing\n  const currency = CURRENCY_MAP[country];\n  req.headers.set('x-currency', currency);\n\n  // Log for analytics\n  console.log(`${city}, ${country}`);\n}",
+      "punchline": "Localization without a GeoIP database."
+    },
+    {
+      "type": "item",
+      "number": "06",
+      "tag": "EDGE",
+      "title": "<em>Limits</em> — what you can't do",
+      "desc": "Edge ≠ Node.js. Know the constraints before you deploy.",
+      "code": "// ✗ No fs module\n// ✗ No native Node.js APIs\n// ✗ 128MB memory limit (Vercel)\n// ✗ 30s execution limit\n// ✗ No long-running connections\n\n// ✓ fetch() works\n// ✓ Web Crypto API\n// ✓ TextEncoder/Decoder\n// ✓ URL, Headers, Request, Response",
+      "punchline": "Web APIs only. Plan accordingly."
+    },
+    {
+      "type": "save",
+      "title": "Edge Runtime <em>Cheat Sheet</em>",
+      "badge": "📌 SAVE THIS",
+      "tag": "CHEAT SHEET",
+      "items": [
+        {"label": "Edge Config", "desc": "Global config in <1ms"},
+        {"label": "Middleware", "desc": "Intercept every request"},
+        {"label": "Streaming", "desc": "Send HTML progressively"},
+        {"label": "KV Store", "desc": "Key-value cache at edge"},
+        {"label": "Geo routing", "desc": "req.geo for location"},
+        {"label": "Limits", "desc": "No fs, no native Node APIs"}
+      ],
+      "question": "Are you deploying to the edge? 👇"
+    },
+    {
+      "type": "cta",
+      "teaser": "Next: <em>Bun vs Node</em> — which runtime should you pick in 2026?",
+      "tagline": "Pro snippets. Zero fluff."
+    }
+  ]
+}

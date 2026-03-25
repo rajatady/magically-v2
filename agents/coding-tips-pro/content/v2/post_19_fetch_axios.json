@@ -1,0 +1,28 @@
+{
+  "topic": "v2_19_fetch_axios",
+  "slides": [
+    {
+      "type": "hook",
+      "bg": "#0a0a0a",
+      "accent": "#ff9f0a",
+      "gradient": "linear-gradient(160deg, #0a0a0a 0%, #081518 50%, #0a0a0a 100%)",
+      "badge": "JAVASCRIPT",
+      "title": "Which HTTP <em>client</em>?",
+      "problem": "Make API requests in JavaScript",
+      "a": {
+        "label": "axios",
+        "code": "import axios from 'axios';\n\nconst { data } =\n  await axios.get(url);"
+      },
+      "b": {
+        "label": "fetch()",
+        "code": "// no import needed\nconst data = await\n  (await fetch(url)).json();"
+      }
+    },
+    {
+      "type": "cta",
+      "bg": "#0a0a0a",
+      "accent": "#ff9f0a",
+      "teaser": "Next: 6 React 19 features"
+    }
+  ]
+}

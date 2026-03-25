@@ -1,0 +1,22 @@
+{
+  "topic": "v2_03_apple_rejecting",
+  "slides": [
+    {
+      "type": "title",
+      "bg": "#f5f5f7",
+      "accent": "#ff3b30",
+      "deco": "line-accent",
+      "badge": "BREAKING",
+      "number": "",
+      "title": "Apple Is <em>Rejecting</em> Vibe-Coded Apps",
+      "subtitle": "March 18, 2026.",
+      "hooks": []
+    },
+    {
+      "type": "cta",
+      "bg": "#f5f5f7",
+      "accent": "#ff3b30",
+      "teaser": "Next: 700K AI agents predicted the election"
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "id": "hello-world",
+  "name": "Hello World",
+  "version": "1.0.0",
+  "description": "Minimal agent that proves the runtime works — runs Python in a container, returns a greeting",
+  "icon": "👋",
+  "author": "magically",
+
+  "secrets": ["GREETING_NAME"],
+
+  "runtime": {
+    "base": "python:3.12-slim",
+    "system": [],
+    "install": ""
+  },
+
+  "triggers": [],
+
+  "functions": [
+    {
+      "name": "greet",
+      "description": "Run a Python script that prints a greeting using an injected secret",
+      "parameters": {},
+      "run": "python greet.py"
+    }
+  ]
+}

@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800;900&family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #F7F3EA;
+  --card: #FFFFFF;
+  --yellow: #FFCA28;
+  --yellow-light: #FFF8DC;
+  --yellow-dark: #F0A800;
+  --code-bg: #1B1B27;
+  --text: #1A1610;
+  --text-mid: #4A4540;
+  --text-light: #8A837A;
+  --green: #228B47;
+  --green-bg: #E8F5ED;
+  --red: #C0392B;
+  --red-bg: #FDECEB;
+  --accent: #D4890A;
+}
+
+body { background: #777; }
+
+.slide {
+  width: 1080px;
+  height: 1080px;
+  background: var(--bg);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  page-break-after: always;
+}
+
+/* Subtle texture */
+.slide::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.012'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}
+.slide > * { position: relative; z-index: 1; }
+
+/* Brand bar */
+.brand-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 44px 20px;
+}
+.brand-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-light);
+  letter-spacing: 1px;
+}
+.badge {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  background: var(--yellow);
+  padding: 5px 18px;
+  border-radius: 20px;
+}
+
+/* Main content */
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 48px;
+}
+
+/* Footer */
+.foot {
+  padding: 0 44px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.dots { display: flex; gap: 8px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: #D5CFC5; }
+.dot.active { background: var(--yellow-dark); width: 24px; border-radius: 4px; }
+.foot-cta {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--yellow-dark);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* ═══ HOOK SLIDE ═══ */
+.hook-slide h1 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 80px;
+  font-weight: 900;
+  color: var(--text);
+  text-align: center;
+  line-height: 1.05;
+  margin-bottom: 20px;
+}
+.hook-slide h1 em { color: var(--accent); font-style: normal; }
+
+/* Yellow problem box */
+.problem-box {
+  background: var(--yellow-light);
+  border: 2px solid var(--yellow);
+  border-radius: 16px;
+  padding: 22px 28px;
+  margin-bottom: 24px;
+  text-align: center;
+}
+.problem-box p {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 20px;
+  color: var(--text-mid);
+  line-height: 1.5;
+}
+.problem-box p strong { color: var(--text); }
+.problem-box .problem-code {
+  margin-top: 14px;
+  padding: 14px 20px;
+  background: var(--code-bg);
+  border-radius: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 16px;
+  color: #D4D4D4;
+  text-align: left;
+  line-height: 1.6;
+}
+
+/* A vs B options */
+.options { display: flex; flex-direction: column; gap: 14px; }
+.opt {
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 2px 16px rgba(100,80,30,0.08);
+  border: 1px solid rgba(0,0,0,0.04);
+}
+.opt-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 22px;
+  background: white;
+}
+.opt-letter {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--yellow);
+  color: var(--text);
+  font-family: 'Outfit', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.opt-name {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+}
+.opt-code {
+  padding: 20px 26px;
+  background: var(--code-bg);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 19px;
+  line-height: 1.6;
+  color: #D4D4D4;
+}
+.opt-code .kw { color: #C586C0; }
+.opt-code .str { color: #CE9178; }
+.opt-code .num { color: #B5CEA8; }
+.opt-code .type { color: #4EC9B0; }
+.opt-code .fn { color: #DCDCAA; }
+.opt-code .cm { color: #6A9955; }
+
+.hook-cta {
+  text-align: center;
+  margin-top: 24px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--yellow-dark);
+  font-style: italic;
+}
+
+/* ═══ ANSWER SLIDE ═══ */
+.answer-slide h2 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 68px;
+  font-weight: 900;
+  color: var(--text);
+  text-align: center;
+  line-height: 1.08;
+  margin-bottom: 28px;
+}
+.answer-slide h2 em { color: var(--green); font-style: normal; }
+.answer-slide h2 .lose { color: var(--red); }
+
+.verdict {
+  padding: 26px 30px;
+  border-radius: 16px;
+  margin-bottom: 14px;
+  border-left: 6px solid;
+}
+.verdict.win { background: var(--green-bg); border-color: var(--green); }
+.verdict.lose { background: var(--red-bg); border-color: var(--red); }
+.verdict-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.verdict.win .verdict-tag { color: var(--green); }
+.verdict.lose .verdict-tag { color: var(--red); }
+.verdict h4 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.verdict p {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 18px;
+  color: var(--text-mid);
+  line-height: 1.5;
+}
+
+.takeaway {
+  text-align: center;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 2px solid rgba(0,0,0,0.06);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--accent);
+  font-style: italic;
+}
+
+/* ═══ CODE DEEP DIVE ═══ */
+.deep-dive h2 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 52px;
+  font-weight: 800;
+  color: var(--text);
+  text-align: center;
+  line-height: 1.1;
+  margin-bottom: 10px;
+}
+.deep-dive h2 em { color: var(--accent); font-style: normal; }
+.deep-dive .sub {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 20px;
+  color: var(--text-light);
+  text-align: center;
+  margin-bottom: 24px;
+}
+.deep-dive .code-full {
+  padding: 28px 32px;
+  background: var(--code-bg);
+  border-radius: 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 19px;
+  line-height: 1.65;
+  color: #D4D4D4;
+  margin-bottom: 20px;
+}
+.deep-dive .code-full .kw { color: #C586C0; }
+.deep-dive .code-full .str { color: #CE9178; }
+.deep-dive .code-full .num { color: #B5CEA8; }
+.deep-dive .code-full .type { color: #4EC9B0; }
+.deep-dive .code-full .fn { color: #DCDCAA; }
+.deep-dive .code-full .cm { color: #6A9955; }
+.deep-dive .note {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 19px;
+  color: var(--text-mid);
+  text-align: center;
+  line-height: 1.5;
+}
+.deep-dive .note strong { color: var(--text); }
+
+/* ═══ SAVE REFERENCE ═══ */
+.save-ref { text-align: center; }
+.save-tag {
+  display: inline-block;
+  background: var(--code-bg);
+  color: #fff;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 22px;
+  border-radius: 30px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 22px;
+}
+.save-ref h2 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 56px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.1;
+  margin-bottom: 24px;
+}
+.save-ref h2 em { color: var(--accent); font-style: normal; }
+.ref-items { display: flex; flex-direction: column; gap: 10px; margin: 0 auto; max-width: 800px; }
+.ref-item {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 20px 28px;
+  background: white;
+  border-radius: 14px;
+  box-shadow: 0 2px 12px rgba(100,80,30,0.07);
+  text-align: left;
+}
+.ref-icon { font-size: 30px; flex-shrink: 0; }
+.ref-text {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.4;
+}
+.save-ref .question {
+  margin-top: 24px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--yellow-dark);
+  font-style: italic;
+}
+
+/* ═══ FOLLOW CTA ═══ */
+.cta-slide { text-align: center; }
+.cta-slide .next-teaser {
+  font-family: 'Outfit', sans-serif;
+  font-size: 44px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.15;
+  margin-bottom: 36px;
+}
+.cta-slide .next-teaser em { color: var(--accent); font-style: normal; }
+.cta-slide .handle-pill {
+  display: inline-block;
+  padding: 18px 52px;
+  background: var(--yellow);
+  border-radius: 14px;
+}
+.cta-slide .handle-text {
+  font-family: 'Outfit', sans-serif;
+  font-size: 34px;
+  font-weight: 800;
+  color: var(--text);
+}
+.cta-slide .tagline {
+  margin-top: 18px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 19px;
+  color: var(--text-light);
+}
+</style>
+</head>
+<body>
+<script>
+const slides = SLIDES_JSON_PLACEHOLDER;
+const BRAND = "@coding_tips_pro";
+const TOTAL = slides.length;
+
+function dots(idx) {
+  return Array.from({length: TOTAL}, (_, i) =>
+    `<div class="dot${i === idx ? ' active' : ''}"></div>`
+  ).join('');
+}
+
+function hl(code) {
+  const toks = [];
+  let t = code
+    .replace(/\/\/(.*)/g, m => { toks.push(`<span class="cm">${m}</span>`); return `__T${toks.length-1}__`; })
+    .replace(/(["'`])(.*?)\1/g, m => { toks.push(`<span class="str">${m}</span>`); return `__T${toks.length-1}__`; });
+  t = t
+    .replace(/\b(const|let|var|function|return|if|else|new|export|import|from|async|await|class|extends|typeof|for|of|in|try|catch|throw|using|yield)\b/g, '<span class="kw">$1</span>')
+    .replace(/\b(\d+\.?\d*)\b/g, '<span class="num">$1</span>')
+    .replace(/\b([A-Z][a-zA-Z]*)\b/g, '<span class="type">$1</span>')
+    .replace(/\.([a-zA-Z_]+)\s*\(/g, '.<span class="fn">$1</span>(');
+  toks.forEach((tok, i) => { t = t.replace(`__T${i}__`, tok); });
+  return t;
+}
+
+slides.forEach((s, idx) => {
+  const el = document.createElement('div');
+  el.className = 'slide';
+
+  const bar = `<div class="brand-bar"><span class="brand-name">${BRAND}</span>${s.badge ? `<span class="badge">${s.badge}</span>` : ''}</div>`;
+  const foot = `<div class="foot"><div class="dots">${dots(idx)}</div><span class="foot-cta">${idx < TOTAL-1 ? 'Swipe →' : BRAND}</span></div>`;
+
+  let content = '';
+
+  if (s.type === 'hook') {
+    const problemCode = s.problem_code ? `<div class="problem-code">${hl(s.problem_code)}</div>` : '';
+    content = `<div class="content hook-slide">
+      <h1>${s.title}</h1>
+      <div class="problem-box">
+        <p>${s.problem}</p>
+        ${problemCode}
+      </div>
+      <div class="options">
+        <div class="opt">
+          <div class="opt-header"><div class="opt-letter">A</div><span class="opt-name">${s.a.label}</span></div>
+          <pre class="opt-code">${hl(s.a.code)}</pre>
+        </div>
+        <div class="opt">
+          <div class="opt-header"><div class="opt-letter">B</div><span class="opt-name">${s.b.label}</span></div>
+          <pre class="opt-code">${hl(s.b.code)}</pre>
+        </div>
+      </div>
+      <p class="hook-cta">${s.cta || 'Pick one. Then swipe.'}</p>
+    </div>`;
+  }
+
+  else if (s.type === 'answer') {
+    const cards = (s.verdicts || []).map(v => `
+      <div class="verdict ${v.result}">
+        <div class="verdict-tag">${v.tag}</div>
+        <h4>${v.title}</h4>
+        <p>${v.text}</p>
+      </div>`).join('');
+    content = `<div class="content answer-slide">
+      <h2>${s.title}</h2>
+      ${cards}
+      ${s.takeaway ? `<p class="takeaway">${s.takeaway}</p>` : ''}
+    </div>`;
+  }
+
+  else if (s.type === 'deep_dive') {
+    content = `<div class="content deep-dive">
+      <h2>${s.title}</h2>
+      ${s.sub ? `<p class="sub">${s.sub}</p>` : ''}
+      <pre class="code-full">${hl(s.code)}</pre>
+      ${s.note ? `<p class="note">${s.note}</p>` : ''}
+    </div>`;
+  }
+
+  else if (s.type === 'save') {
+    const items = (s.items || []).map(i =>
+      `<div class="ref-item"><span class="ref-icon">${i.icon}</span><span class="ref-text">${i.text}</span></div>`
+    ).join('');
+    content = `<div class="content save-ref">
+      <span class="save-tag">${s.tag || '📌 SAVE THIS'}</span>
+      <h2>${s.title}</h2>
+      <div class="ref-items">${items}</div>
+      ${s.question ? `<p class="question">${s.question}</p>` : ''}
+    </div>`;
+  }
+
+  else if (s.type === 'cta') {
+    content = `<div class="content cta-slide">
+      <p class="next-teaser">${s.teaser}</p>
+      <div class="handle-pill"><span class="handle-text">${BRAND}</span></div>
+      <p class="tagline">${s.tagline || 'Pro snippets. Zero fluff.'}</p>
+    </div>`;
+  }
+
+  el.innerHTML = bar + content + foot;
+  document.body.appendChild(el);
+});
+</script>
+</body>
+</html>

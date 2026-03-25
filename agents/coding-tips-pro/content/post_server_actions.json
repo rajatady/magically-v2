@@ -1,0 +1,68 @@
+{
+  "topic": "server_actions",
+  "template": "snippet_battle",
+  "caption": "Stop making API routes for simple form submissions.\n\nReact 19 Server Actions handle it in 3 lines.\nNo fetch. No API route. No loading state boilerplate.\n\n📌 SAVE this — your Next.js code is about to get 80% cleaner.\n\nAre you using Server Actions yet? Comment 👇\n\n#react #nextjs #javascript #typescript #webdev #coding #programming #react19 #serveractions #frontend #codingtips",
+  "slides": [
+    {
+      "type": "hook",
+      "title": "Which snippet is <em>better</em>?",
+      "badge": "NEXT.JS · REACT 19",
+      "problem": "In <strong>Next.js</strong>, submit a form that saves data to the database.",
+      "a": {
+        "label": "API Route + fetch",
+        "code": "await fetch('/api/user', {\n  method: 'POST',\n  body: JSON.stringify({ name })\n});"
+      },
+      "b": {
+        "label": "Server Action",
+        "code": "async function save(formData) {\n  'use server';\n  await db.user.create({ name });\n}"
+      },
+      "cta": "Pick one. Then swipe."
+    },
+    {
+      "type": "answer",
+      "title": "B. Not even <em>close</em>.",
+      "badge": "THE ANSWER",
+      "verdicts": [
+        {
+          "result": "lose",
+          "tag": "Option A — API Route + fetch",
+          "title": "11 lines of boilerplate",
+          "text": "You need useState for loading, event.preventDefault, JSON.stringify, a separate /api/user route file, error handling, and response parsing. Every form needs this dance."
+        },
+        {
+          "result": "win",
+          "tag": "Option B — Server Action",
+          "title": "3 lines. No API route needed.",
+          "text": "The function runs on the server automatically. Next.js handles the network request, loading states (via useFormStatus), error boundaries, and revalidation. Zero boilerplate."
+        }
+      ],
+      "takeaway": "Server Actions killed API routes for mutations."
+    },
+    {
+      "type": "deep_dive",
+      "title": "The full <em>pattern</em>",
+      "badge": "COPY THIS",
+      "sub": "A complete form with Server Action + loading state:",
+      "code": "// actions.ts\n'use server';\n\nexport async function saveName(formData) {\n  const name = formData.get('name');\n  await db.user.create({ data: { name } });\n  revalidatePath('/users');\n}\n\n// form.tsx\nimport { saveName } from './actions';\n\nexport default function Form() {\n  return (\n    &lt;form action={saveName}&gt;\n      &lt;input name=\"name\" required /&gt;\n      &lt;SubmitButton /&gt;\n    &lt;/form&gt;\n  );\n}",
+      "note": "<strong>No fetch. No useState. No API route.</strong> The form just works."
+    },
+    {
+      "type": "save",
+      "title": "Server Actions <em>cheat sheet</em>",
+      "tag": "📌 SAVE THIS",
+      "items": [
+        {"icon": "⚡", "text": "'use server' at top of function → runs on server"},
+        {"icon": "📝", "text": "form action={fn} → auto-submits to server"},
+        {"icon": "🔄", "text": "revalidatePath() → refreshes cached data after mutation"},
+        {"icon": "⏳", "text": "useFormStatus() → built-in pending/loading state"},
+        {"icon": "🚫", "text": "No /api routes needed for form submissions anymore"}
+      ],
+      "question": "Are you still writing API routes for forms? 👇"
+    },
+    {
+      "type": "cta",
+      "teaser": "Next: The <em>5 React hooks</em> most devs don't know exist",
+      "tagline": "Pro snippets. Zero fluff. Daily."
+    }
+  ]
+}

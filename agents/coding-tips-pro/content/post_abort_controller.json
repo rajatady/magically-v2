@@ -1,0 +1,70 @@
+{
+  "topic": "abort_controller",
+  "template": "snippet_battle",
+  "slides": [
+    {
+      "type": "hook",
+      "badge": "JAVASCRIPT",
+      "title": "Which snippet is better?",
+      "problem": "Cancel any async operation cleanly",
+      "a": {
+        "label": "Boolean flag",
+        "code": "let cancelled = false;\n\nfetch(url).then(res =&gt; {\n  if (!cancelled)\n    return res.json();\n});\n\ncancelled = true;"
+      },
+      "b": {
+        "label": "AbortController",
+        "code": "const ctrl =\n  new AbortController();\n\nfetch(url, {\n  signal: ctrl.signal\n});\n\nctrl.abort();"
+      },
+      "cta": "Pick one. Then swipe."
+    },
+    {
+      "type": "answer",
+      "badge": "JAVASCRIPT",
+      "title": "B wins. Always.",
+      "verdicts": [
+        {
+          "tag": "Option A",
+          "result": "bad",
+          "title": "Flag doesn't cancel anything",
+          "text": "The request still completes — you just ignore the result. Bandwidth wasted, race conditions possible."
+        },
+        {
+          "tag": "Option B",
+          "result": "good",
+          "title": "AbortController kills it",
+          "text": "Terminates the fetch at the network level. The request is actually cancelled, not just ignored."
+        }
+      ],
+      "takeaway": "AbortController cancels at the network level. The flag pattern is a lie."
+    },
+    {
+      "type": "deep_dive",
+      "badge": "JAVASCRIPT",
+      "title": "It cancels everything.",
+      "sub": "Not just fetch — event listeners, streams, any async operation.",
+      "code": "const ctrl = new AbortController();\n\n// Cancel fetch after 5s\nfetch('/api/data', {\n  signal: ctrl.signal\n});\nsetTimeout(() =&gt; ctrl.abort(), 5000);\n\n// Auto-remove event listener\nel.addEventListener('scroll', fn, {\n  signal: ctrl.signal\n});\n\n// Built-in timeout signal\nfetch(url, {\n  signal: AbortSignal.timeout(3000)\n});"
+    },
+    {
+      "type": "save",
+      "badge": "JAVASCRIPT",
+      "tag": "📌 SAVE THIS",
+      "title": "AbortController Cheat Sheet",
+      "items": [
+        {"icon": "🔹", "text": "new AbortController() — create controller"},
+        {"icon": "🔹", "text": "ctrl.signal — pass to fetch/addEventListener"},
+        {"icon": "🔹", "text": "ctrl.abort() — cancel everything on this signal"},
+        {"icon": "🔹", "text": "signal.aborted — check if already cancelled"},
+        {"icon": "🔹", "text": "signal.throwIfAborted() — throw if cancelled"},
+        {"icon": "🔹", "text": "AbortSignal.timeout(ms) — auto-cancel"},
+        {"icon": "🔹", "text": "AbortSignal.any([s1, s2]) — first signal wins"}
+      ]
+    },
+    {
+      "type": "cta",
+      "badge": "JAVASCRIPT",
+      "teaser": "Next: The API that replaces setTimeout forever",
+      "tagline": "Pro snippets. Zero fluff."
+    }
+  ],
+  "caption": "Stop using boolean flags to \"cancel\" fetch requests. They don't actually cancel anything.\n\nAbortController kills the request at the network level. One signal controls fetch, event listeners, streams — everything.\n\nWhich approach do you use? A or B?\n\n#javascript #webdev #coding #programming #frontend #developer #codingtips #react #nodejs #learntocode"
+}

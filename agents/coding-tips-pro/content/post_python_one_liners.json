@@ -1,0 +1,79 @@
+{
+  "topic": "python_one_liners",
+  "template": "tutorial_reveal",
+  "caption": "5 Python one-liners that replace 20 lines of code.\n\nIf you're still writing for-loops for these, you're wasting time.\n\nEvery one of these is built into Python. No pip install.\n\n📌 SAVE this — your code reviews will thank you.\n\nWhich one did you not know? Comment 👇\n\n#python #coding #programming #datascience #machinelearning #developer #backend #pythontips #automation #codingtips",
+  "slides": [
+    {
+      "type": "title",
+      "title": "Python <em>one-liners</em> that replace 20 lines",
+      "subtitle": "Built-in. No pip install. Just Python.",
+      "tag": "PYTHON",
+      "number": "5",
+      "hooks": ["Counter()", "defaultdict()", "zip(*matrix)", "walrus :="]
+    },
+    {
+      "type": "item",
+      "number": "01",
+      "tag": "PYTHON",
+      "title": "<em>Counter( )</em> — count anything in one line",
+      "desc": "Count occurrences, find most common items, subtract counts. One import.",
+      "code": "from collections import Counter\n\nwords = ['apple', 'banana', 'apple', 'cherry', 'banana', 'apple']\n\ncount = Counter(words)\n# Counter({'apple': 3, 'banana': 2, 'cherry': 1})\n\ncount.most_common(2)\n# [('apple', 3), ('banana', 2)]",
+      "punchline": "Replaced: for loop + dict + sorting. One line."
+    },
+    {
+      "type": "item",
+      "number": "02",
+      "tag": "PYTHON",
+      "title": "<em>zip(*matrix)</em> — transpose in one line",
+      "desc": "Flip rows and columns. No numpy. No nested loops.",
+      "code": "matrix = [\n  [1, 2, 3],\n  [4, 5, 6],\n  [7, 8, 9]\n]\n\ntransposed = list(zip(*matrix))\n# [(1, 4, 7), (2, 5, 8), (3, 6, 9)]",
+      "punchline": "The asterisk unpacks. zip pairs them up. Done."
+    },
+    {
+      "type": "item",
+      "number": "03",
+      "tag": "PYTHON",
+      "title": "The <em>walrus :=</em> operator",
+      "desc": "Assign and use a value in the same expression. Eliminates redundant calls.",
+      "code": "# Without walrus — calls len() twice\nif len(data) > 10:\n    print(f'Too long: {len(data)}')\n\n# With walrus — one call\nif (n := len(data)) > 10:\n    print(f'Too long: {n}')\n\n# Filter + capture in list comprehension\nresults = [y for x in data if (y := process(x)) is not None]",
+      "punchline": "Assign where you check. One expression."
+    },
+    {
+      "type": "item",
+      "number": "04",
+      "tag": "PYTHON",
+      "title": "<em>defaultdict( )</em> — no more KeyError",
+      "desc": "Auto-creates missing keys with a default value. No if-key-exists checks.",
+      "code": "from collections import defaultdict\n\n# Group items by category — no if/else needed\ngrouped = defaultdict(list)\nfor item in products:\n    grouped[item.category].append(item)\n\n# Count — no initialization needed\ncounts = defaultdict(int)\nfor word in text.split():\n    counts[word] += 1",
+      "punchline": "KeyError is a choice. Stop choosing it."
+    },
+    {
+      "type": "item",
+      "number": "05",
+      "tag": "PYTHON",
+      "title": "<em>itertools.chain( )</em> — flatten anything",
+      "desc": "Merge multiple iterables into one. No nested loops. No extend().",
+      "code": "from itertools import chain\n\nlists = [[1, 2], [3, 4], [5, 6]]\nflat = list(chain.from_iterable(lists))\n# [1, 2, 3, 4, 5, 6]\n\n# Merge dicts, sets, generators — anything iterable\nall_tags = set(chain(\n    post1.tags, post2.tags, post3.tags\n))",
+      "punchline": "Flatten any depth. Any type. One line."
+    },
+    {
+      "type": "save",
+      "title": "Python <em>one-liners</em> decoded",
+      "badge": "📌 SAVE THIS",
+      "tag": "CHEAT SHEET",
+      "items": [
+        {"label": "Counter()", "desc": "Count + rank occurrences instantly"},
+        {"label": "zip(*matrix)", "desc": "Transpose rows ↔ columns"},
+        {"label": "walrus :=", "desc": "Assign + check in one expression"},
+        {"label": "defaultdict()", "desc": "Auto-create missing keys"},
+        {"label": "chain()", "desc": "Flatten nested iterables"}
+      ],
+      "question": "Which one saved you the most code? 👇"
+    },
+    {
+      "type": "cta",
+      "teaser": "Next: <em>5 Rust patterns</em> that make C++ devs jealous",
+      "tagline": "Pro snippets. Zero fluff. Daily."
+    }
+  ]
+}

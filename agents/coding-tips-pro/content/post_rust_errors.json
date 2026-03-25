@@ -1,0 +1,58 @@
+{
+  "topic": "rust_errors",
+  "template": "snippet_battle",
+  "caption": "JavaScript try/catch is lying to you.\n\nRust's Result type forces you to handle EVERY error. No silent failures. No forgotten catch blocks. The compiler won't let you ship broken error handling.\n\nWhich pattern would you trust? A or B?\n\n#rust #javascript #errorhandling #coding #programming #developer #rustlang #cleancode #typesafe #codingtips",
+  "slides": [
+    {
+      "type": "hook",
+      "badge": "RUST vs JS",
+      "title": "Which <em>error handling</em> is safer?",
+      "problem": "Handle a function that might fail",
+      "a": {
+        "label": "JS try/catch",
+        "code": "try {\n  const data = await fetch(url);\n  const json = await data.json();\n  process(json);\n} catch (e) {\n  // e is 'any' — what type?\n  // which line threw?\n  console.log('something broke');\n}"
+      },
+      "b": {
+        "label": "Rust Result",
+        "code": "let data = fetch(url).await?;\nlet json = data.json().await?;\nprocess(json);\n\n// ? propagates the EXACT error\n// Compiler knows the type\n// Can't forget to handle it"
+      },
+      "cta": "Pick one. Then swipe."
+    },
+    {
+      "type": "answer",
+      "badge": "RUST vs JS",
+      "title": "B wins. <em>Errors are values, not surprises.</em>",
+      "verdicts": [
+        {"tag": "Option A", "result": "bad", "title": "Catch-all hides the real problem", "text": "The catch block gets 'any'. You don't know which line failed or what type the error is. Easy to forget. Silent failures everywhere."},
+        {"tag": "Option B", "result": "good", "title": "The compiler forces you to handle it", "text": "Result<T, E> makes errors part of the type system. The ? operator propagates them cleanly. You literally cannot compile code with unhandled errors."}
+      ],
+      "takeaway": "In Rust, 'it compiles' means every error path is handled."
+    },
+    {
+      "type": "deep_dive",
+      "badge": "RUST",
+      "title": "The ? operator is <em>magic.</em>",
+      "sub": "Propagate errors in one character. Type-safe all the way up.",
+      "code": "// Without ? — verbose\nfn get_user(id: u32) -&gt; Result&lt;User, Error&gt; {\n  let resp = match fetch(id) {\n    Ok(r) =&gt; r,\n    Err(e) =&gt; return Err(e),\n  };\n  // ...\n}\n\n// With ? — one character\nfn get_user(id: u32) -&gt; Result&lt;User, Error&gt; {\n  let resp = fetch(id)?;\n  let body = resp.json()?;\n  Ok(parse(body)?)\n}"
+    },
+    {
+      "type": "save",
+      "badge": "RUST vs JS",
+      "tag": "📌 SAVE THIS",
+      "title": "Rust Error Handling Cheat Sheet",
+      "items": [
+        {"icon": "🔹", "text": "Result<T, E> — success OR error, never both"},
+        {"icon": "🔹", "text": "? operator — propagate errors in one char"},
+        {"icon": "🔹", "text": "match on Result — handle Ok and Err explicitly"},
+        {"icon": "🔹", "text": "unwrap() — crash if error (dev only)"},
+        {"icon": "🔹", "text": "No exceptions — errors are values, not surprises"}
+      ]
+    },
+    {
+      "type": "cta",
+      "badge": "RUST vs JS",
+      "teaser": "Next: Claude Code + MCP — give AI your entire stack",
+      "tagline": "Pro snippets. Zero fluff."
+    }
+  ]
+}

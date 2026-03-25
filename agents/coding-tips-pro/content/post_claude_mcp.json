@@ -1,0 +1,69 @@
+{
+  "topic": "claude_mcp",
+  "template": "tutorial_reveal",
+  "caption": "4 MCP servers that turn Claude Code into an autonomous agent.\n\nBrowser control. Database access. Figma designs. File system. All from one terminal conversation.\n\nThis is what AI-assisted development looks like in 2026.\n\n📌 SAVE this — your dev workflow is about to change.\n\nWhich MCP server would you add first? 👇\n\n#claudecode #mcp #ai #agents #coding #programming #developer #automation #10xdeveloper #codingtips",
+  "slides": [
+    {
+      "type": "title",
+      "title": "<em>MCP servers</em> that turn Claude into an autonomous agent",
+      "subtitle": "Browser. Database. Figma. All from your terminal.",
+      "tag": "CLAUDE CODE",
+      "number": "4",
+      "hooks": ["browser", "postgres", "figma", "filesystem"]
+    },
+    {
+      "type": "item",
+      "number": "01",
+      "tag": "MCP",
+      "title": "<em>Browser automation</em> — Claude controls Chrome",
+      "desc": "Navigate pages, click buttons, fill forms, take screenshots. All via natural language.",
+      "code": "// .claude/settings.json\n{\n  \"mcpServers\": {\n    \"playwright\": {\n      \"command\": \"npx\",\n      \"args\": [\n        \"@anthropic/mcp-playwright\"\n      ]\n    }\n  }\n}\n\n// Then just ask Claude:\n// \"Open localhost:3000 and\n//  test the login flow\"",
+      "punchline": "E2E testing without writing test code."
+    },
+    {
+      "type": "item",
+      "number": "02",
+      "tag": "MCP",
+      "title": "<em>Database access</em> — query from conversation",
+      "desc": "Claude reads your schema, writes queries, and shows results. No SQL client needed.",
+      "code": "// .claude/settings.json\n{\n  \"mcpServers\": {\n    \"postgres\": {\n      \"command\": \"npx\",\n      \"args\": [\n        \"@anthropic/mcp-postgres\",\n        \"postgresql://localhost/mydb\"\n      ]\n    }\n  }\n}\n\n// Ask: \"Show me users who signed\n//  up this week with no orders\"",
+      "punchline": "SQL from natural language. Live data."
+    },
+    {
+      "type": "item",
+      "number": "03",
+      "tag": "MCP",
+      "title": "<em>Figma integration</em> — design to code",
+      "desc": "Claude reads your Figma designs, extracts components, and generates matching code.",
+      "code": "// .claude/settings.json\n{\n  \"mcpServers\": {\n    \"figma\": {\n      \"command\": \"npx\",\n      \"args\": [\n        \"@anthropic/mcp-figma\"\n      ]\n    }\n  }\n}\n\n// Ask: \"Build the hero section\n//  from this Figma URL:\n//  figma.com/design/abc123\"",
+      "punchline": "Pixel-perfect from Figma. Automatically."
+    },
+    {
+      "type": "item",
+      "number": "04",
+      "tag": "MCP",
+      "title": "<em>All at once</em> — combine servers",
+      "desc": "Claude uses multiple MCP servers in one conversation. Read Figma, write code, test in browser, query DB.",
+      "code": "// One conversation:\n//\n// 1. Read the Figma design\n// 2. Generate React component\n// 3. Open browser, check rendering\n// 4. Query DB to verify data\n// 5. Fix issues, re-test\n// 6. Commit and push\n//\n// All autonomous. One terminal.",
+      "punchline": "The full dev cycle. Zero context switching."
+    },
+    {
+      "type": "save",
+      "title": "MCP Servers <em>Cheat Sheet</em>",
+      "badge": "📌 SAVE THIS",
+      "tag": "CHEAT SHEET",
+      "items": [
+        {"label": "playwright", "desc": "Browser automation + screenshots"},
+        {"label": "postgres", "desc": "Database queries from conversation"},
+        {"label": "figma", "desc": "Design → code from Figma URLs"},
+        {"label": "filesystem", "desc": "Read/write files anywhere"}
+      ],
+      "question": "Which MCP server would you add first? 👇"
+    },
+    {
+      "type": "cta",
+      "teaser": "Next: <em>Claude Code headless</em> — run AI from cron jobs",
+      "tagline": "Pro snippets. Zero fluff."
+    }
+  ]
+}

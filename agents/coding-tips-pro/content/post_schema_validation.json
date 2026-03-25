@@ -1,0 +1,59 @@
+{
+  "topic": "schema_validation",
+  "template": "tutorial_reveal",
+  "caption": "3 TypeScript schema validators compared.\n\nZod, Valibot, and io-ts — which one should you pick for your next project?\n\nSpoiler: one of them is 10x smaller than the others.\n\n📌 SAVE this comparison.\n\nWhich one do you use? 👇\n\n#typescript #zod #validation #webdev #coding #programming #developer #cleancode #schema #codingtips",
+  "slides": [
+    {
+      "type": "title",
+      "title": "Schema <em>validators</em> compared",
+      "subtitle": "Zod vs Valibot vs io-ts — which one wins?",
+      "tag": "TYPESCRIPT",
+      "number": "3",
+      "hooks": ["Zod", "Valibot", "io-ts"]
+    },
+    {
+      "type": "item",
+      "number": "01",
+      "tag": "ZOD",
+      "title": "<em>Zod</em> — the default choice",
+      "desc": "Most popular. Great DX. Chainable API. Works everywhere.",
+      "code": "import { z } from 'zod';\n\nconst User = z.object({\n  name: z.string().min(1),\n  age: z.number().int().positive(),\n  email: z.string().email(),\n});\n\ntype User = z.infer&lt;typeof User&gt;;\n\nconst result = User.safeParse(data);\n// { success: true, data: { ... } }",
+      "punchline": "12KB gzipped. The industry standard."
+    },
+    {
+      "type": "item",
+      "number": "02",
+      "tag": "VALIBOT",
+      "title": "<em>Valibot</em> — the lightweight contender",
+      "desc": "Tree-shakeable. 10x smaller than Zod. Same API style.",
+      "code": "import * as v from 'valibot';\n\nconst User = v.object({\n  name: v.pipe(\n    v.string(), v.minLength(1)\n  ),\n  age: v.pipe(\n    v.number(), v.integer()\n  ),\n  email: v.pipe(\n    v.string(), v.email()\n  ),\n});\n\nconst result = v.safeParse(User, data);",
+      "punchline": "1.2KB gzipped. Yes, really."
+    },
+    {
+      "type": "item",
+      "number": "03",
+      "tag": "IO-TS",
+      "title": "<em>io-ts</em> — the FP approach",
+      "desc": "Functional programming style. Uses fp-ts. Powerful but verbose.",
+      "code": "import * as t from 'io-ts';\n\nconst User = t.type({\n  name: t.string,\n  age: t.number,\n  email: t.string,\n});\n\nconst result = User.decode(data);\n// Either&lt;Errors, User&gt;",
+      "punchline": "Powerful. But you need to love fp-ts."
+    },
+    {
+      "type": "save",
+      "title": "Validator <em>Comparison</em>",
+      "badge": "📌 SAVE THIS",
+      "tag": "CHEAT SHEET",
+      "items": [
+        {"label": "Zod", "desc": "12KB — best DX, most popular"},
+        {"label": "Valibot", "desc": "1.2KB — tree-shakeable, 10x smaller"},
+        {"label": "io-ts", "desc": "FP style — powerful but verbose"}
+      ],
+      "question": "Which one are you using? 👇"
+    },
+    {
+      "type": "cta",
+      "teaser": "Next: <em>TypeScript infer</em> — the pattern nobody teaches",
+      "tagline": "Pro snippets. Zero fluff."
+    }
+  ]
+}

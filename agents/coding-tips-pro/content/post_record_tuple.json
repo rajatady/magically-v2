@@ -1,0 +1,59 @@
+{
+  "topic": "record_tuple",
+  "template": "snippet_battle",
+  "caption": "Stop using Object.freeze() for immutable data.\n\nRecord and Tuple are deeply immutable by default. They compare by VALUE, not reference. And they work as Map keys.\n\nES2026 proposal. Which pattern do you prefer? A or B?\n\n#javascript #immutable #es2026 #webdev #coding #programming #developer #cleancode #functional #codingtips",
+  "slides": [
+    {
+      "type": "hook",
+      "badge": "ES2026",
+      "title": "Which <em>immutable</em> pattern is better?",
+      "problem": "Create deeply immutable data structures",
+      "a": {
+        "label": "Object.freeze()",
+        "code": "const user = Object.freeze({\n  name: 'Sarah',\n  tags: ['dev', 'lead']\n});\n\n// Shallow! Nested still mutable:\nuser.tags.push('admin'); // works!"
+      },
+      "b": {
+        "label": "Record & Tuple",
+        "code": "const user = #{\n  name: 'Sarah',\n  tags: #['dev', 'lead']\n};\n\n// Deep immutable:\nuser.tags.push('admin');\n// TypeError!"
+      },
+      "cta": "Pick one. Then swipe."
+    },
+    {
+      "type": "answer",
+      "badge": "ES2026",
+      "title": "B wins. <em>Deep immutability by default.</em>",
+      "verdicts": [
+        {"tag": "Option A", "result": "bad", "title": "Shallow freeze only", "text": "Object.freeze doesn't freeze nested objects. You need deepFreeze or a library. And frozen objects still compare by reference."},
+        {"tag": "Option B", "result": "good", "title": "Deeply immutable + value equality", "text": "Records (#{ }) and Tuples (#[ ]) are immutable all the way down. And they compare by VALUE — #{a:1} === #{a:1} is true."}
+      ],
+      "takeaway": "Record and Tuple solve immutability AND equality in one feature."
+    },
+    {
+      "type": "deep_dive",
+      "badge": "ES2026",
+      "title": "The <em>killer feature</em>: value equality.",
+      "sub": "Two identical records are equal. No more deep-equal libraries.",
+      "code": "// Objects compare by reference\n{ a: 1 } === { a: 1 }  // false\n\n// Records compare by VALUE\n#{ a: 1 } === #{ a: 1 }  // true!\n\n// Works as Map keys\nconst cache = new Map();\ncache.set(#{ x: 10, y: 20 }, 'hit');\ncache.get(#{ x: 10, y: 20 }); // 'hit'!\n\n// Works in Sets\nconst set = new Set();\nset.add(#[1, 2, 3]);\nset.has(#[1, 2, 3]); // true!"
+    },
+    {
+      "type": "save",
+      "badge": "ES2026",
+      "tag": "📌 SAVE THIS",
+      "title": "Record & Tuple Cheat Sheet",
+      "items": [
+        {"icon": "🔹", "text": "#{ key: value } — immutable object (Record)"},
+        {"icon": "🔹", "text": "#[ item1, item2 ] — immutable array (Tuple)"},
+        {"icon": "🔹", "text": "Deep immutability — nested too"},
+        {"icon": "🔹", "text": "Value equality — #{a:1} === #{a:1}"},
+        {"icon": "🔹", "text": "Works as Map keys and in Sets"},
+        {"icon": "🔹", "text": "Stage 2 proposal — coming to browsers"}
+      ]
+    },
+    {
+      "type": "cta",
+      "badge": "ES2026",
+      "teaser": "Next: Claude Code + MCP — give AI access to your entire stack",
+      "tagline": "Pro snippets. Zero fluff."
+    }
+  ]
+}

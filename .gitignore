@@ -137,3 +137,19 @@ CLAUDE.md
 AGENTS.md
 plans
 docs
+.turbo/
+*.sqlite
+*.db
+magically.db*
+.DS_Store
+dreamer-os.html
+demo/
+
+# Agent content artifacts (rendered PNGs, videos, generated files)
+agents/*/content/carousel_*/
+agents/*/content/reel_*/
+agents/*/content/v2/rendered_*/
+agents/*/content/v3_*/
+agents/*/.env
+agents/*/analytics.db
+agents/*/.claude/

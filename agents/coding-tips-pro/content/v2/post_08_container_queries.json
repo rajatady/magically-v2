@@ -1,0 +1,21 @@
+{
+  "topic": "v2_08_container_queries",
+  "slides": [
+    {
+      "type": "title",
+      "bg": "#f5f5f7",
+      "accent": "#007aff",
+      "badge": "CSS",
+      "number": "",
+      "title": "One CSS Line Replaces <em>10 Media Queries</em>",
+      "subtitle": "Container queries. The component knows its own width.",
+      "hooks": []
+    },
+    {
+      "type": "cta",
+      "bg": "#f5f5f7",
+      "accent": "#007aff",
+      "teaser": "Next: Moment.js is dead"
+    }
+  ]
+}

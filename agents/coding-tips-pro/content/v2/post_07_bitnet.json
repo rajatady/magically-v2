@@ -1,0 +1,22 @@
+{
+  "topic": "v2_07_bitnet",
+  "slides": [
+    {
+      "type": "title",
+      "bg": "#0a0a0a",
+      "accent": "#5e5ce6",
+      "deco": "glow-top",
+      "badge": "BITNET",
+      "number": "",
+      "title": "120 Billion Parameters. <em>Your Laptop.</em>",
+      "subtitle": "1-bit LLMs. By Microsoft. Open source.",
+      "hooks": []
+    },
+    {
+      "type": "cta",
+      "bg": "#0a0a0a",
+      "accent": "#5e5ce6",
+      "teaser": "Next: One CSS line replaces 10 media queries"
+    }
+  ]
+}

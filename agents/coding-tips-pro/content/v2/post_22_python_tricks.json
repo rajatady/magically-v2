@@ -1,0 +1,25 @@
+{
+  "topic": "v2_22_python_tricks",
+  "slides": [
+    {
+      "type": "title",
+      "bg": "#ffd6d4",
+      "accent": "#c0392b",
+      "badge": "PYTHON",
+      "number": "3",
+      "title": "Python tricks that <em>senior devs</em> use daily",
+      "subtitle": "Walrus operator, match/case, and more.",
+      "hooks": [
+        "walrus :=",
+        "match/case",
+        "slots"
+      ]
+    },
+    {
+      "type": "cta",
+      "bg": "#ffd6d4",
+      "accent": "#c0392b",
+      "teaser": "Next: let vs const"
+    }
+  ]
+}

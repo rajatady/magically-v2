@@ -1,0 +1,26 @@
+{
+  "topic": "v2_16_git_commands",
+  "slides": [
+    {
+      "type": "title",
+      "bg": "#ffe4c4",
+      "accent": "#c66d00",
+      "badge": "GIT",
+      "number": "7",
+      "title": "Git commands <em>seniors use daily</em>",
+      "subtitle": "Most juniors don't know #3.",
+      "hooks": [
+        "stash",
+        "reflog",
+        "bisect",
+        "cherry-pick"
+      ]
+    },
+    {
+      "type": "cta",
+      "bg": "#ffe4c4",
+      "accent": "#c66d00",
+      "teaser": "Next: async/await vs .then()"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "topic": "v2_14_css_tricks",
+  "slides": [
+    {
+      "type": "title",
+      "bg": "#c8f5e8",
+      "accent": "#0d9373",
+      "badge": "CSS",
+      "number": "3",
+      "title": "CSS tricks that replaced <em>JavaScript entirely</em>",
+      "subtitle": "No JS needed. All browsers.",
+      "hooks": [
+        ":has()",
+        "scroll-snap",
+        "@container"
+      ]
+    },
+    {
+      "type": "cta",
+      "bg": "#c8f5e8",
+      "accent": "#0d9373",
+      "teaser": "Next: structuredClone vs JSON"
+    }
+  ]
+}

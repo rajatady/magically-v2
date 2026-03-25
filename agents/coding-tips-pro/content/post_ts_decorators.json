@@ -1,0 +1,79 @@
+{
+  "topic": "ts_decorators",
+  "template": "tutorial_reveal",
+  "caption": "TypeScript decorators just hit Stage 3 — no more experimentalDecorators flag needed.\n\nThese 5 patterns will clean up your codebase overnight. Which one are you adding first?\n\n#typescript #decorators #javascript #webdev #coding #programming #developer #codingtips #cleancode #softwareengineering",
+  "slides": [
+    {
+      "type": "title",
+      "title": "TypeScript <em>Decorators</em> That Clean Up Your Code",
+      "subtitle": "Stage 3 decorators — no experimentalDecorators needed",
+      "tag": "TYPESCRIPT 5",
+      "number": "5",
+      "hooks": ["@log", "@memo", "@sealed", "@validate", "@throttle"]
+    },
+    {
+      "type": "item",
+      "number": "01",
+      "tag": "TYPESCRIPT 5",
+      "title": "<em>@log</em> — auto-log every call",
+      "desc": "Wrap any method to log its name and arguments automatically.",
+      "code": "function log(target: any,\n  ctx: ClassMethodDecoratorContext) {\n  return function (...args: any[]) {\n    console.log(\n      `${String(ctx.name)}(${args})`\n    );\n    return target.apply(this, args);\n  };\n}\n\nclass API {\n  @log\n  fetchUser(id: string) { /* ... */ }\n}",
+      "punchline": "Zero boilerplate logging."
+    },
+    {
+      "type": "item",
+      "number": "02",
+      "tag": "TYPESCRIPT 5",
+      "title": "<em>@memo</em> — cache expensive results",
+      "desc": "Memoize return values based on arguments.",
+      "code": "function memo(target: any,\n  ctx: ClassMethodDecoratorContext) {\n  const cache = new Map();\n  return function (...args: any[]) {\n    const key = JSON.stringify(args);\n    if (!cache.has(key))\n      cache.set(key,\n        target.apply(this, args));\n    return cache.get(key);\n  };\n}",
+      "punchline": "Built-in memoization in 8 lines."
+    },
+    {
+      "type": "item",
+      "number": "03",
+      "tag": "TYPESCRIPT 5",
+      "title": "<em>@sealed</em> — freeze the class",
+      "desc": "Prevent adding or removing properties at runtime.",
+      "code": "function sealed(\n  target: Function,\n  _ctx: ClassDecoratorContext\n) {\n  Object.seal(target);\n  Object.seal(target.prototype);\n}\n\n@sealed\nclass Config {\n  host = 'localhost';\n  port = 3000;\n}",
+      "punchline": "Immutable classes, one decorator."
+    },
+    {
+      "type": "item",
+      "number": "04",
+      "tag": "TYPESCRIPT 5",
+      "title": "<em>@validate</em> — runtime type checks",
+      "desc": "Validate arguments before the method runs.",
+      "code": "function validate(target: any,\n  ctx: ClassMethodDecoratorContext) {\n  return function (...args: any[]) {\n    for (const arg of args) {\n      if (arg == null)\n        throw new Error(\n          `${String(ctx.name)}: null arg`\n        );\n    }\n    return target.apply(this, args);\n  };\n}",
+      "punchline": "Catch bad inputs at the boundary."
+    },
+    {
+      "type": "item",
+      "number": "05",
+      "tag": "TYPESCRIPT 5",
+      "title": "<em>@throttle</em> — rate-limit calls",
+      "desc": "Prevent a method from firing more than once per interval.",
+      "code": "function throttle(ms: number) {\n  return (target: any,\n    _ctx: ClassMethodDecoratorContext\n  ) =&gt; {\n    let last = 0;\n    return function (...args: any[]) {\n      if (Date.now() - last &lt; ms) return;\n      last = Date.now();\n      return target.apply(this, args);\n    };\n  };\n}",
+      "punchline": "Higher-order decorator with config."
+    },
+    {
+      "type": "save",
+      "title": "Decorator <em>Cheat Sheet</em>",
+      "badge": "📌 SAVE THIS",
+      "tag": "CHEAT SHEET",
+      "items": [
+        {"label": "@log", "desc": "Auto-log method calls"},
+        {"label": "@memo", "desc": "Cache return values by args"},
+        {"label": "@sealed", "desc": "Freeze class shape at runtime"},
+        {"label": "@validate", "desc": "Runtime null/type checks"},
+        {"label": "@throttle(ms)", "desc": "Rate-limit method calls"}
+      ],
+      "question": "Which decorator are you adding first? 👇"
+    },
+    {
+      "type": "cta",
+      "teaser": "Next: TypeScript <em>infer</em> keyword — the pattern nobody teaches",
+      "tagline": "Pro snippets. Zero fluff."
+    }
+  ]
+}

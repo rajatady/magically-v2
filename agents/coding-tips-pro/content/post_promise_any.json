@@ -1,0 +1,65 @@
+{
+  "topic": "promise_any",
+  "caption": "Promise.all() fails if ONE promise rejects.\n\nPromise.any() returns the FIRST one that succeeds.\n\nKnow the difference. It could save your production app.\n\n📌 SAVE for when you need it.\n\nDrop a 🔥 if you learned something.\n\n#javascript #typescript #webdev #coding #programming #promises #async #frontend #backend #nodejs #codingtips",
+  "slides": [
+    {
+      "type": "ab_question",
+      "question": "Which is <em>safer</em>?",
+      "subtitle": "Fetching from multiple API mirrors",
+      "badge": "ASYNC · JS",
+      "option_a": {
+        "label": "Promise.all()",
+        "code": "const [a, b, c] = await Promise.all([\n  fetch(mirror1),\n  fetch(mirror2),\n  fetch(mirror3)\n]);\n// If ANY fails → everything fails"
+      },
+      "option_b": {
+        "label": "Promise.any()",
+        "code": "const fastest = await Promise.any([\n  fetch(mirror1),\n  fetch(mirror2),\n  fetch(mirror3)\n]);\n// First success wins. Others ignored."
+      },
+      "cta": "Which would you pick? Swipe →"
+    },
+    {
+      "type": "reveal",
+      "title": "It <em>depends</em> on what you need.",
+      "badge": "THE ANSWER",
+      "cards": [
+        {
+          "verdict": "info",
+          "label": "Promise.all()",
+          "title": "When you need ALL results",
+          "text": "Use when every response matters. Loading a dashboard with 5 API calls — you need all 5. But if one API is down, your entire page breaks."
+        },
+        {
+          "verdict": "winner",
+          "label": "Promise.any()",
+          "title": "When you need the FASTEST success",
+          "text": "Use for redundancy. Hit 3 CDN mirrors — take whichever responds first. If mirror1 is down, mirror2 saves you. Zero downtime."
+        }
+      ],
+      "takeaway": "Promise.all = need everything. Promise.any = need just one."
+    },
+    {
+      "type": "code_showcase",
+      "title": "The full <em>Promise</em> family",
+      "badge": "CHEAT SHEET",
+      "code": "// Resolves when ALL succeed\nawait Promise.all([p1, p2, p3])\n\n// Resolves when FIRST succeeds\nawait Promise.any([p1, p2, p3])\n\n// Resolves when ALL settle (success or fail)\nawait Promise.allSettled([p1, p2, p3])\n\n// Resolves when FIRST settles\nawait Promise.race([p1, p2, p3])",
+      "explanation": "<strong>4 methods. 4 different use cases.</strong> Most devs only know .all() and .race()."
+    },
+    {
+      "type": "save_card",
+      "title": "Promise methods <em>decoded</em>",
+      "badge_text": "📌 SAVE THIS",
+      "items": [
+        {"icon": "📦", "text": "Promise.all → need ALL, fails on ANY rejection"},
+        {"icon": "🏆", "text": "Promise.any → first SUCCESS wins, ignores failures"},
+        {"icon": "📋", "text": "Promise.allSettled → waits for ALL, never rejects"},
+        {"icon": "⚡", "text": "Promise.race → first to SETTLE wins (success or fail)"}
+      ],
+      "prompt": "Which one did you not know about? 👇"
+    },
+    {
+      "type": "follow_cta",
+      "teaser": "Next: <em>AbortController</em> — cancel any fetch in one line",
+      "tagline": "Pro snippets. Zero fluff. Daily."
+    }
+  ]
+}

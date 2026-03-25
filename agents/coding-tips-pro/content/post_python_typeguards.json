@@ -1,0 +1,68 @@
+{
+  "topic": "python_typeguards",
+  "template": "snippet_battle",
+  "caption": "Stop scattering isinstance() checks everywhere.\n\nPython type guards narrow types automatically. Your IDE knows the type after the check. Zero runtime cost.\n\nWhich pattern do you use? A or B?\n\n#python #typing #typeguard #coding #programming #developer #backend #pythontips #cleancode #codingtips",
+  "slides": [
+    {
+      "type": "hook",
+      "badge": "PYTHON 3.10+",
+      "title": "Which <em>type check</em> is better?",
+      "problem": "Narrow a union type safely at runtime",
+      "a": {
+        "label": "isinstance + assert",
+        "code": "def process(val: str | int):\n  if isinstance(val, str):\n    print(val.upper())\n  elif isinstance(val, int):\n    print(val + 1)\n  else:\n    raise TypeError()"
+      },
+      "b": {
+        "label": "TypeGuard",
+        "code": "from typing import TypeGuard\n\ndef is_str(v: str | int\n) -&gt; TypeGuard[str]:\n  return isinstance(v, str)"
+      },
+      "cta": "Pick one. Then swipe."
+    },
+    {
+      "type": "answer",
+      "badge": "PYTHON 3.10+",
+      "title": "B wins. <em>Your IDE thanks you.</em>",
+      "verdicts": [
+        {
+          "tag": "Option A",
+          "result": "bad",
+          "title": "Works but doesn't compose",
+          "text": "Every function repeats the same isinstance checks. The type narrowing only works inside that specific if block."
+        },
+        {
+          "tag": "Option B",
+          "result": "good",
+          "title": "Reusable type narrowing",
+          "text": "Define it once. Use it everywhere. Your editor and type checker know the type after the guard returns True."
+        }
+      ],
+      "takeaway": "TypeGuard makes isinstance checks composable and type-safe."
+    },
+    {
+      "type": "deep_dive",
+      "badge": "PYTHON 3.10+",
+      "title": "TypeGuard in <em>real code.</em>",
+      "sub": "Filter lists, validate API responses, narrow unions.",
+      "code": "from typing import TypeGuard\n\ndef is_dict_with_name(\n  val: dict\n) -&gt; TypeGuard[dict[str, str]]:\n  return (\n    isinstance(val, dict)\n    and 'name' in val\n    and isinstance(val['name'], str)\n  )\n\n# Type narrows after check:\nif is_dict_with_name(response):\n  print(response['name'].upper())\n  # IDE knows response is\n  # dict[str, str] here"
+    },
+    {
+      "type": "save",
+      "badge": "PYTHON 3.10+",
+      "tag": "📌 SAVE THIS",
+      "title": "TypeGuard Cheat Sheet",
+      "items": [
+        {"icon": "🔹", "text": "from typing import TypeGuard"},
+        {"icon": "🔹", "text": "Return TypeGuard[T] from a bool function"},
+        {"icon": "🔹", "text": "IDE narrows type after guard returns True"},
+        {"icon": "🔹", "text": "Works with isinstance, hasattr, any check"},
+        {"icon": "🔹", "text": "TypeIs (3.13) — stricter alternative"}
+      ]
+    },
+    {
+      "type": "cta",
+      "badge": "PYTHON 3.10+",
+      "teaser": "Next: Python match/case — structural pattern matching",
+      "tagline": "Pro snippets. Zero fluff."
+    }
+  ]
+}

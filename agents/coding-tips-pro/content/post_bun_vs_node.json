@@ -1,0 +1,59 @@
+{
+  "topic": "bun_vs_node",
+  "template": "snippet_battle",
+  "caption": "Bun vs Node.js — the runtime war is real.\n\nBun is faster at everything: installs, starts, serves, tests. But Node has the ecosystem. Which do you pick?\n\nWhich runtime are you shipping with? A or B?\n\n#bun #nodejs #javascript #webdev #coding #programming #developer #runtime #performance #codingtips",
+  "slides": [
+    {
+      "type": "hook",
+      "badge": "RUNTIME",
+      "title": "Which <em>runtime</em> should you pick?",
+      "problem": "Run JavaScript/TypeScript on the server",
+      "a": {
+        "label": "Node.js",
+        "code": "// Install deps\nnpm install        // ~8s\n\n// Start server\nnode server.ts     // needs tsx\n\n// Run tests\nnpx jest           // ~4s startup"
+      },
+      "b": {
+        "label": "Bun",
+        "code": "// Install deps\nbun install        // ~0.5s\n\n// Start server\nbun server.ts      // native TS\n\n// Run tests\nbun test           // ~0.2s startup"
+      },
+      "cta": "Pick one. Then swipe."
+    },
+    {
+      "type": "answer",
+      "badge": "RUNTIME",
+      "title": "Both win. <em>Different strengths.</em>",
+      "verdicts": [
+        {"tag": "Node.js", "result": "good", "title": "Mature ecosystem. Battle-tested.", "text": "20 years of packages. Every library works. Every cloud supports it. Production-proven at every scale."},
+        {"tag": "Bun", "result": "good", "title": "10-25x faster. Native TypeScript.", "text": "Built-in bundler, test runner, package manager. No config files. Runs .ts directly. But younger ecosystem."}
+      ],
+      "takeaway": "New project? Try Bun. Legacy codebase? Node is fine. Both run the same code."
+    },
+    {
+      "type": "deep_dive",
+      "badge": "RUNTIME",
+      "title": "The <em>real</em> benchmarks.",
+      "sub": "Not synthetic — actual dev workflow speed.",
+      "code": "// npm install (fresh, 50 deps)\nNode: npm install    →  8.2s\nBun:  bun install    →  0.4s  (20x)\n\n// TypeScript execution\nNode: npx tsx app.ts →  1.1s\nBun:  bun app.ts     →  0.05s (22x)\n\n// HTTP server (req/sec)\nNode: express        →  15K/s\nBun:  Bun.serve      →  120K/s (8x)\n\n// Test suite (100 tests)\nNode: jest           →  4.2s\nBun:  bun test       →  0.3s  (14x)"
+    },
+    {
+      "type": "save",
+      "badge": "RUNTIME",
+      "tag": "📌 SAVE THIS",
+      "title": "Bun vs Node Cheat Sheet",
+      "items": [
+        {"icon": "🔹", "text": "bun install — 20x faster than npm install"},
+        {"icon": "🔹", "text": "bun app.ts — native TypeScript, no config"},
+        {"icon": "🔹", "text": "bun test — built-in test runner, Jest-compatible"},
+        {"icon": "🔹", "text": "Bun.serve — 8x faster HTTP server"},
+        {"icon": "🔹", "text": "Node: mature ecosystem, every library works"},
+        {"icon": "🔹", "text": "Both run the same JavaScript/TypeScript"}
+      ]
+    },
+    {
+      "type": "cta",
+      "badge": "RUNTIME",
+      "teaser": "Next: Import maps — ship JavaScript without a bundler",
+      "tagline": "Pro snippets. Zero fluff."
+    }
+  ]
+}

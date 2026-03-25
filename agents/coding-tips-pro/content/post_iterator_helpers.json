@@ -1,0 +1,99 @@
+{
+  "topic": "iterator_helpers",
+  "template": "tutorial_reveal",
+  "caption": "7 iterator helpers that just landed in JavaScript.\n\nLazy .map(), .filter(), .take() — without creating intermediate arrays. Process millions of items with zero memory overhead.\n\nES2026. All browsers. No polyfills.\n\n📌 SAVE this — you'll be using these daily.\n\nWhich one surprised you? 👇\n\n#javascript #es2026 #iterators #webdev #coding #programming #developer #performance #cleancode #codingtips",
+  "slides": [
+    {
+      "type": "title",
+      "title": "<em>Iterator helpers</em> that just landed in JavaScript",
+      "subtitle": "Lazy evaluation. Zero intermediate arrays. ES2026.",
+      "tag": "ES2026",
+      "number": "7",
+      "hooks": [".map()", ".filter()", ".take()", ".drop()", ".flatMap()", ".reduce()", ".toArray()"]
+    },
+    {
+      "type": "item",
+      "number": "01",
+      "tag": "ES2026",
+      "title": "<em>.map( )</em> — transform lazily",
+      "desc": "Like Array.map but doesn't create a new array. Transforms on demand.",
+      "code": "const prices = [10, 20, 30, 40, 50];\n\n// Eager — creates new array\nprices.map(p => p * 1.1);\n\n// Lazy — no array created\nprices.values()\n  .map(p => p * 1.1)\n  .toArray();\n// [11, 22, 33, 44, 55]",
+      "punchline": "Same result. Zero intermediate arrays."
+    },
+    {
+      "type": "item",
+      "number": "02",
+      "tag": "ES2026",
+      "title": "<em>.filter( )</em> — skip lazily",
+      "desc": "Filters without creating an intermediate array first.",
+      "code": "const users = getMillionsOfUsers();\n\n// Lazy filter — stops early\nconst admins = users.values()\n  .filter(u => u.role === 'admin')\n  .take(5)\n  .toArray();\n// Only processes until 5 found",
+      "punchline": "Processes 5 items, not 1 million."
+    },
+    {
+      "type": "item",
+      "number": "03",
+      "tag": "ES2026",
+      "title": "<em>.take( )</em> — grab the first N",
+      "desc": "Stop iteration after N items. Like .slice(0, N) but lazy.",
+      "code": "function* fibonacci() {\n  let a = 0, b = 1;\n  while (true) {\n    yield a;\n    [a, b] = [b, a + b];\n  }\n}\n\n// First 10 Fibonacci numbers\nfibonacci().take(10).toArray();\n// [0, 1, 1, 2, 3, 5, 8, 13, 21, 34]",
+      "punchline": "Works on infinite sequences."
+    },
+    {
+      "type": "item",
+      "number": "04",
+      "tag": "ES2026",
+      "title": "<em>.drop( )</em> — skip the first N",
+      "desc": "The opposite of .take(). Skip N items, keep the rest.",
+      "code": "const logs = getLogEntries();\n\n// Skip header rows, take next 100\nlogs.values()\n  .drop(3)\n  .take(100)\n  .toArray();",
+      "punchline": "Pagination without .slice()."
+    },
+    {
+      "type": "item",
+      "number": "05",
+      "tag": "ES2026",
+      "title": "<em>.flatMap( )</em> — flatten + transform",
+      "desc": "Map and flatten in one pass. Lazy.",
+      "code": "const sentences = [\n  'hello world',\n  'foo bar baz'\n];\n\nsentences.values()\n  .flatMap(s => s.split(' '))\n  .toArray();\n// ['hello', 'world', 'foo', 'bar', 'baz']",
+      "punchline": "One pass. No intermediate arrays."
+    },
+    {
+      "type": "item",
+      "number": "06",
+      "tag": "ES2026",
+      "title": "<em>.reduce( )</em> — accumulate lazily",
+      "desc": "Same as Array.reduce but works on any iterator.",
+      "code": "const total = prices.values()\n  .filter(p => p > 20)\n  .map(p => p * 1.1)\n  .reduce((sum, p) => sum + p, 0);\n// Chained. Lazy. One pass.",
+      "punchline": "The full pipeline in one chain."
+    },
+    {
+      "type": "item",
+      "number": "07",
+      "tag": "ES2026",
+      "title": "<em>.toArray( )</em> — materialize",
+      "desc": "Convert the lazy iterator back to an array when you need it.",
+      "code": "// Everything before toArray()\n// is lazy — no work done yet.\n\nconst result = hugeDataset\n  .values()\n  .filter(predicate)\n  .map(transform)\n  .take(100)\n  .toArray();  // NOW it runs",
+      "punchline": "Lazy until you call .toArray()."
+    },
+    {
+      "type": "save",
+      "title": "Iterator Helpers <em>Cheat Sheet</em>",
+      "badge": "📌 SAVE THIS",
+      "tag": "CHEAT SHEET",
+      "items": [
+        {"label": ".map(fn)", "desc": "Transform each item lazily"},
+        {"label": ".filter(fn)", "desc": "Skip items lazily"},
+        {"label": ".take(n)", "desc": "First N items only"},
+        {"label": ".drop(n)", "desc": "Skip first N items"},
+        {"label": ".flatMap(fn)", "desc": "Map + flatten in one pass"},
+        {"label": ".reduce(fn, init)", "desc": "Accumulate to single value"},
+        {"label": ".toArray()", "desc": "Materialize the iterator"}
+      ],
+      "question": "Which helper are you using first? 👇"
+    },
+    {
+      "type": "cta",
+      "teaser": "Next: <em>Temporal API</em> — the built-in that killed Moment.js",
+      "tagline": "Pro snippets. Zero fluff."
+    }
+  ]
+}

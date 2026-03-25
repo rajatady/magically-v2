@@ -1,0 +1,69 @@
+{
+  "topic": "import_maps",
+  "template": "tutorial_reveal",
+  "caption": "4 import map patterns that kill your bundler.\n\nShip ES modules directly to the browser. No webpack. No Vite. No build step. Just a script tag.\n\nAll browsers since 2023.\n\n📌 SAVE this — your next side project doesn't need a bundler.\n\nWould you ship without a bundler? 👇\n\n#javascript #importmaps #webdev #coding #programming #developer #esmodules #nobundler #html #codingtips",
+  "slides": [
+    {
+      "type": "title",
+      "title": "<em>Import map</em> patterns that kill your bundler",
+      "subtitle": "No webpack. No Vite. No build step. Just HTML.",
+      "tag": "HTML · ES2023",
+      "number": "4",
+      "hooks": ["importmap", "bare specifiers", "CDN imports", "scopes"]
+    },
+    {
+      "type": "item",
+      "number": "01",
+      "tag": "HTML",
+      "title": "<em>Bare specifiers</em> — import 'react' in the browser",
+      "desc": "Map package names to URLs. No bundler resolves them — the browser does.",
+      "code": "&lt;script type=\"importmap\"&gt;\n{\n  \"imports\": {\n    \"react\": \"https://esm.sh/react@19\",\n    \"react-dom\": \"https://esm.sh/react-dom@19\"\n  }\n}\n&lt;/script&gt;\n\n&lt;script type=\"module\"&gt;\nimport React from 'react';\n// Works. No bundler.\n&lt;/script&gt;",
+      "punchline": "import 'react' — in the browser. Natively."
+    },
+    {
+      "type": "item",
+      "number": "02",
+      "tag": "HTML",
+      "title": "<em>CDN imports</em> — zero npm install",
+      "desc": "Point to esm.sh, unpkg, or jsDelivr. No node_modules folder.",
+      "code": "&lt;script type=\"importmap\"&gt;\n{\n  \"imports\": {\n    \"lodash/\": \"https://esm.sh/lodash-es/\",\n    \"three\": \"https://esm.sh/three@0.160\"\n  }\n}\n&lt;/script&gt;\n\n&lt;script type=\"module\"&gt;\nimport { debounce } from 'lodash/debounce';\nimport * as THREE from 'three';\n&lt;/script&gt;",
+      "punchline": "Full app. Zero node_modules."
+    },
+    {
+      "type": "item",
+      "number": "03",
+      "tag": "HTML",
+      "title": "<em>Scoped overrides</em> — different versions per path",
+      "desc": "One module uses React 18, another uses React 19. No conflicts.",
+      "code": "&lt;script type=\"importmap\"&gt;\n{\n  \"imports\": {\n    \"react\": \"https://esm.sh/react@19\"\n  },\n  \"scopes\": {\n    \"/legacy/\": {\n      \"react\": \"https://esm.sh/react@18\"\n    }\n  }\n}\n&lt;/script&gt;",
+      "punchline": "Version conflicts solved. In HTML."
+    },
+    {
+      "type": "item",
+      "number": "04",
+      "tag": "HTML",
+      "title": "<em>Local files</em> — your own modules",
+      "desc": "Mix CDN packages with your local code. Same import syntax.",
+      "code": "&lt;script type=\"importmap\"&gt;\n{\n  \"imports\": {\n    \"react\": \"https://esm.sh/react@19\",\n    \"@app/\": \"./src/\",\n    \"@lib/\": \"./lib/\"\n  }\n}\n&lt;/script&gt;\n\n&lt;script type=\"module\"&gt;\nimport { App } from '@app/App.js';\nimport { utils } from '@lib/utils.js';\n&lt;/script&gt;",
+      "punchline": "CDN + local. Same syntax. No config."
+    },
+    {
+      "type": "save",
+      "title": "Import Maps <em>Cheat Sheet</em>",
+      "badge": "📌 SAVE THIS",
+      "tag": "CHEAT SHEET",
+      "items": [
+        {"label": "importmap", "desc": "<script type=\"importmap\"> in HTML"},
+        {"label": "imports", "desc": "Map bare specifiers to URLs"},
+        {"label": "scopes", "desc": "Different versions per path"},
+        {"label": "CDN", "desc": "esm.sh, unpkg, jsDelivr — no install"}
+      ],
+      "question": "Would you ship without a bundler? 👇"
+    },
+    {
+      "type": "cta",
+      "teaser": "Next: <em>Record and Tuple</em> — immutable data in JavaScript",
+      "tagline": "Pro snippets. Zero fluff."
+    }
+  ]
+}

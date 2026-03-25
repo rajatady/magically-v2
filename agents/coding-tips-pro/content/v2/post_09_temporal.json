@@ -1,0 +1,21 @@
+{
+  "topic": "v2_09_temporal",
+  "slides": [
+    {
+      "type": "title",
+      "bg": "#f5f5f7",
+      "accent": "#ff3b30",
+      "badge": "ES2026",
+      "number": "",
+      "title": "Moment.js <em>is dead.</em>",
+      "subtitle": "Temporal API is built into JS. No npm install.",
+      "hooks": []
+    },
+    {
+      "type": "cta",
+      "bg": "#f5f5f7",
+      "accent": "#ff3b30",
+      "teaser": "Next: 4K video + audio locally"
+    }
+  ]
+}

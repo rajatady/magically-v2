@@ -1,0 +1,16 @@
+{
+  "size": "small",
+  "refresh": "1m",
+  "theme": "auto",
+  "data": {
+    "source": "static"
+  },
+  "layout": {
+    "type": "stack",
+    "children": [
+      { "type": "text", "value": "🕐", "style": "display" },
+      { "type": "text", "value": "{{data.time}}", "style": "title" },
+      { "type": "text", "value": "{{data.date}}", "style": "caption" }
+    ]
+  }
+}

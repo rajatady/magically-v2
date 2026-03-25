@@ -1,0 +1,69 @@
+{
+  "topic": "python_match",
+  "template": "snippet_battle",
+  "caption": "Stop writing if/elif chains in Python.\n\nmatch/case destructures, guards, and matches types — all in one expression. It's not a switch statement. It's structural pattern matching.\n\nPython 3.10+. Which pattern do you use? A or B?\n\n#python #patternmatching #coding #programming #developer #backend #pythontips #cleancode #python310 #codingtips",
+  "slides": [
+    {
+      "type": "hook",
+      "badge": "PYTHON 3.10+",
+      "title": "Which <em>branching</em> is cleaner?",
+      "problem": "Handle multiple cases with complex conditions",
+      "a": {
+        "label": "if / elif",
+        "code": "def handle(event):\n  if event['type'] == 'click':\n    x = event['pos'][0]\n    y = event['pos'][1]\n    process_click(x, y)\n  elif event['type'] == 'key':\n    if event['mod'] == 'ctrl':\n      shortcut(event['key'])"
+      },
+      "b": {
+        "label": "match / case",
+        "code": "def handle(event):\n  match event:\n    case {'type': 'click',\n          'pos': [x, y]}:\n      process_click(x, y)\n    case {'type': 'key',\n          'mod': 'ctrl',\n          'key': k}:\n      shortcut(k)"
+      },
+      "cta": "Pick one. Then swipe."
+    },
+    {
+      "type": "answer",
+      "badge": "PYTHON 3.10+",
+      "title": "B wins. <em>Destructures + matches in one step.</em>",
+      "verdicts": [
+        {
+          "tag": "Option A",
+          "result": "bad",
+          "title": "Manual key access, nested ifs",
+          "text": "Every condition is a new line. Miss a key and you get KeyError at runtime. Doesn't compose."
+        },
+        {
+          "tag": "Option B",
+          "result": "good",
+          "title": "Pattern matching extracts AND checks",
+          "text": "Destructures values and checks structure simultaneously. Cleaner, safer, and the linter catches missing patterns."
+        }
+      ],
+      "takeaway": "match/case is not a switch statement. It's structural pattern matching."
+    },
+    {
+      "type": "deep_dive",
+      "badge": "PYTHON 3.10+",
+      "title": "It does <em>way more</em> than switch.",
+      "sub": "Type matching. Guards. Nested destructuring. Wildcards.",
+      "code": "match command:\n  # Match by type\n  case str(s):\n    print(f'String: {s}')\n  case int(n) if n &gt; 0:\n    print(f'Positive: {n}')\n  # Match nested structures\n  case {'user': {'name': str(name),\n                 'age': int(a)}} if a &gt;= 18:\n    grant_access(name)\n  # Wildcard fallback\n  case _:\n    print('Unknown')"
+    },
+    {
+      "type": "save",
+      "badge": "PYTHON 3.10+",
+      "tag": "📌 SAVE THIS",
+      "title": "match/case Cheat Sheet",
+      "items": [
+        {"icon": "🔹", "text": "match value: case pattern: — basic matching"},
+        {"icon": "🔹", "text": "case [x, y]: — sequence destructuring"},
+        {"icon": "🔹", "text": "case {'key': val}: — dict destructuring"},
+        {"icon": "🔹", "text": "case int(n) if n > 0: — type + guard"},
+        {"icon": "🔹", "text": "case _: — wildcard (default)"},
+        {"icon": "🔹", "text": "case str() | int(): — OR patterns"}
+      ]
+    },
+    {
+      "type": "cta",
+      "badge": "PYTHON 3.10+",
+      "teaser": "Next: Record and Tuple — immutable data in JavaScript",
+      "tagline": "Pro snippets. Zero fluff."
+    }
+  ]
+}

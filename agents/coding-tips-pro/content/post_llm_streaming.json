@@ -1,0 +1,69 @@
+{
+  "topic": "llm_streaming",
+  "template": "tutorial_reveal",
+  "caption": "4 ways to stream LLM responses in TypeScript.\n\nSSE, WebSocket, ReadableStream, async iterators — each has a sweet spot. Pick the wrong one and your users stare at a spinner for 10 seconds.\n\n📌 SAVE this streaming reference.\n\nWhich pattern do you use? 👇\n\n#typescript #llm #ai #streaming #webdev #coding #programming #developer #openai #codingtips",
+  "slides": [
+    {
+      "type": "title",
+      "title": "Ways to <em>stream</em> LLM responses",
+      "subtitle": "SSE, WebSocket, ReadableStream, async iterators.",
+      "tag": "TYPESCRIPT",
+      "number": "4",
+      "hooks": ["SSE", "WebSocket", "ReadableStream", "for await"]
+    },
+    {
+      "type": "item",
+      "number": "01",
+      "tag": "TYPESCRIPT",
+      "title": "<em>Server-Sent Events</em> — the simplest",
+      "desc": "One-directional stream over HTTP. Works with fetch. No library needed.",
+      "code": "const stream = await fetch('/api/chat', {\n  method: 'POST',\n  body: JSON.stringify({ prompt }),\n});\n\nconst reader = stream.body\n  .pipeThrough(new TextDecoderStream())\n  .getReader();\n\nwhile (true) {\n  const { done, value } = await reader.read();\n  if (done) break;\n  appendToUI(value);\n}",
+      "punchline": "Best for: most LLM chat UIs."
+    },
+    {
+      "type": "item",
+      "number": "02",
+      "tag": "TYPESCRIPT",
+      "title": "<em>WebSocket</em> — bidirectional",
+      "desc": "Full-duplex. Send and receive simultaneously. Persistent connection.",
+      "code": "const ws = new WebSocket('wss://api/stream');\n\nws.onmessage = (event) =&gt; {\n  const chunk = JSON.parse(event.data);\n  appendToUI(chunk.text);\n};\n\nws.send(JSON.stringify({\n  prompt: 'Explain quantum computing'\n}));",
+      "punchline": "Best for: real-time collaboration, voice."
+    },
+    {
+      "type": "item",
+      "number": "03",
+      "tag": "TYPESCRIPT",
+      "title": "<em>ReadableStream</em> — transform on the fly",
+      "desc": "Chain transforms. Parse JSON chunks. Backpressure built in.",
+      "code": "const response = await fetch('/api/chat');\n\nconst parsed = response.body\n  .pipeThrough(new TextDecoderStream())\n  .pipeThrough(new TransformStream({\n    transform(chunk, controller) {\n      const lines = chunk.split('\\n');\n      for (const line of lines) {\n        if (line.startsWith('data: '))\n          controller.enqueue(\n            JSON.parse(line.slice(6))\n          );\n      }\n    }\n  }));",
+      "punchline": "Best for: custom parsing pipelines."
+    },
+    {
+      "type": "item",
+      "number": "04",
+      "tag": "TYPESCRIPT",
+      "title": "<em>Async iterators</em> — the cleanest",
+      "desc": "for-await-of over a stream. Reads like synchronous code.",
+      "code": "async function* streamChat(prompt: string) {\n  const res = await fetch('/api/chat', {\n    method: 'POST',\n    body: JSON.stringify({ prompt }),\n  });\n  const reader = res.body!.getReader();\n  const decoder = new TextDecoder();\n  while (true) {\n    const { done, value } = await reader.read();\n    if (done) return;\n    yield decoder.decode(value);\n  }\n}\n\nfor await (const chunk of streamChat('Hi')) {\n  appendToUI(chunk);\n}",
+      "punchline": "Best for: clean API wrappers."
+    },
+    {
+      "type": "save",
+      "title": "LLM Streaming <em>Cheat Sheet</em>",
+      "badge": "📌 SAVE THIS",
+      "tag": "CHEAT SHEET",
+      "items": [
+        {"label": "SSE", "desc": "Simplest. One-way. Works with fetch."},
+        {"label": "WebSocket", "desc": "Bidirectional. Real-time."},
+        {"label": "ReadableStream", "desc": "Transform chains. Backpressure."},
+        {"label": "Async iterator", "desc": "Cleanest syntax. for-await-of."}
+      ],
+      "question": "Which streaming pattern do you use? 👇"
+    },
+    {
+      "type": "cta",
+      "teaser": "Next: <em>Web Workers</em> — move heavy computation off the main thread",
+      "tagline": "Pro snippets. Zero fluff."
+    }
+  ]
+}

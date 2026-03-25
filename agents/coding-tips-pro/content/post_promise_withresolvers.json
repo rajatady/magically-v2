@@ -1,0 +1,68 @@
+{
+  "topic": "promise_withresolvers",
+  "template": "snippet_battle",
+  "caption": "Stop wrapping everything in new Promise().\n\nPromise.withResolvers() gives you resolve and reject directly. No callback nesting.\n\nES2024. All browsers. Zero polyfills.\n\nWhich pattern do you use? A or B?\n\n#javascript #promises #es2024 #webdev #coding #programming #developer #async #codingtips #cleancode",
+  "slides": [
+    {
+      "type": "hook",
+      "badge": "ES2024",
+      "title": "Which <em>Promise</em> pattern is cleaner?",
+      "problem": "Create a promise and resolve it externally",
+      "a": {
+        "label": "new Promise()",
+        "code": "let resolve, reject;\nconst p = new Promise(\n  (res, rej) =&gt; {\n    resolve = res;\n    reject = rej;\n  }\n);"
+      },
+      "b": {
+        "label": "withResolvers()",
+        "code": "const { promise, resolve,\n  reject } =\n  Promise.withResolvers();"
+      },
+      "cta": "Pick one. Then swipe."
+    },
+    {
+      "type": "answer",
+      "badge": "ES2024",
+      "title": "B wins. <em>No wrapper needed.</em>",
+      "verdicts": [
+        {
+          "tag": "Option A",
+          "result": "bad",
+          "title": "Leaking resolve/reject outside",
+          "text": "You create variables, then assign inside the callback. It's a hack everyone uses because there was no alternative."
+        },
+        {
+          "tag": "Option B",
+          "result": "good",
+          "title": "Clean destructuring",
+          "text": "One line. Get promise, resolve, and reject as separate values. No callbacks. No variable hoisting."
+        }
+      ],
+      "takeaway": "Promise.withResolvers() kills the most common Promise anti-pattern."
+    },
+    {
+      "type": "deep_dive",
+      "badge": "ES2024",
+      "title": "Where it <em>actually shines.</em>",
+      "sub": "Event-driven code. Streams. Deferred patterns.",
+      "code": "function createChannel() {\n  const { promise, resolve } =\n    Promise.withResolvers();\n\n  return {\n    wait: () =&gt; promise,\n    send: (val) =&gt; resolve(val),\n  };\n}\n\nconst ch = createChannel();\n\n// Somewhere else:\nch.send('hello');\n\n// Consumer:\nconst msg = await ch.wait();"
+    },
+    {
+      "type": "save",
+      "badge": "ES2024",
+      "tag": "📌 SAVE THIS",
+      "title": "Promise.withResolvers() Cheat Sheet",
+      "items": [
+        {"icon": "🔹", "text": "Returns { promise, resolve, reject }"},
+        {"icon": "🔹", "text": "No more new Promise() wrapper hack"},
+        {"icon": "🔹", "text": "Works in Chrome, Safari, Firefox, Edge"},
+        {"icon": "🔹", "text": "ES2024 — shipped in all browsers 2024"},
+        {"icon": "🔹", "text": "Perfect for deferred / event patterns"}
+      ]
+    },
+    {
+      "type": "cta",
+      "badge": "ES2024",
+      "teaser": "Next: Iterator helpers — lazy .map() and .filter()",
+      "tagline": "Pro snippets. Zero fluff."
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "topic": "ws_vs_sse",
+  "template": "snippet_battle",
+  "caption": "WebSocket vs Server-Sent Events — which should you use?\n\nOne is bidirectional. One is simpler. Most devs pick the wrong one.\n\nWhich pattern would you ship? A or B?\n\n#javascript #websocket #sse #webdev #coding #programming #developer #realtime #api #codingtips",
+  "slides": [
+    {
+      "type": "hook",
+      "badge": "REAL-TIME",
+      "title": "Which <em>real-time</em> pattern?",
+      "problem": "Stream live data from server to client",
+      "a": {
+        "label": "WebSocket",
+        "code": "const ws = new WebSocket(url);\n\nws.onmessage = (e) =&gt; {\n  const data = JSON.parse(e.data);\n  update(data);\n};\n\nws.send(JSON.stringify(msg));"
+      },
+      "b": {
+        "label": "Server-Sent Events",
+        "code": "const source =\n  new EventSource('/api/stream');\n\nsource.onmessage = (e) =&gt; {\n  const data = JSON.parse(e.data);\n  update(data);\n};"
+      },
+      "cta": "Pick one. Then swipe."
+    },
+    {
+      "type": "answer",
+      "badge": "REAL-TIME",
+      "title": "It depends. <em>Different jobs.</em>",
+      "verdicts": [
+        {"tag": "WebSocket", "result": "good", "title": "Bidirectional. Full duplex.", "text": "Client AND server send data. Chat apps, multiplayer games, collaborative editing. More complex to set up."},
+        {"tag": "SSE", "result": "good", "title": "Server → client only. Dead simple.", "text": "Auto-reconnect. Works over HTTP/2. No special server. Perfect for notifications, live feeds, LLM streaming."}
+      ],
+      "takeaway": "Need to SEND data? WebSocket. Just receiving? SSE is simpler and enough."
+    },
+    {
+      "type": "deep_dive",
+      "badge": "REAL-TIME",
+      "title": "When to use <em>which.</em>",
+      "sub": "A decision matrix.",
+      "code": "// Use WebSocket when:\n// → Chat / messaging\n// → Multiplayer games\n// → Collaborative editing (like Figma)\n// → You need client-to-server streaming\n\n// Use SSE when:\n// → Notifications / alerts\n// → Live dashboards\n// → LLM token streaming\n// → Stock tickers\n// → Any server-push scenario"
+    },
+    {
+      "type": "save",
+      "badge": "REAL-TIME",
+      "tag": "📌 SAVE THIS",
+      "title": "WebSocket vs SSE Cheat Sheet",
+      "items": [
+        {"icon": "🔹", "text": "WebSocket: bidirectional, full duplex"},
+        {"icon": "🔹", "text": "SSE: server → client only, auto-reconnect"},
+        {"icon": "🔹", "text": "SSE works over HTTP/2 (no upgrade needed)"},
+        {"icon": "🔹", "text": "WebSocket needs ws:// protocol + server support"},
+        {"icon": "🔹", "text": "SSE is enough for 80% of real-time use cases"}
+      ]
+    },
+    {
+      "type": "cta",
+      "badge": "REAL-TIME",
+      "teaser": "Next: Import maps — no bundler needed",
+      "tagline": "Pro snippets. Zero fluff."
+    }
+  ]
+}

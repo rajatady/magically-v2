@@ -1,0 +1,28 @@
+{
+  "topic": "v2_17_async_await",
+  "slides": [
+    {
+      "type": "hook",
+      "bg": "#0a0a0a",
+      "accent": "#ff9f0a",
+      "gradient": "linear-gradient(160deg, #0a0a0a 0%, #0a1020 50%, #0a0a0a 100%)",
+      "badge": "JAVASCRIPT",
+      "title": "Which <em>async</em> pattern?",
+      "problem": "Fetch data from an API cleanly",
+      "a": {
+        "label": ".then() chain",
+        "code": "fetch(url)\n  .then(r => r.json())\n  .then(data => {\n    process(data);\n  })"
+      },
+      "b": {
+        "label": "async/await",
+        "code": "const data = await\n  (await fetch(url)).json();"
+      }
+    },
+    {
+      "type": "cta",
+      "bg": "#0a0a0a",
+      "accent": "#ff9f0a",
+      "teaser": "Next: 4 TypeScript patterns"
+    }
+  ]
+}

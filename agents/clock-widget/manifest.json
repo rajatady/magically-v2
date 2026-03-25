@@ -1,0 +1,20 @@
+{
+  "id": "clock-widget",
+  "name": "Clock",
+  "version": "1.0.0",
+  "description": "Live clock and date on your home screen",
+  "icon": "🕐",
+  "color": "#f97316",
+  "author": "magically",
+  "tools": [],
+  "ui": {
+    "entry": "ui/App.tsx",
+    "widget": "widget.json"
+  },
+  "permissions": {
+    "data": [],
+    "actions": [],
+    "memory": "none"
+  },
+  "functions": []
+}

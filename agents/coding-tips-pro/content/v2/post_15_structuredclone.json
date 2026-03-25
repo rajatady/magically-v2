@@ -1,0 +1,28 @@
+{
+  "topic": "v2_15_structuredclone",
+  "slides": [
+    {
+      "type": "hook",
+      "bg": "#0a0a0a",
+      "accent": "#ff9f0a",
+      "gradient": "linear-gradient(160deg, #0a0a0a 0%, #1a1508 50%, #0a0a0a 100%)",
+      "badge": "JAVASCRIPT",
+      "title": "Which <em>clone</em> is better?",
+      "problem": "Deep copy an object with nested data",
+      "a": {
+        "label": "JSON trick",
+        "code": "const copy =\n  JSON.parse(\n    JSON.stringify(obj)\n  );"
+      },
+      "b": {
+        "label": "Native way",
+        "code": "const copy =\n  structuredClone(obj);"
+      }
+    },
+    {
+      "type": "cta",
+      "bg": "#0a0a0a",
+      "accent": "#ff9f0a",
+      "teaser": "Next: 7 Git commands"
+    }
+  ]
+}

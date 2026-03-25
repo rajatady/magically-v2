@@ -1,0 +1,61 @@
+{
+  "topic": "web_workers",
+  "template": "tutorial_reveal",
+  "caption": "3 Web Worker patterns that unblock your main thread.\n\nHeavy computation freezes your UI. Web Workers run JavaScript in a background thread. No jank. No frozen tabs.\n\nAll browsers. No library needed.\n\n📌 SAVE this — your users will notice the difference.\n\nAre you using Web Workers? 👇\n\n#webworkers #javascript #webdev #coding #programming #developer #performance #frontend #threads #codingtips",
+  "slides": [
+    {
+      "type": "title",
+      "title": "<em>Web Worker</em> patterns that unblock your main thread",
+      "subtitle": "Heavy computation without freezing the UI.",
+      "tag": "WEB APIs",
+      "number": "3",
+      "hooks": ["dedicated", "shared", "transferable"]
+    },
+    {
+      "type": "item",
+      "number": "01",
+      "tag": "WEB APIs",
+      "title": "<em>Dedicated Worker</em> — offload heavy tasks",
+      "desc": "Spawn a background thread. Send data in, get results back. UI stays smooth.",
+      "code": "// main.js\nconst worker = new Worker('heavy.js');\n\nworker.postMessage({\n  data: hugeArray,\n  operation: 'sort'\n});\n\nworker.onmessage = (e) =&gt; {\n  console.log('Sorted!', e.data);\n  // UI never froze\n};\n\n// heavy.js\nself.onmessage = (e) =&gt; {\n  const sorted = e.data.data.sort();\n  self.postMessage(sorted);\n};",
+      "punchline": "Sort 1M items. Zero UI jank."
+    },
+    {
+      "type": "item",
+      "number": "02",
+      "tag": "WEB APIs",
+      "title": "<em>Shared Worker</em> — one worker, many tabs",
+      "desc": "Multiple browser tabs share one worker. Coordinate state between them.",
+      "code": "// Shared across all tabs\nconst worker = new SharedWorker('sync.js');\n\nworker.port.postMessage({\n  type: 'update',\n  cart: cartItems\n});\n\nworker.port.onmessage = (e) =&gt; {\n  // All tabs get the same state\n  updateUI(e.data);\n};\n\n// sync.js\nconst ports = [];\nself.onconnect = (e) =&gt; {\n  const port = e.ports[0];\n  ports.push(port);\n  port.onmessage = (msg) =&gt; {\n    ports.forEach(p =&gt; p.postMessage(msg.data));\n  };\n};",
+      "punchline": "Cart syncs across tabs. No localStorage polling."
+    },
+    {
+      "type": "item",
+      "number": "03",
+      "tag": "WEB APIs",
+      "title": "<em>Transferable Objects</em> — zero-copy data transfer",
+      "desc": "Move ArrayBuffers to workers instantly. No serialization overhead.",
+      "code": "// Without transfer — COPIES the data\nworker.postMessage(buffer);\n// buffer is still usable here (but slow)\n\n// With transfer — MOVES the data\nworker.postMessage(buffer, [buffer]);\n// buffer is now EMPTY here (but instant)\n\n// Perfect for:\n// - Image processing (canvas pixels)\n// - Audio processing (samples)\n// - Large binary data (files, WASM)",
+      "punchline": "Transfer 100MB in 0ms. Not 500ms."
+    },
+    {
+      "type": "save",
+      "title": "Web Workers <em>Cheat Sheet</em>",
+      "badge": "📌 SAVE THIS",
+      "tag": "CHEAT SHEET",
+      "items": [
+        {"label": "Dedicated", "desc": "new Worker() — one thread per worker"},
+        {"label": "Shared", "desc": "new SharedWorker() — shared across tabs"},
+        {"label": "Transferable", "desc": "postMessage(data, [data]) — zero-copy"},
+        {"label": "No DOM", "desc": "Workers can't touch the DOM"},
+        {"label": "All browsers", "desc": "Supported everywhere. No polyfill."}
+      ],
+      "question": "What do you offload to workers? 👇"
+    },
+    {
+      "type": "cta",
+      "teaser": "Next: <em>Claude Code + MCP</em> — give AI access to your entire stack",
+      "tagline": "Pro snippets. Zero fluff."
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "topic": "v2_12_jules",
+  "slides": [
+    {
+      "type": "title",
+      "bg": "#f5f5f7",
+      "accent": "#007aff",
+      "deco": "circle-top",
+      "badge": "GOOGLE",
+      "number": "",
+      "title": "Jules CLI <em>Just Dropped.</em>",
+      "subtitle": "Async coding agent. Start tasks from terminal.",
+      "hooks": []
+    },
+    {
+      "type": "cta",
+      "bg": "#f5f5f7",
+      "accent": "#007aff",
+      "teaser": "Next: Which optimization is better?"
+    }
+  ]
+}

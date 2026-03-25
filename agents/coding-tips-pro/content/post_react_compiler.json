@@ -1,0 +1,69 @@
+{
+  "topic": "react_compiler",
+  "template": "snippet_battle",
+  "caption": "Stop writing useMemo and useCallback everywhere.\n\nReact Compiler does it for you. Automatically. At build time.\n\nYour hand-written memoization is now dead code.\n\nWhich approach are you using? A or B?\n\n#react #reactjs #javascript #webdev #coding #programming #frontend #developer #nextjs #codingtips",
+  "slides": [
+    {
+      "type": "hook",
+      "badge": "REACT 19",
+      "title": "Which <em>optimization</em> is better?",
+      "problem": "Prevent unnecessary re-renders in React",
+      "a": {
+        "label": "Manual memoization",
+        "code": "const filtered = useMemo(\n  () =&gt; items.filter(i =&gt; i.active),\n  [items]\n);\nconst onClick = useCallback(\n  () =&gt; setCount(c =&gt; c + 1),\n  []\n);\nreturn &lt;List\n  items={filtered}\n  onClick={onClick}\n/&gt;;"
+      },
+      "b": {
+        "label": "React Compiler",
+        "code": "const filtered =\n  items.filter(i =&gt; i.active);\n\nconst onClick =\n  () =&gt; setCount(c =&gt; c + 1);\n\nreturn &lt;List\n  items={filtered}\n  onClick={onClick}\n/&gt;;"
+      },
+      "cta": "Pick one. Then swipe."
+    },
+    {
+      "type": "answer",
+      "badge": "REACT 19",
+      "title": "B wins. <em>Same performance. Zero boilerplate.</em>",
+      "verdicts": [
+        {
+          "tag": "Option A",
+          "result": "bad",
+          "title": "Manual memo is noisy and error-prone",
+          "text": "useMemo and useCallback everywhere. Dependency arrays that break silently. 40% of your component is optimization boilerplate."
+        },
+        {
+          "tag": "Option B",
+          "result": "good",
+          "title": "React Compiler memoizes at build time",
+          "text": "Write plain React. The compiler analyzes your code and inserts memoization automatically. Same output. Zero manual work."
+        }
+      ],
+      "takeaway": "The compiler doesn't just memoize — it understands your intent better than you do."
+    },
+    {
+      "type": "deep_dive",
+      "badge": "REACT 19",
+      "title": "What the compiler <em>actually does.</em>",
+      "sub": "It rewrites your components at build time. You never see the optimization.",
+      "code": "// What you write:\nfunction Cart({ items }) {\n  const total = items.reduce(\n    (sum, i) =&gt; sum + i.price, 0\n  );\n  return &lt;p&gt;Total: ${total}&lt;/p&gt;;\n}\n\n// What the compiler outputs:\nfunction Cart({ items }) {\n  const $ = useMemoCache(2);\n  let t0;\n  if ($[0] !== items) {\n    t0 = items.reduce(\n      (sum, i) =&gt; sum + i.price, 0\n    );\n    $[0] = items; $[1] = t0;\n  } else { t0 = $[1]; }\n  return &lt;p&gt;Total: ${t0}&lt;/p&gt;;\n}"
+    },
+    {
+      "type": "save",
+      "badge": "REACT 19",
+      "tag": "📌 SAVE THIS",
+      "title": "React Compiler Cheat Sheet",
+      "items": [
+        {"icon": "🔹", "text": "Auto-memoizes values, callbacks, and JSX"},
+        {"icon": "🔹", "text": "No useMemo, useCallback, or React.memo needed"},
+        {"icon": "🔹", "text": "Works at build time — zero runtime cost"},
+        {"icon": "🔹", "text": "Requires React 19 + babel plugin"},
+        {"icon": "🔹", "text": "npm i babel-plugin-react-compiler"},
+        {"icon": "🔹", "text": "Already used in production at Meta"}
+      ]
+    },
+    {
+      "type": "cta",
+      "badge": "REACT 19",
+      "teaser": "Next: React Server Components — the pattern that killed API routes",
+      "tagline": "Pro snippets. Zero fluff."
+    }
+  ]
+}

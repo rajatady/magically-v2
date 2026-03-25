@@ -1,0 +1,30 @@
+{
+  "name": "magically",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Open-source personal Agent OS",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "test:watch": "turbo run test:watch",
+    "lint": "turbo run lint",
+    "clean": "turbo run clean"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.2",
+    "@types/node": "^22.10.0"
+  },
+  "packageManager": "bun@1.2.3",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "trustedDependencies": [
+    "@nestjs/core"
+  ]
+}

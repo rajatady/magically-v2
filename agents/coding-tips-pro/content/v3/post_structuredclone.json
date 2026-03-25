@@ -1,0 +1,103 @@
+{
+  "topic": "structuredclone_v3",
+  "template": "snippet_battle",
+  "slides": [
+    {
+      "_comment": "SLIDE 1: Hook — Which clone is better? A/B with real code",
+      "background": {"type": "gradient", "value": "linear-gradient(160deg, #0a0a0a 0%, #1a1020 50%, #0a0a0a 100%)"},
+      "decorations": [
+        {"type": "circle", "xPct": 55, "yPct": -8, "sizePct": 45, "circleBg": "#ff9f0a", "circleOpacity": 0.07, "blurPx": 50}
+      ],
+      "elements": [
+        {"type": "badge", "xPct": 32, "yPct": 0, "content": "JAVASCRIPT", "sizePct": 2.2, "badgeBg": "#ff9f0a", "badgeColor": "#000"},
+        {"type": "text", "xPct": 0, "yPct": 6, "wPct": 100, "content": "Which clone\nis better?", "font": "headline", "sizePct": 8, "weight": 800, "color": "#f5f5f7", "align": "center", "lineHeight": 1.06},
+        {"type": "text", "xPct": 0, "yPct": 32, "wPct": 100, "content": "Deep copy an object with nested data", "font": "body", "sizePct": 2.6, "weight": 400, "color": "rgba(255,255,255,0.35)", "align": "center"},
+
+        {"type": "text", "xPct": 5, "yPct": 41, "content": "A", "font": "body", "sizePct": 2.8, "weight": 800, "color": "#000", "align": "center"},
+        {"type": "circle", "xPct": 3, "yPct": 39.5, "sizePct": 5, "circleBg": "#ff9f0a", "circleOpacity": 1},
+        {"type": "text", "xPct": 12, "yPct": 41, "content": "The JSON trick", "font": "body", "sizePct": 2.4, "weight": 600, "color": "rgba(255,255,255,0.5)"},
+        {"type": "code", "xPct": 2, "yPct": 48, "wPct": 96, "content": "<span style='color:#c586c0'>const</span> copy = JSON.<span style='color:#dcdcaa'>parse</span>(\n  JSON.<span style='color:#dcdcaa'>stringify</span>(original)\n);", "sizePct": 2.3, "paddingPct": 2.5, "radiusPct": 1.5},
+
+        {"type": "text", "xPct": 5, "yPct": 67, "content": "B", "font": "body", "sizePct": 2.8, "weight": 800, "color": "#000", "align": "center"},
+        {"type": "circle", "xPct": 3, "yPct": 65.5, "sizePct": 5, "circleBg": "#2997ff", "circleOpacity": 1},
+        {"type": "text", "xPct": 12, "yPct": 67, "content": "The native way", "font": "body", "sizePct": 2.4, "weight": 600, "color": "rgba(255,255,255,0.5)"},
+        {"type": "code", "xPct": 2, "yPct": 74, "wPct": 96, "content": "<span style='color:#c586c0'>const</span> copy =\n  <span style='color:#dcdcaa'>structuredClone</span>(original);", "sizePct": 2.3, "paddingPct": 2.5, "radiusPct": 1.5},
+
+        {"type": "text", "xPct": 0, "yPct": 92, "wPct": 100, "content": "Pick one. Then swipe.", "font": "headline", "sizePct": 2.8, "weight": 400, "color": "rgba(255,255,255,0.3)", "align": "center", "italic": true}
+      ]
+    },
+
+    {
+      "_comment": "SLIDE 2: Answer — B wins. Bold, simple, centered.",
+      "background": {"type": "gradient", "value": "linear-gradient(160deg, #0a0a0a 0%, #1a1020 50%, #0a0a0a 100%)"},
+      "decorations": [
+        {"type": "circle", "xPct": 20, "yPct": 25, "sizePct": 50, "circleBg": "#34c759", "circleOpacity": 0.04, "blurPx": 60}
+      ],
+      "elements": [
+        {"type": "text", "xPct": 0, "yPct": 20, "wPct": 100, "content": "B wins.", "font": "headline", "sizePct": 11, "weight": 800, "color": "#f5f5f7", "align": "center"},
+        {"type": "text", "xPct": 0, "yPct": 42, "wPct": 100, "content": "One line.\nEverything preserved.", "font": "headline", "sizePct": 6.5, "weight": 700, "color": "#34c759", "align": "center", "lineHeight": 1.15},
+        {"type": "text", "xPct": 5, "yPct": 72, "wPct": 90, "content": "JSON.stringify silently breaks on Date, Map, Set,\nRegExp, and circular references.\nstructuredClone handles all of them.", "font": "body", "sizePct": 2.5, "weight": 400, "color": "rgba(255,255,255,0.4)", "align": "center", "lineHeight": 1.5}
+      ]
+    },
+
+    {
+      "_comment": "SLIDE 3: The problem — show REAL DATA that breaks. Red accent.",
+      "background": {"type": "gradient", "value": "linear-gradient(160deg, #0a0a0a 0%, #1a1020 50%, #0a0a0a 100%)"},
+      "elements": [
+        {"type": "text", "xPct": 0, "yPct": 3, "wPct": 100, "content": "What JSON.stringify\nbreaks:", "font": "headline", "sizePct": 5.5, "weight": 800, "color": "#ff3b30", "align": "center", "lineHeight": 1.1},
+
+        {"type": "code", "xPct": 0, "yPct": 22, "wPct": 100, "content": "<span style='color:#c586c0'>const</span> user = {\n  name:   <span style='color:#ce9178'>\"Sarah Chen\"</span>,\n  joined: <span style='color:#c586c0'>new</span> <span style='color:#4ec9b0'>Date</span>(<span style='color:#ce9178'>\"2026-01-15\"</span>),\n  skills: <span style='color:#c586c0'>new</span> <span style='color:#4ec9b0'>Set</span>([<span style='color:#ce9178'>\"react\"</span>, <span style='color:#ce9178'>\"node\"</span>, <span style='color:#ce9178'>\"rust\"</span>]),\n  cache:  <span style='color:#c586c0'>new</span> <span style='color:#4ec9b0'>Map</span>([[<span style='color:#ce9178'>\"token\"</span>, <span style='color:#ce9178'>\"abc123\"</span>]]),\n};", "sizePct": 2, "paddingPct": 2.5, "radiusPct": 1.5},
+
+        {"type": "text", "xPct": 0, "yPct": 58, "wPct": 100, "content": "After JSON.parse(JSON.stringify(user)):", "font": "body", "sizePct": 2.2, "weight": 500, "color": "rgba(255,255,255,0.45)", "align": "center"},
+
+        {"type": "code", "xPct": 2, "yPct": 65, "wPct": 96, "content": "name   → <span style='color:#ce9178'>\"Sarah Chen\"</span>     <span style='color:#34c759'>✓ ok</span>\njoined → <span style='color:#ff3b30'>\"2026-01-15T...\"</span>  <span style='color:#ff3b30'>✗ string, not Date</span>\nskills → <span style='color:#ff3b30'>{}</span>               <span style='color:#ff3b30'>✗ empty object</span>\ncache  → <span style='color:#ff3b30'>{}</span>               <span style='color:#ff3b30'>✗ empty object</span>", "sizePct": 1.9, "paddingPct": 2.5, "radiusPct": 1.5, "border": "#ff3b30"}
+      ]
+    },
+
+    {
+      "_comment": "SLIDE 4: The solution — structuredClone preserves it. Green. 'That's it.' moment.",
+      "background": {"type": "gradient", "value": "linear-gradient(160deg, #0a0a0a 0%, #1a1020 50%, #0a0a0a 100%)"},
+      "decorations": [
+        {"type": "circle", "xPct": 25, "yPct": 15, "sizePct": 45, "circleBg": "#34c759", "circleOpacity": 0.04, "blurPx": 60}
+      ],
+      "elements": [
+        {"type": "text", "xPct": 0, "yPct": 3, "wPct": 100, "content": "structuredClone\npreserves everything.", "font": "headline", "sizePct": 5.5, "weight": 800, "color": "#f5f5f7", "align": "center", "lineHeight": 1.1},
+
+        {"type": "code", "xPct": 0, "yPct": 24, "wPct": 100, "content": "<span style='color:#c586c0'>const</span> copy = <span style='color:#dcdcaa'>structuredClone</span>(user);\n\ncopy.name   <span style='color:#c586c0'>===</span> <span style='color:#ce9178'>\"Sarah Chen\"</span>   <span style='color:#34c759'>✓</span>\ncopy.joined <span style='color:#c586c0'>instanceof</span> <span style='color:#4ec9b0'>Date</span>   <span style='color:#34c759'>✓ true</span>\ncopy.skills <span style='color:#c586c0'>instanceof</span> <span style='color:#4ec9b0'>Set</span>    <span style='color:#34c759'>✓ true</span>\ncopy.cache  <span style='color:#c586c0'>instanceof</span> <span style='color:#4ec9b0'>Map</span>    <span style='color:#34c759'>✓ true</span>", "sizePct": 2.2, "paddingPct": 3, "radiusPct": 1.5, "border": "#34c759"},
+
+        {"type": "text", "xPct": 0, "yPct": 65, "wPct": 100, "content": "That's it.", "font": "headline", "sizePct": 9, "weight": 800, "color": "#f5f5f7", "align": "center"},
+        {"type": "text", "xPct": 0, "yPct": 82, "wPct": 100, "content": "One line. All types preserved.", "font": "headline", "sizePct": 3.2, "weight": 400, "color": "#34c759", "align": "center", "italic": true}
+      ]
+    },
+
+    {
+      "_comment": "SLIDE 5: Bonus — what else it handles",
+      "background": {"type": "gradient", "value": "linear-gradient(160deg, #0a0a0a 0%, #1a1020 50%, #0a0a0a 100%)"},
+      "elements": [
+        {"type": "text", "xPct": 0, "yPct": 5, "wPct": 100, "content": "Also handles:", "font": "headline", "sizePct": 6, "weight": 800, "color": "#f5f5f7", "align": "center"},
+        {"type": "text", "xPct": 8, "yPct": 25, "content": "→  Circular references", "font": "body", "sizePct": 3.5, "weight": 500, "color": "#f5f5f7", "lineHeight": 1.4},
+        {"type": "text", "xPct": 8, "yPct": 37, "content": "→  ArrayBuffer, Blob, File", "font": "body", "sizePct": 3.5, "weight": 500, "color": "#f5f5f7", "lineHeight": 1.4},
+        {"type": "text", "xPct": 8, "yPct": 49, "content": "→  Error objects", "font": "body", "sizePct": 3.5, "weight": 500, "color": "#f5f5f7", "lineHeight": 1.4},
+        {"type": "text", "xPct": 8, "yPct": 61, "content": "→  Nested objects (any depth)", "font": "body", "sizePct": 3.5, "weight": 500, "color": "#f5f5f7", "lineHeight": 1.4},
+        {"type": "line", "xPct": 8, "yPct": 78, "wPct": 84, "hPct": 0.2, "lineBg": "rgba(255,255,255,0.1)"},
+        {"type": "text", "xPct": 0, "yPct": 83, "wPct": 100, "content": "All browsers + Node 17+. Zero polyfills.", "font": "headline", "sizePct": 3, "weight": 600, "color": "#ff9f0a", "align": "center", "italic": true}
+      ]
+    },
+
+    {
+      "_comment": "SLIDE 6: CTA — bold, fills the frame",
+      "background": {"type": "gradient", "value": "linear-gradient(160deg, #0a0a0a 0%, #1a1020 50%, #0a0a0a 100%)"},
+      "watermark": false,
+      "decorations": [
+        {"type": "circle", "xPct": 25, "yPct": 30, "sizePct": 40, "circleBg": "#ff9f0a", "circleOpacity": 0.05, "blurPx": 50}
+      ],
+      "elements": [
+        {"type": "text", "xPct": 0, "yPct": 15, "wPct": 100, "content": "FOLLOW", "font": "body", "sizePct": 5, "weight": 800, "color": "#f5f5f7", "align": "center"},
+        {"type": "pill", "xPct": 12, "yPct": 32, "wPct": 76, "content": "@coding_tips_pro", "font": "mono", "sizePct": 3.5, "weight": 700, "pillBg": "#ff9f0a", "pillColor": "#000", "align": "center"},
+        {"type": "text", "xPct": 0, "yPct": 50, "wPct": 100, "content": "FOR PRO SNIPPETS\nAND TRICKS DAILY", "font": "body", "sizePct": 4, "weight": 800, "color": "#f5f5f7", "align": "center", "lineHeight": 1.3},
+        {"type": "line", "xPct": 30, "yPct": 72, "wPct": 40, "hPct": 0.2, "lineBg": "rgba(255,255,255,0.1)"},
+        {"type": "text", "xPct": 0, "yPct": 78, "wPct": 100, "content": "Next: Iterator helpers —\nlazy .map() and .filter()", "font": "headline", "sizePct": 2.8, "weight": 400, "color": "rgba(255,255,255,0.3)", "align": "center", "italic": true, "lineHeight": 1.4}
+      ]
+    }
+  ]
+}

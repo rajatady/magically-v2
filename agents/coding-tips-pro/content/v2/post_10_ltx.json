@@ -1,0 +1,22 @@
+{
+  "topic": "v2_10_ltx",
+  "slides": [
+    {
+      "type": "title",
+      "bg": "#0a0a0a",
+      "accent": "#bf5af2",
+      "deco": "glow-center",
+      "badge": "LTX 2.3",
+      "number": "",
+      "title": "4K Video + Audio <em>Locally. Free.</em>",
+      "subtitle": "Open source. Apache 2.0. Runs on your GPU.",
+      "hooks": []
+    },
+    {
+      "type": "cta",
+      "bg": "#0a0a0a",
+      "accent": "#bf5af2",
+      "teaser": "Next: Lazy arrays are here"
+    }
+  ]
+}

@@ -1,0 +1,79 @@
+{
+  "topic": "react_hidden_hooks",
+  "template": "tutorial_reveal",
+  "caption": "5 React hooks you probably never used.\n\nReact 19 shipped hooks that solve problems you've been hacking around for years.\n\nStop writing workarounds. Use the built-in solution.\n\n📌 SAVE this — you'll need at least 2 of these this week.\n\nWhich one surprised you? Comment the number 👇\n\n#react #react19 #hooks #javascript #typescript #webdev #coding #programming #frontend #nextjs #codingtips",
+  "slides": [
+    {
+      "type": "title",
+      "title": "React hooks you <em>never</em> used",
+      "subtitle": "Built into React 19. No libraries needed.",
+      "tag": "REACT 19",
+      "number": "5",
+      "hooks": ["useId()", "useOptimistic()", "useFormStatus()", "useSyncExternalStore()"]
+    },
+    {
+      "type": "item",
+      "number": "01",
+      "tag": "REACT 19",
+      "title": "<em>useId( )</em> — unique IDs, SSR-safe",
+      "desc": "Generates stable IDs that survive server rendering. No hydration mismatch. No Math.random hacks.",
+      "code": "function EmailField() {\n  const id = useId();\n  return (\n    &lt;div&gt;\n      &lt;label htmlFor={id}&gt;Email&lt;/label&gt;\n      &lt;input id={id} type=\"email\" /&gt;\n    &lt;/div&gt;\n  );\n}",
+      "punchline": "Accessibility solved in one line."
+    },
+    {
+      "type": "item",
+      "number": "02",
+      "tag": "REACT 19",
+      "title": "<em>useOptimistic( )</em> — instant UI",
+      "desc": "Show the result before the server confirms. Auto-rolls back on failure.",
+      "code": "const [optimisticLikes, addLike] =\n  useOptimistic(likes, (state, newLike) =>\n    [...state, newLike]\n  );\n\nasync function handleLike() {\n  addLike({ id: Date.now(), user: me });\n  await saveLikeToServer();\n}",
+      "punchline": "Zero perceived latency. Server catches up."
+    },
+    {
+      "type": "item",
+      "number": "03",
+      "tag": "REACT 19",
+      "title": "<em>useFormStatus( )</em> — pending for free",
+      "desc": "Know if a parent form is submitting. No props. No context. Just call it.",
+      "code": "function SubmitButton() {\n  const { pending } = useFormStatus();\n  return (\n    &lt;button disabled={pending}&gt;\n      {pending ? 'Saving...' : 'Save'}\n    &lt;/button&gt;\n  );\n}",
+      "punchline": "Works inside any form. Zero prop drilling."
+    },
+    {
+      "type": "item",
+      "number": "04",
+      "tag": "REACT 19",
+      "title": "<em>useDeferredValue( )</em> — smooth typing",
+      "desc": "Deprioritize expensive re-renders so the UI stays responsive during fast input.",
+      "code": "function Search({ query }) {\n  const deferred = useDeferredValue(query);\n  // Input updates instantly\n  // Heavy list re-renders in background\n  return &lt;HeavyList filter={deferred} /&gt;;\n}",
+      "punchline": "Type fast. No jank. React handles the rest."
+    },
+    {
+      "type": "item",
+      "number": "05",
+      "tag": "REACT 19",
+      "title": "<em>useSyncExternalStore( )</em>",
+      "desc": "Subscribe to anything outside React — localStorage, WebSocket, Redux — without tearing.",
+      "code": "function useOnlineStatus() {\n  return useSyncExternalStore(\n    // subscribe\n    (cb) => {\n      window.addEventListener('online', cb);\n      window.addEventListener('offline', cb);\n      return () => {\n        window.removeEventListener('online', cb);\n        window.removeEventListener('offline', cb);\n      };\n    },\n    // getSnapshot\n    () => navigator.onLine\n  );\n}",
+      "punchline": "The bridge between React and everything else."
+    },
+    {
+      "type": "save",
+      "title": "All <em>5 hooks</em> decoded",
+      "badge": "📌 SAVE THIS",
+      "tag": "CHEAT SHEET",
+      "items": [
+        {"label": "useId()", "desc": "SSR-safe unique IDs for accessibility"},
+        {"label": "useOptimistic()", "desc": "Instant UI before server confirms"},
+        {"label": "useFormStatus()", "desc": "Is the form submitting? No props needed"},
+        {"label": "useDeferredValue()", "desc": "Deprioritize expensive re-renders"},
+        {"label": "useSyncExternalStore()", "desc": "Subscribe to non-React state safely"}
+      ],
+      "question": "Which one are you using first? 👇"
+    },
+    {
+      "type": "cta",
+      "teaser": "Next: the <em>one CSS trick</em> that replaced 50 lines of JavaScript",
+      "tagline": "Pro snippets. Zero fluff. Daily."
+    }
+  ]
+}

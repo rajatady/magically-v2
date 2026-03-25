@@ -1,0 +1,128 @@
+{
+  "topic": "temporal_api",
+  "template": "tutorial_reveal",
+  "caption": "7 Temporal API features that make Moment.js obsolete.\n\nBuilt into JavaScript. No npm install. No bundle size. Handles time zones correctly for the first time ever.\n\nES2026. Shipping in all browsers.\n\n\ud83d\udccc SAVE this \u2014 Moment.js is officially dead.\n\nWhich feature surprised you? \ud83d\udc47\n\n#javascript #temporal #webdev #coding #programming #developer #es2026 #datetime #momentjs #codingtips",
+  "slides": [
+    {
+      "type": "title",
+      "title": "<em>Temporal API</em> features that make Moment.js obsolete",
+      "subtitle": "Built into JavaScript. No install. Time zones that actually work.",
+      "tag": "ES2026",
+      "number": "7",
+      "hooks": [
+        "PlainDate",
+        "ZonedDateTime",
+        "Duration",
+        "Instant",
+        "until()",
+        "compare()",
+        "from()"
+      ]
+    },
+    {
+      "type": "item",
+      "number": "01",
+      "tag": "ES2026",
+      "title": "<em>PlainDate</em> \u2014 dates without time zones",
+      "desc": "A date that means the same thing everywhere. No midnight bugs.",
+      "code": "const birthday = Temporal.PlainDate\n  .from('1995-12-25');\n\nbirthday.year;    // 1995\nbirthday.month;   // 12\nbirthday.day;     // 25\n\n// No time zone. No midnight shift.\n// December 25 everywhere.",
+      "punchline": "Finally. A date that's just a date."
+    },
+    {
+      "type": "item",
+      "number": "02",
+      "tag": "ES2026",
+      "title": "<em>ZonedDateTime</em> \u2014 time zones done right",
+      "desc": "The thing Date has been failing at for 25 years.",
+      "code": "const meeting = Temporal.ZonedDateTime\n  .from({\n    timeZone: 'America/New_York',\n    year: 2026, month: 3, day: 22,\n    hour: 14, minute: 30,\n  });\n\n// Convert to Tokyo:\nmeeting.withTimeZone('Asia/Tokyo');\n// 2026-03-23T03:30:00+09:00[Asia/Tokyo]",
+      "punchline": "One API. Every time zone. Correct."
+    },
+    {
+      "type": "item",
+      "number": "03",
+      "tag": "ES2026",
+      "title": "<em>Duration</em> \u2014 time math without bugs",
+      "desc": "Add 1 month and 3 days. No more manual millisecond arithmetic.",
+      "code": "const duration = Temporal.Duration\n  .from({ months: 1, days: 3 });\n\nconst start = Temporal.PlainDate\n  .from('2026-01-28');\n\nstart.add(duration);\n// 2026-03-03 (handles Feb correctly)",
+      "punchline": "February has 28 days? Temporal knows."
+    },
+    {
+      "type": "item",
+      "number": "04",
+      "tag": "ES2026",
+      "title": "<em>Instant</em> \u2014 exact moments in time",
+      "desc": "Like Date.now() but immutable and precise to nanoseconds.",
+      "code": "const now = Temporal.Now.instant();\n\n// Nanosecond precision\nnow.epochNanoseconds;\n// 1742649600000000000n\n\n// Compare two instants\nTemporal.Instant.compare(a, b);\n// -1, 0, or 1",
+      "punchline": "Immutable. Nanosecond. Comparable."
+    },
+    {
+      "type": "item",
+      "number": "05",
+      "tag": "ES2026",
+      "title": "<em>until()</em> and <em>since()</em> \u2014 distance between dates",
+      "desc": "How long between two dates? One method. Any unit.",
+      "code": "const start = Temporal.PlainDate\n  .from('2026-01-01');\nconst end = Temporal.PlainDate\n  .from('2026-03-22');\n\nstart.until(end);\n// P2M21D (2 months, 21 days)\n\nstart.until(end, {\n  largestUnit: 'day'\n});\n// P81D (81 days)",
+      "punchline": "No more moment(a).diff(moment(b))."
+    },
+    {
+      "type": "item",
+      "number": "06",
+      "tag": "ES2026",
+      "title": "<em>compare()</em> \u2014 sort dates correctly",
+      "desc": "Built-in comparison. No more getTime() hacks.",
+      "code": "const dates = [\n  Temporal.PlainDate.from('2026-03-22'),\n  Temporal.PlainDate.from('2025-12-01'),\n  Temporal.PlainDate.from('2026-01-15'),\n];\n\ndates.sort(Temporal.PlainDate.compare);\n// [2025-12-01, 2026-01-15, 2026-03-22]",
+      "punchline": "Array.sort just works. Finally."
+    },
+    {
+      "type": "item",
+      "number": "07",
+      "tag": "ES2026",
+      "title": "<em>from()</em> \u2014 parse anything safely",
+      "desc": "ISO strings, objects, partial dates. One method handles all.",
+      "code": "// From ISO string\nTemporal.PlainDate.from('2026-03-22');\n\n// From object\nTemporal.PlainDate.from({\n  year: 2026, month: 3, day: 22\n});\n\n// Invalid dates throw (not silently wrong)\nTemporal.PlainDate.from('2026-02-30');\n// RangeError!",
+      "punchline": "No more silent date corruption."
+    },
+    {
+      "type": "save",
+      "title": "Temporal API <em>Cheat Sheet</em>",
+      "badge": "\ud83d\udccc SAVE THIS",
+      "tag": "CHEAT SHEET",
+      "items": [
+        {
+          "label": "PlainDate",
+          "desc": "Date without time zone"
+        },
+        {
+          "label": "ZonedDateTime",
+          "desc": "Date + time + zone"
+        },
+        {
+          "label": "Duration",
+          "desc": "Time spans (months, days, hours)"
+        },
+        {
+          "label": "Instant",
+          "desc": "Exact moment, nanosecond precision"
+        },
+        {
+          "label": "until() / since()",
+          "desc": "Distance between dates"
+        },
+        {
+          "label": "compare()",
+          "desc": "Sort dates correctly"
+        },
+        {
+          "label": "from()",
+          "desc": "Parse safely, throw on invalid"
+        }
+      ],
+      "question": "Which feature replaces the most code for you? \ud83d\udc47"
+    },
+    {
+      "type": "cta",
+      "teaser": "Next: <em>Record and Tuple</em> \u2014 immutable data in JavaScript",
+      "tagline": "Pro snippets. Zero fluff."
+    }
+  ]
+}

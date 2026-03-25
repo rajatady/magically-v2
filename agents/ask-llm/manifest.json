@@ -1,0 +1,17 @@
+{
+  "id": "ask-llm",
+  "name": "Ask LLM",
+  "version": "1.0.0",
+  "description": "Minimal agent to test ctx.llm — no Docker, no deps, just asks the LLM a question",
+  "icon": "🧠",
+
+  "triggers": [],
+
+  "functions": [
+    {
+      "name": "ask",
+      "description": "Ask the LLM anything",
+      "parameters": { "type": "object", "properties": { "question": { "type": "string" } }, "required": ["question"] }
+    }
+  ]
+}

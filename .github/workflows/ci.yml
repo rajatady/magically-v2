@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.2.3"
+
+      - run: bun install --frozen-lockfile
+
+      - name: Test runtime
+        working-directory: packages/runtime
+        run: bun run test
+
+      - name: Test CLI
+        working-directory: packages/cli
+        run: bun run test
+
+      - name: Test agent-sdk
+        working-directory: packages/agent-sdk
+        run: bun run test
+
+      - name: Test widget-dsl
+        working-directory: packages/widget-dsl
+        run: bun run test
+
+      - name: Test web
+        working-directory: apps/web
+        run: bun run test

@@ -1,0 +1,79 @@
+{
+  "topic": "agent_repos_march_2026",
+  "template": "tutorial_reveal",
+  "caption": "5 AI agent repos just broke GitHub this week.\n\nNot chatbots. Not copilots. Autonomous agents that control browsers, predict markets, and operate your entire dev stack.\n\nThis is what developers are building right now. March 2026.\n\nWhich one are you starring? 👇\n\n#aiagents #github #coding #programming #ai #developer #opensource #machinelearning #agents #trending",
+  "slides": [
+    {
+      "type": "title",
+      "title": "AI Agent Repos That <em>Broke GitHub</em> This Week",
+      "subtitle": "March 2026. These repos gained 10K-23K stars in 7 days.",
+      "tag": "AI AGENTS",
+      "number": "5",
+      "hooks": ["superpowers", "agency-agents", "MiroFish", "page-agent", "OpenViking"]
+    },
+    {
+      "type": "item",
+      "number": "01",
+      "tag": "100K STARS",
+      "title": "<em>superpowers</em> — agentic skills framework",
+      "desc": "A methodology for giving AI agents real capabilities. +19K stars in one week. 100K total.",
+      "code": "# Install agent superpowers\nnpx superpowers init\n\n# Your agent can now:\n# - Read and write files\n# - Run terminal commands\n# - Search the web\n# - Control browsers\n# - Deploy applications\n# All from natural language.",
+      "punchline": "100K stars in weeks. The fastest-growing agent repo ever."
+    },
+    {
+      "type": "item",
+      "number": "02",
+      "tag": "56K STARS",
+      "title": "<em>agency-agents</em> — multi-agent teams",
+      "desc": "Specialized AI agents with distinct expertise working together. +23K stars this week.",
+      "code": "# Define your agent team\nagents:\n  frontend_wizard:\n    role: \"React/Next.js expert\"\n    tools: [browser, figma, code]\n  \n  backend_ops:\n    role: \"API and database specialist\"\n    tools: [postgres, redis, deploy]\n  \n  security_auditor:\n    role: \"Vulnerability scanner\"\n    tools: [code, network, logs]",
+      "punchline": "+23K stars in 7 days. Agents aren't solo anymore."
+    },
+    {
+      "type": "item",
+      "number": "03",
+      "tag": "36K STARS",
+      "title": "<em>MiroFish</em> — 700K agents predict anything",
+      "desc": "Swarm intelligence engine. An undergrad built it in 10 days. Got $4M funding in 24 hours.",
+      "code": "from mirofish import Swarm\n\n# 700,000 agents vote on predictions\nswarm = Swarm(agents=700_000)\n\nresult = swarm.predict(\n  question=\"Will BTC hit 150K by June?\",\n  context=market_data\n)\n\nprint(result.confidence)  # 0.73\nprint(result.consensus)   # \"Likely\"",
+      "punchline": "Built in 10 days. $4M in 24 hours. 36K stars."
+    },
+    {
+      "type": "item",
+      "number": "04",
+      "tag": "12K STARS",
+      "title": "<em>page-agent</em> — control any website with English",
+      "desc": "Add one script tag. Type what you want. The AI does it. By Alibaba.",
+      "code": "&lt;!-- Add to any webpage --&gt;\n&lt;script src=\"page-agent.js\"&gt;&lt;/script&gt;\n\n// Then just type:\n\"Fill out the signup form\n with my info and submit\"\n\n// The agent finds the fields,\n// fills them, clicks submit.\n// One sentence. Any website.",
+      "punchline": "One line of JS. Your browser has an AI pilot."
+    },
+    {
+      "type": "item",
+      "number": "05",
+      "tag": "17K STARS",
+      "title": "<em>OpenViking</em> — memory for AI agents",
+      "desc": "Context database by ByteDance. Agents remember everything across sessions.",
+      "code": "from openviking import ContextDB\n\ndb = ContextDB()\n\n# Agent stores what it learns\ndb.store(\n  key=\"user_preferences\",\n  context=learned_prefs,\n  ttl=\"30d\"\n)\n\n# Any agent can recall it later\nprefs = db.recall(\"user_preferences\")\n# Persistent memory across sessions",
+      "punchline": "Agents that remember. By ByteDance. +10K stars in a week."
+    },
+    {
+      "type": "save",
+      "title": "Agent Repos <em>March 2026</em>",
+      "badge": "📌 SAVE THIS",
+      "tag": "CHEAT SHEET",
+      "items": [
+        {"label": "superpowers", "desc": "Agentic skills framework — 100K stars"},
+        {"label": "agency-agents", "desc": "Multi-agent teams — 56K stars"},
+        {"label": "MiroFish", "desc": "Swarm intelligence — 36K stars"},
+        {"label": "page-agent", "desc": "Control any website — 12K stars"},
+        {"label": "OpenViking", "desc": "Agent memory DB — 17K stars"}
+      ],
+      "question": "Which one are you building with? 👇"
+    },
+    {
+      "type": "cta",
+      "teaser": "Next: <em>The vibe coding backlash</em> — Apple is rejecting AI-generated apps",
+      "tagline": "AI agent era. Daily updates."
+    }
+  ]
+}

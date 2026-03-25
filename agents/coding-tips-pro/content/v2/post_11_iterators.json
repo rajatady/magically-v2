@@ -1,0 +1,21 @@
+{
+  "topic": "v2_11_iterators",
+  "slides": [
+    {
+      "type": "title",
+      "bg": "#0a0a0a",
+      "accent": "#30d158",
+      "badge": "ES2026",
+      "number": "",
+      "title": "<em>Lazy</em> Arrays Are Here.",
+      "subtitle": "Iterator helpers: .map(), .filter(), .take() \u2014 no intermediates.",
+      "hooks": []
+    },
+    {
+      "type": "cta",
+      "bg": "#0a0a0a",
+      "accent": "#30d158",
+      "teaser": "Next: Google Jules CLI"
+    }
+  ]
+}

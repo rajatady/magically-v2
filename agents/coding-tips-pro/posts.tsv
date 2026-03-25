@@ -1,0 +1,43 @@
+id	date	topic	caption_start	media_type	slides	views	reach	likes	saves	shares	comments	avg_watch_s	status	notes	lang
+17876438351790079	2022-12-10	JS Array GroupBy	Want to group an array by a specific property	carousel	4	0	0	18	0	0	1	0	live	original post - JS reduce groupBy	javascript
+17954506259119985	2022-12-10	React Countdown Timer	Ever wondered how you could create a reusable countdown timer	carousel	5	0	0	16	13	0	0	0	live	original post - React hooks countdown	react
+17949788645199884	2022-12-11	JS Map vs forEach	Finding the right tools for the right job	carousel	4	0	0	22	23	0	5	0	live	original post - A/B quiz format - BEST performer 157 saves when boosted	javascript
+18335333131034549	2022-12-14	JS Remove Duplicates	Ever wondered how professionals remove duplicates	carousel	6	0	0	36	33	0	0	0	live	original post - Set() tutorial - 91% save-to-like ratio	javascript
+18187474249367698	2026-03-19	structuredClone	Stop using JSON.parse(JSON.stringify())	carousel	5	0	0	0	0	0	0	0	live	A/B quiz: JSON trick vs structuredClone - deep clone	javascript
+17880252891501156	2026-03-19	Promise.any	Promise.all fails if ONE promise rejects	carousel	5	0	0	0	0	0	0	0	live	A/B quiz: Promise.all vs Promise.any - async patterns	javascript
+18150136516459286	2026-03-19	using keyword	JavaScript just got a new keyword: using	carousel	5	0	0	0	0	0	0	0	live	A/B quiz: try/finally vs using - ES2025 resource management	javascript
+17875351917556220	2026-03-19	Server Actions	Stop making API routes for form submissions	carousel	5	0	0	0	0	0	0	0	live	snippet_battle template - A/B quiz: API route vs Server Action in Next.js	react
+18109577245696643	2026-03-19	React Hidden Hooks	5 React hooks you probably never used	carousel	8	0	0	0	0	0	0	0	live	tutorial_reveal template - 5 hooks with individual code slides	react
+17956078236085327	2026-03-19	TS satisfies vs as	TypeScript satisfies keyword changed how I write types	carousel	5	0	0	0	0	0	0	0	live	snippet_battle template - A/B quiz: as vs satisfies	typescript
+18041072816751985	2026-03-19	CSS :has() selector	CSS :has() replaced 50 lines of JavaScript	carousel	8	0	0	0	0	0	0	0	live	tutorial_reveal template - 5 :has() patterns	css
+18120551725617900	2026-03-19	Python one-liners	5 Python one-liners that replace 20 lines	carousel	8	0	0	0	0	0	0	0	live	tutorial_reveal template - Counter, zip, walrus, defaultdict, chain	python
+17907217965367757	2026-03-20	CSS :has() kills JS	CSS just killed JavaScript. The :has() selector lets you style parent elements	reel	6	0	0	0	0	0	0	0	live	FIRST REEL - CSS :has() vs JS DOM manipulation - code_vs format	css
+18096782989961484	2026-03-20	AbortController	Stop using boolean flags to cancel fetch requests	carousel	5	0	0	0	0	0	0	0	live	snippet_battle - A/B: boolean flag vs AbortController	javascript
+18328764391247033	2026-03-20	TS Decorators	TypeScript decorators just hit Stage 3	carousel	8	0	0	0	0	0	0	0	live	tutorial_reveal template - 5 decorators: @log @memo @sealed @validate @throttle	typescript
+17965498206047428	2026-03-20	Claude Code Review	Stop waiting for PR reviews	reel	4	0	0	0	0	0	0	0	live	reel - Claude Code: cat file | claude -p instant code review	ai
+17910767088357223	2026-03-20	CSS Nesting	Stop using Sass just for nesting	carousel	5	0	0	0	0	0	0	0	live	snippet_battle - Sass vs native CSS nesting	css
+18061405436372480	2026-03-20	JS Array Methods	5 JavaScript array methods you probably never used	carousel	8	0	0	0	0	0	0	0	live	tutorial_reveal - findLast, at, with, toSorted, toReversed	javascript
+17902501026393012	2026-03-20	AI Agent Repos March 2026	5 AI agent repos just broke GitHub this week	carousel	8	0	0	0	0	0	0	0	live	tutorial_reveal - superpowers, agency-agents, MiroFish, page-agent, OpenViking	ai-agents
+18352538968237429	2026-03-21	React Compiler	Stop writing useMemo and useCallback everywhere	carousel	5	0	0	0	0	0	0	0	live	snippet_battle - manual memoization vs React Compiler auto-memo	react
+18110809642744958	2026-03-21	Schema Validation	3 TypeScript schema validators compared	carousel	6	0	0	0	0	0	0	0	live	tutorial_reveal - Zod vs Valibot vs io-ts (3 items NOT 5)	typescript
+18132847207540518	2026-03-21	Promise.withResolvers	Stop wrapping everything in new Promise	carousel	5	0	0	0	0	0	0	0	live	snippet_battle - new Promise wrapper vs Promise.withResolvers()	javascript
+18124554535576049	2026-03-21	CSS Container Queries	4 CSS container query patterns that replace media queries	carousel	7	0	0	0	0	0	0	0	live	tutorial_reveal - @container, named containers, cqw units, style queries (4 items)	css
+18124158754597594	2026-03-21	Python TypeGuards	Stop scattering isinstance checks everywhere	carousel	5	0	0	0	0	0	0	0	live	snippet_battle - isinstance+assert vs TypeGuard	python
+18115685482638390	2026-03-21	Next.js Cache Patterns	6 Next.js cache patterns that will save your production	carousel	9	0	0	0	0	0	0	0	live	tutorial_reveal - revalidateTag, unstable_cache, revalidatePath, cache(), ISR (6 items)	react
+17879677056397683	2026-03-22	TS Infer Keyword	Stop writing manual type extraction	carousel	5	0	0	0	0	0	0	0	live	snippet_battle - manual type extraction vs infer keyword	typescript
+17915314086143457	2026-03-22	Iterator Helpers	7 iterator helpers that just landed in JavaScript	carousel	10	0	0	0	0	0	0	0	live	tutorial_reveal - map, filter, take, drop, flatMap, reduce, toArray (7 items)	javascript
+18200483449340833	2026-03-22	Rust Match vs JS Switch	JavaScript switch is embarrassing next to Rust match	carousel	5	0	0	0	0	0	0	0	live	snippet_battle - JS switch vs Rust match pattern matching	rust
+18079057406105161	2026-03-22	Temporal API	7 Temporal API features that make Moment.js obsolete	carousel	10	0	0	0	0	0	0	0	live	tutorial_reveal - PlainDate, ZonedDateTime, Duration, Instant, until, compare, from (7 items)	javascript
+17968341812881316	2026-03-23	Python match/case	Stop writing if/elif chains in Python	carousel	5	0	0	0	0	0	0	0	live	snippet_battle - if/elif vs match/case structural pattern matching	python
+18116908867632022	2026-03-23	LLM Streaming	4 ways to stream LLM responses in TypeScript	carousel	7	0	0	0	0	0	0	0	live	tutorial_reveal - SSE, WebSocket, ReadableStream, async iterators (4 items)	typescript
+17909931435181945	2026-03-23	Array.groupBy	Stop writing reduce to group arrays	carousel	5	0	0	0	0	0	0	0	live	snippet_battle - manual reduce vs Object.groupBy	javascript
+18103165318730192	2026-03-23	Edge Runtime	6 edge runtime patterns every Next.js dev should know	carousel	9	0	0	0	0	0	0	0	live	tutorial_reveal - edge config, middleware, streaming, KV, geo routing, limits (6 items)	react
+18018160583819338	2026-03-23	WebSocket vs SSE	WebSocket vs Server-Sent Events which should you use	carousel	5	0	0	0	0	0	0	0	live	snippet_battle - WebSocket vs SSE real-time patterns	javascript
+18090855416124988	2026-03-23	Rust Ownership	3 Rust ownership rules explained for JS developers	carousel	6	0	0	0	0	0	0	0	live	tutorial_reveal - ownership, borrowing, lifetimes explained for JS devs (3 items)	rust
+18106665865848576	2026-03-24	Bun vs Node	Bun vs Node.js the runtime war is real	carousel	5	0	0	0	0	0	0	0	live	snippet_battle - Node.js vs Bun runtime benchmarks	javascript
+18070002380268396	2026-03-24	Import Maps	4 import map patterns that kill your bundler	carousel	7	0	0	0	0	0	0	0	live	tutorial_reveal - bare specifiers, CDN imports, scopes, local files (4 items)	html
+17855456715629766	2026-03-24	Record and Tuple	Stop using Object.freeze for immutable data	carousel	5	0	0	0	0	0	0	0	live	snippet_battle - Object.freeze vs Record and Tuple immutability	javascript
+18141577390498215	2026-03-24	Web Workers	3 Web Worker patterns that unblock your main thread	carousel	6	0	0	0	0	0	0	0	live	tutorial_reveal - dedicated, shared, transferable workers (3 items)	web-apis
+17961788979025099	2026-03-24	Rust Error Handling	JavaScript try/catch is lying to you	carousel	5	0	0	0	0	0	0	0	live	snippet_battle - JS try/catch vs Rust Result type error handling	rust
+18123497650608235	2026-03-24	Claude Code MCP	4 MCP servers that turn Claude into an autonomous agent	carousel	7	0	0	0	0	0	0	0	live	tutorial_reveal - browser, postgres, figma, filesystem MCP servers (4 items)	ai
+18111255817774848	2026-03-25	CSS @layer	Stop fighting CSS specificity	carousel	5	0	0	0	0	0	0	0	live	snippet_battle - specificity hacks vs @layer cascade layers	css

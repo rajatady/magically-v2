@@ -1,0 +1,58 @@
+{
+  "topic": "array_groupby",
+  "template": "snippet_battle",
+  "caption": "Stop writing reduce() to group arrays.\n\nObject.groupBy() is built into JavaScript now. One line. No lodash.\n\nWhich pattern do you use? A or B?\n\n#javascript #es2025 #webdev #coding #programming #developer #arrays #groupby #cleancode #codingtips",
+  "slides": [
+    {
+      "type": "hook",
+      "badge": "ES2025",
+      "title": "Which <em>grouping</em> is cleaner?",
+      "problem": "Group array items by a property",
+      "a": {
+        "label": "Manual reduce",
+        "code": "const grouped = items.reduce(\n  (acc, item) =&gt; {\n    const key = item.category;\n    if (!acc[key]) acc[key] = [];\n    acc[key].push(item);\n    return acc;\n  }, {}\n);"
+      },
+      "b": {
+        "label": "Object.groupBy()",
+        "code": "const grouped =\n  Object.groupBy(\n    items,\n    item =&gt; item.category\n  );"
+      },
+      "cta": "Pick one. Then swipe."
+    },
+    {
+      "type": "answer",
+      "badge": "ES2025",
+      "title": "B wins. <em>One line. Built-in.</em>",
+      "verdicts": [
+        {"tag": "Option A", "result": "bad", "title": "8 lines for a common pattern", "text": "Every JS project has this exact reduce somewhere. Verbose, error-prone, and everyone writes it slightly differently."},
+        {"tag": "Option B", "result": "good", "title": "Native. No dependencies.", "text": "Object.groupBy takes an array and a key function. Returns a null-prototype object. All browsers since 2024."}
+      ],
+      "takeaway": "The most copy-pasted reduce pattern is now a built-in."
+    },
+    {
+      "type": "deep_dive",
+      "badge": "ES2025",
+      "title": "It works with <em>any</em> key logic.",
+      "sub": "Strings, computed values, even Map.groupBy for non-string keys.",
+      "code": "// Group by computed value\nObject.groupBy(users, u =&gt;\n  u.age &gt;= 18 ? 'adult' : 'minor'\n);\n\n// Map.groupBy for non-string keys\nMap.groupBy(items, item =&gt;\n  item.date.getFullYear()\n);\n// Map { 2025 =&gt; [...], 2026 =&gt; [...] }"
+    },
+    {
+      "type": "save",
+      "badge": "ES2025",
+      "tag": "📌 SAVE THIS",
+      "title": "groupBy Cheat Sheet",
+      "items": [
+        {"icon": "🔹", "text": "Object.groupBy(array, keyFn) — group by string key"},
+        {"icon": "🔹", "text": "Map.groupBy(array, keyFn) — group by any key"},
+        {"icon": "🔹", "text": "Returns null-prototype object (no hasOwnProperty needed)"},
+        {"icon": "🔹", "text": "All browsers + Node 21+"},
+        {"icon": "🔹", "text": "Replaces lodash.groupBy and manual reduce"}
+      ]
+    },
+    {
+      "type": "cta",
+      "badge": "ES2025",
+      "teaser": "Next: Web Workers — heavy computation off the main thread",
+      "tagline": "Pro snippets. Zero fluff."
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "topic": "rust_ownership",
+  "template": "tutorial_reveal",
+  "caption": "3 Rust ownership rules explained for JavaScript developers.\n\nNo garbage collector. No memory leaks. No null pointer crashes. Rust's ownership system prevents entire categories of bugs at compile time.\n\nIf you know JS, you can understand Rust.\n\n📌 SAVE this — Rust is coming for your backend.\n\nWhich rule surprised you? 👇\n\n#rust #javascript #webdev #coding #programming #developer #rustlang #memory #ownership #codingtips",
+  "slides": [
+    {
+      "type": "title",
+      "title": "Rust <em>ownership</em> explained for JS developers",
+      "subtitle": "No garbage collector. No memory leaks. No crashes.",
+      "tag": "RUST",
+      "number": "3",
+      "hooks": ["ownership", "borrowing", "lifetimes"]
+    },
+    {
+      "type": "item",
+      "number": "01",
+      "tag": "RUST",
+      "title": "<em>Ownership</em> — every value has one owner",
+      "desc": "In JS, any variable can point to any object. In Rust, only ONE variable owns the data at a time.",
+      "code": "// JavaScript — both point to same object\nlet a = { name: 'Sarah' };\nlet b = a;  // both valid\nconsole.log(a.name); // 'Sarah'\n\n// Rust — ownership MOVES\nlet a = String::from(\"Sarah\");\nlet b = a;  // a is now INVALID\n// println!(\"{}\", a); // COMPILE ERROR",
+      "punchline": "Rust catches use-after-move at compile time."
+    },
+    {
+      "type": "item",
+      "number": "02",
+      "tag": "RUST",
+      "title": "<em>Borrowing</em> — read without taking ownership",
+      "desc": "Like passing a reference in JS, but with strict rules. One mutable OR many immutable. Never both.",
+      "code": "// JavaScript — no rules\nfunction greet(user) {\n  user.name = 'hacked'; // mutates!\n}\n\n// Rust — borrowing with rules\nfn greet(user: &User) {\n  // Can read user.name\n  // CANNOT mutate (it's &, not &mut)\n}\n\nfn update(user: &mut User) {\n  user.name = String::from(\"new\");\n  // Only ONE &mut at a time\n}",
+      "punchline": "No surprise mutations. Ever."
+    },
+    {
+      "type": "item",
+      "number": "03",
+      "tag": "RUST",
+      "title": "<em>Lifetimes</em> — no dangling references",
+      "desc": "In JS, the garbage collector handles this. In Rust, the compiler proves references are always valid.",
+      "code": "// JavaScript — GC saves you\nfunction getRef() {\n  let data = [1, 2, 3];\n  return data; // GC keeps it alive\n}\n\n// Rust — compiler proves validity\nfn get_ref() -> &Vec<i32> {\n  let data = vec![1, 2, 3];\n  return &data;\n  // COMPILE ERROR: data dropped here\n  // reference would be dangling\n}",
+      "punchline": "Use-after-free is impossible in Rust."
+    },
+    {
+      "type": "save",
+      "title": "Rust Ownership <em>Cheat Sheet</em>",
+      "badge": "📌 SAVE THIS",
+      "tag": "CHEAT SHEET",
+      "items": [
+        {"label": "Ownership", "desc": "Each value has exactly one owner"},
+        {"label": "Move", "desc": "Assignment transfers ownership"},
+        {"label": "Borrowing &", "desc": "Read access, no mutation"},
+        {"label": "Borrowing &mut", "desc": "Write access, exclusive"},
+        {"label": "Lifetimes", "desc": "Compiler proves refs are valid"},
+        {"label": "No GC", "desc": "Memory freed when owner drops"}
+      ],
+      "question": "Ready to try Rust? 👇"
+    },
+    {
+      "type": "cta",
+      "teaser": "Next: <em>Bun vs Node</em> — which runtime in 2026?",
+      "tagline": "Pro snippets. Zero fluff."
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "topic": "v2_21_grid_flexbox",
+  "slides": [
+    {
+      "type": "hook",
+      "bg": "#0a0a0a",
+      "accent": "#ff9f0a",
+      "gradient": "linear-gradient(160deg, #0a0a0a 0%, #1a1020 50%, #0a0a0a 100%)",
+      "badge": "CSS",
+      "title": "Which <em>layout</em> system?",
+      "problem": "Position elements on a page",
+      "a": {
+        "label": "Flexbox",
+        "code": ".row {\n  display: flex;\n  gap: 1rem;\n}"
+      },
+      "b": {
+        "label": "Grid",
+        "code": ".layout {\n  display: grid;\n  grid-template:\n    \"a b\" / 1fr 2fr;\n}"
+      }
+    },
+    {
+      "type": "cta",
+      "bg": "#0a0a0a",
+      "accent": "#ff9f0a",
+      "teaser": "Next: 3 Python tricks"
+    }
+  ]
+}

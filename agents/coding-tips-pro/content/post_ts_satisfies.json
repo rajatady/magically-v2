@@ -1,0 +1,67 @@
+{
+  "topic": "ts_satisfies_vs_as",
+  "template": "snippet_battle",
+  "caption": "TypeScript's 'satisfies' keyword changed how I write types.\n\nIt validates your type WITHOUT widening it.\n'as' just trusts you blindly.\n\nOne catches bugs at compile time. The other hides them.\n\n📌 SAVE this — it'll fix your next TypeScript headache.\n\nDid you know about satisfies? Comment 👇\n\n#typescript #javascript #webdev #coding #programming #types #frontend #react #nextjs #codingtips",
+  "slides": [
+    {
+      "type": "hook",
+      "title": "Which snippet is <em>better</em>?",
+      "badge": "TYPESCRIPT",
+      "problem": "In <strong>TypeScript</strong>, define a config object with strict types.",
+      "a": {
+        "label": "as (type assertion)",
+        "code": "const config = {\n  port: 3000,\n  host: 'localhost',\n  debug: 'yes'  // Bug! Should be boolean\n} as Config;"
+      },
+      "b": {
+        "label": "satisfies (type validation)",
+        "code": "const config = {\n  port: 3000,\n  host: 'localhost',\n  debug: 'yes'  // Error! Type 'string'\n} satisfies Config;"
+      },
+      "cta": "Pick one. Then swipe."
+    },
+    {
+      "type": "answer",
+      "title": "B catches the <em>bug</em>.",
+      "badge": "THE ANSWER",
+      "verdicts": [
+        {
+          "result": "lose",
+          "tag": "Option A — as",
+          "title": "Silently lies to the compiler",
+          "text": "'as' tells TypeScript: trust me, I know what I'm doing. It won't check if debug: 'yes' matches boolean. The bug ships to production."
+        },
+        {
+          "result": "win",
+          "tag": "Option B — satisfies",
+          "title": "Validates AND preserves the narrow type",
+          "text": "'satisfies' checks that your object matches Config — and throws a compile error for debug: 'yes'. But unlike 'as', it keeps the literal types. config.port is 3000, not just number."
+        }
+      ],
+      "takeaway": "'as' hides bugs. 'satisfies' finds them."
+    },
+    {
+      "type": "deep_dive",
+      "title": "The real <em>difference</em>",
+      "badge": "KEY INSIGHT",
+      "sub": "satisfies validates without widening your types:",
+      "code": "type Route = { path: string; auth: boolean };\n\n// With 'as' — type is Route (widened)\nconst login = { path: '/login', auth: false } as Route;\nlogin.path  // type: string (lost '/login')\n\n// With 'satisfies' — type preserved\nconst login = {\n  path: '/login',\n  auth: false\n} satisfies Route;\nlogin.path  // type: '/login' (literal!)",
+      "note": "<strong>satisfies = validation + narrow types.</strong> Best of both worlds."
+    },
+    {
+      "type": "save",
+      "title": "TypeScript <em>assertion</em> cheat sheet",
+      "tag": "📌 SAVE THIS",
+      "items": [
+        {"icon": "🚫", "text": "as → trusts you blindly, hides type errors"},
+        {"icon": "✅", "text": "satisfies → validates AND keeps literal types"},
+        {"icon": "⚠️", "text": "as const → makes everything readonly + literal"},
+        {"icon": "💡", "text": "satisfies + as const → strictest possible typing"}
+      ],
+      "question": "Were you using 'as' everywhere? 👇"
+    },
+    {
+      "type": "cta",
+      "teaser": "Next: <em>3 TypeScript</em> patterns seniors use daily",
+      "tagline": "Pro snippets. Zero fluff. Daily."
+    }
+  ]
+}

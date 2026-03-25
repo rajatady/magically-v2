@@ -1,0 +1,69 @@
+{
+  "topic": "rust_match",
+  "template": "snippet_battle",
+  "caption": "JavaScript switch is embarrassing next to Rust match.\n\nPattern matching, destructuring, exhaustive checks — all in one expression. No break statements. No fallthrough bugs.\n\nWhich pattern would you ship? A or B?\n\n#rust #javascript #coding #programming #developer #webdev #rustlang #patternmatching #cleancode #codingtips",
+  "slides": [
+    {
+      "type": "hook",
+      "badge": "RUST vs JS",
+      "title": "Which <em>branching</em> is cleaner?",
+      "problem": "Handle multiple cases with complex data",
+      "a": {
+        "label": "JS switch",
+        "code": "switch (shape.type) {\n  case 'circle':\n    area = Math.PI\n      * shape.r ** 2;\n    break;\n  case 'rect':\n    area = shape.w\n      * shape.h;\n    break;\n}"
+      },
+      "b": {
+        "label": "Rust match",
+        "code": "let area = match shape {\n  Circle { r } =>\n    PI * r.powi(2),\n  Rect { w, h } =>\n    w * h,\n};"
+      },
+      "cta": "Pick one. Then swipe."
+    },
+    {
+      "type": "answer",
+      "badge": "RUST vs JS",
+      "title": "B wins. <em>It's an expression.</em>",
+      "verdicts": [
+        {
+          "tag": "Option A",
+          "result": "bad",
+          "title": "Statements, not expressions",
+          "text": "switch can't return a value directly. You need break. You can fall through accidentally. No exhaustive checking."
+        },
+        {
+          "tag": "Option B",
+          "result": "good",
+          "title": "Pattern matching + destructuring",
+          "text": "match returns a value. Destructures in place. The compiler forces you to handle every case. Zero fallthrough bugs."
+        }
+      ],
+      "takeaway": "Rust match is what JavaScript switch should have been."
+    },
+    {
+      "type": "deep_dive",
+      "badge": "RUST",
+      "title": "match does <em>way more.</em>",
+      "sub": "Guards, ranges, nested patterns, binding.",
+      "code": "let msg = match score {\n  100 => \"Perfect!\",\n  90..=99 => \"Excellent\",\n  n if n >= 70 => \"Pass\",\n  _ => \"Try again\",\n};\n\n// Destructure nested enums\nmatch event {\n  Click { pos: (x, y) }\n    if x > 0 => handle(x, y),\n  Hover { duration }\n    if duration > 2.0 => tooltip(),\n  _ => {},\n}"
+    },
+    {
+      "type": "save",
+      "badge": "RUST vs JS",
+      "tag": "📌 SAVE THIS",
+      "title": "Rust match Cheat Sheet",
+      "items": [
+        {"icon": "🔹", "text": "match value { pattern => result }"},
+        {"icon": "🔹", "text": "Destructure structs: Point { x, y } =>"},
+        {"icon": "🔹", "text": "Guards: n if n > 0 =>"},
+        {"icon": "🔹", "text": "Ranges: 1..=10 =>"},
+        {"icon": "🔹", "text": "Wildcard: _ => (must handle all cases)"},
+        {"icon": "🔹", "text": "Returns a value — it's an expression"}
+      ]
+    },
+    {
+      "type": "cta",
+      "badge": "RUST vs JS",
+      "teaser": "Next: Rust ownership — explained for JS developers",
+      "tagline": "Pro snippets. Zero fluff."
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "topic": "v2_13_react_compiler",
+  "slides": [
+    {
+      "type": "hook",
+      "bg": "#0a0a0a",
+      "accent": "#ff9f0a",
+      "gradient": "linear-gradient(160deg, #0a0a0a 0%, #1a1020 50%, #0a0a0a 100%)",
+      "badge": "REACT 19",
+      "title": "Which <em>optimization</em> is better?",
+      "problem": "Prevent unnecessary re-renders in React",
+      "a": {
+        "label": "Manual memo",
+        "code": "const val = useMemo(\n  () => calc(x), [x]\n);\nconst fn = useCallback(\n  () => run(), []\n);"
+      },
+      "b": {
+        "label": "React Compiler",
+        "code": "const val = calc(x);\nconst fn = () => run();"
+      }
+    },
+    {
+      "type": "cta",
+      "bg": "#0a0a0a",
+      "accent": "#ff9f0a",
+      "teaser": "Next: 3 CSS tricks"
+    }
+  ]
+}

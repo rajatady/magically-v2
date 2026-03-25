@@ -1,0 +1,8 @@
+app = "coding-tips-pro-agent"
+primary_region = "bom"
+
+[build]
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

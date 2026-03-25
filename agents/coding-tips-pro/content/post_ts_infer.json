@@ -1,0 +1,68 @@
+{
+  "topic": "ts_infer",
+  "template": "snippet_battle",
+  "caption": "Stop writing manual type extraction.\n\nTypeScript's infer keyword lets you extract types from inside other types. One line. Zero boilerplate.\n\nWhich pattern do you use? A or B?\n\n#typescript #infer #coding #programming #developer #webdev #frontend #cleancode #types #codingtips",
+  "slides": [
+    {
+      "type": "hook",
+      "badge": "TYPESCRIPT",
+      "title": "Which <em>type extraction</em> is cleaner?",
+      "problem": "Extract the return type of a function",
+      "a": {
+        "label": "Manual extraction",
+        "code": "type GetReturn&lt;T&gt; =\n  T extends (...args: any[])\n    =&gt; any\n    ? ReturnType&lt;T&gt;\n    : never;"
+      },
+      "b": {
+        "label": "Using infer",
+        "code": "type GetReturn&lt;T&gt; =\n  T extends\n    (...args: any[]) =&gt; infer R\n    ? R\n    : never;"
+      },
+      "cta": "Pick one. Then swipe."
+    },
+    {
+      "type": "answer",
+      "badge": "TYPESCRIPT",
+      "title": "B wins. <em>infer extracts directly.</em>",
+      "verdicts": [
+        {
+          "tag": "Option A",
+          "result": "bad",
+          "title": "Depends on built-in utility",
+          "text": "ReturnType is itself built with infer. You're adding a layer of indirection when you could just do it directly."
+        },
+        {
+          "tag": "Option B",
+          "result": "good",
+          "title": "Extracts the type inline",
+          "text": "infer R captures whatever type sits in that position. No utility types needed. Works for any shape — arrays, promises, functions, objects."
+        }
+      ],
+      "takeaway": "infer is the scalpel. Utility types are the Swiss army knife."
+    },
+    {
+      "type": "deep_dive",
+      "badge": "TYPESCRIPT",
+      "title": "<em>infer</em> works everywhere.",
+      "sub": "Arrays, Promises, objects, tuples — extract any nested type.",
+      "code": "// Extract array element type\ntype Elem&lt;T&gt; =\n  T extends (infer E)[] ? E : never;\n\n// Unwrap a Promise\ntype Unwrap&lt;T&gt; =\n  T extends Promise&lt;infer V&gt;\n    ? V : T;\n\n// Extract prop type from object\ntype PropType&lt;T, K extends keyof T&gt; =\n  T extends { [P in K]: infer V }\n    ? V : never;\n\n// First element of a tuple\ntype First&lt;T&gt; =\n  T extends [infer F, ...any[]] ? F : never;"
+    },
+    {
+      "type": "save",
+      "badge": "TYPESCRIPT",
+      "tag": "📌 SAVE THIS",
+      "title": "TypeScript infer Cheat Sheet",
+      "items": [
+        {"icon": "🔹", "text": "infer R — capture a type variable in a conditional"},
+        {"icon": "🔹", "text": "T extends (infer E)[] — extract array element"},
+        {"icon": "🔹", "text": "T extends Promise<infer V> — unwrap Promise"},
+        {"icon": "🔹", "text": "T extends (...args: any[]) => infer R — return type"},
+        {"icon": "🔹", "text": "T extends [infer F, ...infer R] — tuple destructure"}
+      ]
+    },
+    {
+      "type": "cta",
+      "badge": "TYPESCRIPT",
+      "teaser": "Next: Temporal API — the built-in that killed Moment.js",
+      "tagline": "Pro snippets. Zero fluff."
+    }
+  ]
+}

@@ -1,0 +1,69 @@
+{
+  "topic": "css_nesting",
+  "template": "snippet_battle",
+  "caption": "Stop using Sass just for nesting.\n\nCSS can nest natively now. No preprocessor. No build step. No dependencies.\n\nEvery major browser supports it since 2023.\n\nWhich way do you write CSS? A or B?\n\n#css #webdev #frontend #coding #programming #developer #codingtips #sass #webdesign #html",
+  "slides": [
+    {
+      "type": "hook",
+      "badge": "CSS",
+      "title": "Which <em>nesting</em> is better?",
+      "problem": "Nest child selectors without a preprocessor",
+      "a": {
+        "label": "Sass / SCSS",
+        "code": ".card {\n  background: white;\n  .title {\n    font-size: 24px;\n  }\n  &:hover {\n    background: #f0f0f0;\n  }\n}"
+      },
+      "b": {
+        "label": "Native CSS",
+        "code": ".card {\n  background: white;\n  .title {\n    font-size: 24px;\n  }\n  &:hover {\n    background: #f0f0f0;\n  }\n}"
+      },
+      "cta": "Pick one. Then swipe."
+    },
+    {
+      "type": "answer",
+      "badge": "CSS",
+      "title": "B wins. <em>They're identical.</em>",
+      "verdicts": [
+        {
+          "tag": "Option A",
+          "result": "bad",
+          "title": "Requires Sass + build step",
+          "text": "You need node-sass or dart-sass, a build pipeline, a config file, and a watcher. All just to nest selectors."
+        },
+        {
+          "tag": "Option B",
+          "result": "good",
+          "title": "Native CSS — zero dependencies",
+          "text": "Same syntax works natively in the browser. No build step. No npm install. No config. Just write CSS."
+        }
+      ],
+      "takeaway": "The #1 reason people used Sass is now built into CSS."
+    },
+    {
+      "type": "deep_dive",
+      "badge": "CSS",
+      "title": "Native nesting is <em>even better.</em>",
+      "sub": "It supports things Sass can't do natively.",
+      "code": ".card {\n  background: white;\n\n  /* Nest selectors */\n  .title { font-weight: bold; }\n  .body  { color: #333; }\n\n  /* Pseudo-classes */\n  &:hover { box-shadow: 0 4px 12px #0002; }\n  &:focus-within { outline: 2px solid blue; }\n\n  /* Media queries inline */\n  @media (width &lt; 768px) {\n    padding: 1rem;\n  }\n}"
+    },
+    {
+      "type": "save",
+      "badge": "CSS",
+      "tag": "📌 SAVE THIS",
+      "title": "CSS Nesting Cheat Sheet",
+      "items": [
+        {"icon": "🔹", "text": ".parent { .child { } } — direct nesting"},
+        {"icon": "🔹", "text": "& — reference parent (same as Sass)"},
+        {"icon": "🔹", "text": "@media inside rules — inline breakpoints"},
+        {"icon": "🔹", "text": "No & needed for class/element selectors"},
+        {"icon": "🔹", "text": "Works in Chrome, Safari, Firefox, Edge"},
+        {"icon": "🔹", "text": "Zero build step — just ship .css files"}
+      ]
+    },
+    {
+      "type": "cta",
+      "badge": "CSS",
+      "teaser": "Next: The CSS property that replaces 10 media queries",
+      "tagline": "Pro snippets. Zero fluff."
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "topic": "v2_23_let_const",
+  "slides": [
+    {
+      "type": "hook",
+      "bg": "#0a0a0a",
+      "accent": "#ff9f0a",
+      "gradient": "linear-gradient(160deg, #0a0a0a 0%, #081508 50%, #0a0a0a 100%)",
+      "badge": "JAVASCRIPT",
+      "title": "Which <em>declaration</em>?",
+      "problem": "Declare variables in JavaScript",
+      "a": {
+        "label": "let",
+        "code": "let count = 0;\nlet name = \"Ada\";\nlet items = [];\nlet config = {};\nlet active = true;"
+      },
+      "b": {
+        "label": "const",
+        "code": "const count = 0;\nconst name = \"Ada\";"
+      }
+    },
+    {
+      "type": "cta",
+      "bg": "#0a0a0a",
+      "accent": "#ff9f0a",
+      "teaser": "Next: 4 Node.js built-ins"
+    }
+  ]
+}

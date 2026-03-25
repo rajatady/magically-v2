@@ -1,0 +1,89 @@
+{
+  "topic": "nextjs_cache",
+  "template": "tutorial_reveal",
+  "caption": "6 Next.js cache patterns that will save your production.\n\nNext.js 15 changed everything about caching. No more magic. You control what caches, when it expires, and how to bust it.\n\nIf you're still using the old defaults, your app is stale.\n\n📌 SAVE this cache reference.\n\nWhich pattern surprised you? 👇\n\n#nextjs #react #webdev #coding #programming #frontend #developer #caching #nextjs15 #codingtips",
+  "slides": [
+    {
+      "type": "title",
+      "title": "Next.js <em>cache</em> patterns that save your production",
+      "subtitle": "Next.js 15 changed everything. No more magic caching.",
+      "tag": "NEXT.JS 15",
+      "number": "6",
+      "hooks": ["revalidateTag", "unstable_cache", "no-store", "revalidatePath", "cache()", "ISR"]
+    },
+    {
+      "type": "item",
+      "number": "01",
+      "tag": "NEXT.JS 15",
+      "title": "<em>fetch</em> is no longer cached by default",
+      "desc": "In Next.js 15, fetch() defaults to no-cache. You must opt in.",
+      "code": "// Next.js 14: cached by default\nfetch(url);\n\n// Next.js 15: NOT cached\nfetch(url);\n\n// Opt in to caching:\nfetch(url, {\n  next: { revalidate: 3600 }\n});",
+      "punchline": "The biggest breaking change in Next.js 15."
+    },
+    {
+      "type": "item",
+      "number": "02",
+      "tag": "NEXT.JS 15",
+      "title": "<em>revalidateTag</em> — surgical cache busting",
+      "desc": "Tag your cached data. Invalidate by tag when data changes.",
+      "code": "// Tag the fetch\nfetch(url, {\n  next: { tags: ['products'] }\n});\n\n// Bust it from a Server Action\n'use server';\nimport { revalidateTag } from\n  'next/cache';\n\nrevalidateTag('products');",
+      "punchline": "Invalidate exactly what changed. Nothing else."
+    },
+    {
+      "type": "item",
+      "number": "03",
+      "tag": "NEXT.JS 15",
+      "title": "<em>revalidatePath</em> — bust an entire route",
+      "desc": "When the whole page needs to refresh. Nuclear option.",
+      "code": "'use server';\nimport { revalidatePath } from\n  'next/cache';\n\n// Bust the products page\nrevalidatePath('/products');\n\n// Bust everything under /shop\nrevalidatePath('/shop', 'layout');",
+      "punchline": "Page-level cache invalidation."
+    },
+    {
+      "type": "item",
+      "number": "04",
+      "tag": "NEXT.JS 15",
+      "title": "<em>unstable_cache</em> — cache anything",
+      "desc": "Not just fetch — cache database queries, computations, anything.",
+      "code": "import { unstable_cache } from\n  'next/cache';\n\nconst getUser = unstable_cache(\n  async (id: string) =&gt; {\n    return db.user.findUnique({\n      where: { id }\n    });\n  },\n  ['user'],\n  { revalidate: 600 }\n);",
+      "punchline": "Cache DB queries with tags and TTL."
+    },
+    {
+      "type": "item",
+      "number": "05",
+      "tag": "NEXT.JS 15",
+      "title": "React <em>cache()</em> — deduplicate per request",
+      "desc": "Multiple components call the same function? It runs once.",
+      "code": "import { cache } from 'react';\n\nexport const getUser = cache(\n  async (id: string) =&gt; {\n    return db.user.findUnique({\n      where: { id }\n    });\n  }\n);\n\n// Call in 5 components =\n// 1 database query",
+      "punchline": "Request-level dedup. Zero config."
+    },
+    {
+      "type": "item",
+      "number": "06",
+      "tag": "NEXT.JS 15",
+      "title": "<em>ISR</em> — regenerate on demand",
+      "desc": "Static pages that update without redeploy. The best of both worlds.",
+      "code": "// In your page:\nexport const revalidate = 60;\n// Regenerate every 60 seconds\n\n// Or on-demand via webhook:\n// POST /api/revalidate\nexport async function POST() {\n  revalidateTag('blog');\n  return Response.json({ ok: true });\n}",
+      "punchline": "Static speed + dynamic freshness."
+    },
+    {
+      "type": "save",
+      "title": "Next.js Cache <em>Cheat Sheet</em>",
+      "badge": "📌 SAVE THIS",
+      "tag": "CHEAT SHEET",
+      "items": [
+        {"label": "fetch no-cache", "desc": "Default in Next.js 15 — opt in to cache"},
+        {"label": "revalidateTag", "desc": "Bust cache by tag from Server Actions"},
+        {"label": "revalidatePath", "desc": "Bust entire route cache"},
+        {"label": "unstable_cache", "desc": "Cache anything — DB, compute, etc"},
+        {"label": "React cache()", "desc": "Dedup calls within a request"},
+        {"label": "ISR revalidate", "desc": "Static + on-demand regeneration"}
+      ],
+      "question": "Which pattern are you using? 👇"
+    },
+    {
+      "type": "cta",
+      "teaser": "Next: <em>Server Actions</em> — the pattern that killed API routes",
+      "tagline": "Pro snippets. Zero fluff."
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "topic": "v2_01_mirofish",
+  "slides": [
+    {
+      "type": "title",
+      "bg": "#0a0a0a",
+      "accent": "#ff9f0a",
+      "deco": "glow-top",
+      "badge": "MIROFISH",
+      "number": "700K",
+      "title": "AI Agents",
+      "subtitle": "Predicted the election. Built in 10 days.",
+      "hooks": []
+    },
+    {
+      "type": "cta",
+      "bg": "#0a0a0a",
+      "accent": "#ff9f0a",
+      "teaser": "Next: 11x faster than Chrome"
+    }
+  ]
+}

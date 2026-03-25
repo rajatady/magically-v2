@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;0,6..72,800;1,6..72,500;1,6..72,700&family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #F7F3EA;
+  --card: #FFFFFF;
+  --yellow: #FFCA28;
+  --yellow-light: #FFF8DC;
+  --yellow-dark: #D4890A;
+  --code-bg: #1B1B27;
+  --text: #1A1610;
+  --text-mid: #4A4540;
+  --text-light: #8A837A;
+  --green: #228B47;
+  --red: #C0392B;
+  --accent: #D4890A;
+}
+
+body { background: #777; }
+
+.slide {
+  width: 1080px;
+  height: 1080px;
+  background: var(--bg);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  page-break-after: always;
+}
+
+.slide::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.012'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}
+.slide > * { position: relative; z-index: 1; }
+
+/* ─── Shared ─── */
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 28px 108px 0;
+}
+.brand {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-light);
+  letter-spacing: 1px;
+}
+.tag {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  background: var(--yellow);
+  padding: 5px 18px;
+  border-radius: 20px;
+}
+.chevrons {
+  position: absolute;
+  top: 38px;
+  right: 48px;
+  font-size: 52px;
+  font-weight: 900;
+  color: var(--yellow);
+  font-family: 'DM Sans', sans-serif;
+  letter-spacing: -6px;
+  z-index: 2;
+}
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 108px;
+}
+.foot {
+  padding: 0 108px 26px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.dots { display: flex; gap: 8px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: #D5CFC5; }
+.dot.active { background: var(--yellow-dark); width: 24px; border-radius: 4px; }
+.foot-label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--yellow-dark);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.handle-bar {
+  display: inline-block;
+  background: var(--yellow);
+  padding: 10px 32px;
+  border-radius: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* ═══ TITLE CARD ═══ */
+.title-card {
+  text-align: center;
+  position: relative;
+}
+
+/* 3D hero element */
+.title-hero {
+  position: relative;
+  width: 400px;
+  height: 340px;
+  margin: 0 auto 16px;
+}
+.title-hero .yellow-circle {
+  width: 320px;
+  height: 320px;
+  background: var(--yellow);
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 0;
+}
+/* Orbiting rings — React atom style */
+.title-hero .orbit {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  border: 4px solid var(--text);
+  border-radius: 50%;
+  z-index: 1;
+}
+.title-hero .orbit-1 {
+  width: 380px;
+  height: 140px;
+  transform: translate(-50%, -50%) rotate(-30deg);
+  opacity: 0.15;
+}
+.title-hero .orbit-2 {
+  width: 380px;
+  height: 140px;
+  transform: translate(-50%, -50%) rotate(30deg);
+  opacity: 0.15;
+}
+.title-hero .orbit-3 {
+  width: 380px;
+  height: 140px;
+  transform: translate(-50%, -50%) rotate(90deg);
+  opacity: 0.1;
+}
+/* Floating code fragments */
+.title-hero .float-chip {
+  position: absolute;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 8px 16px;
+  background: var(--code-bg);
+  color: #DCDCAA;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  z-index: 3;
+}
+.title-hero .float-chip:nth-child(5) { top: 0; left: 0; transform: rotate(-6deg); }
+.title-hero .float-chip:nth-child(6) { top: 10px; right: -20px; transform: rotate(4deg); }
+.title-hero .float-chip:nth-child(7) { bottom: 10px; left: -10px; transform: rotate(3deg); }
+.title-hero .float-chip:nth-child(8) { bottom: 0; right: 0; transform: rotate(-3deg); }
+
+.title-hero .number-splash {
+  font-family: 'Newsreader', serif;
+  font-size: 260px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 0.85;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -52%);
+  z-index: 2;
+  text-shadow: 4px 4px 0 rgba(255,202,40,0.3);
+}
+.title-card h1 {
+  font-family: 'Newsreader', serif;
+  font-size: 72px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.08;
+  margin-bottom: 16px;
+  position: relative;
+  z-index: 1;
+}
+.title-card h1 em { color: var(--accent); font-style: italic; }
+.title-card .subtitle {
+  font-family: 'Newsreader', serif;
+  font-size: 28px;
+  font-weight: 400;
+  font-style: italic;
+  color: var(--text-light);
+  position: relative;
+  z-index: 1;
+}
+.title-card .hook-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 36px;
+  position: relative;
+  z-index: 1;
+}
+.title-card .hook-chip {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 18px;
+  font-weight: 600;
+  padding: 12px 22px;
+  background: var(--code-bg);
+  color: #D4D4D4;
+  border-radius: 10px;
+}
+.title-card .hook-chip .fn { color: #DCDCAA; }
+.title-card .hook-chip .kw { color: #C586C0; }
+
+/* ═══ ITEM CARD (one hook per slide) ═══ */
+.item-card { }
+.item-card .item-number {
+  font-family: 'Newsreader', serif;
+  font-size: 120px;
+  font-weight: 800;
+  color: var(--yellow);
+  opacity: 0.3;
+  line-height: 1;
+  margin-bottom: -20px;
+}
+.item-card h2 {
+  font-family: 'Newsreader', serif;
+  font-size: 52px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.1;
+  margin-bottom: 14px;
+}
+.item-card h2 em { color: var(--accent); font-style: italic; }
+.item-card .desc {
+  font-family: 'Newsreader', serif;
+  font-size: 24px;
+  font-weight: 400;
+  color: var(--text-mid);
+  line-height: 1.5;
+  margin-bottom: 24px;
+  font-style: italic;
+}
+.item-card .code-block {
+  padding: 24px 28px;
+  background: var(--code-bg);
+  border-radius: 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 19px;
+  line-height: 1.65;
+  color: #D4D4D4;
+  margin-bottom: 18px;
+}
+.item-card .code-block .kw { color: #C586C0; }
+.item-card .code-block .str { color: #CE9178; }
+.item-card .code-block .num { color: #B5CEA8; }
+.item-card .code-block .type { color: #4EC9B0; }
+.item-card .code-block .fn { color: #DCDCAA; }
+.item-card .code-block .cm { color: #6A9955; }
+.item-card .punchline {
+  font-family: 'Newsreader', serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--accent);
+  text-align: center;
+  font-style: italic;
+}
+
+/* ═══ SAVE CARD ═══ */
+.save-card { text-align: center; }
+.save-badge {
+  display: inline-block;
+  background: var(--code-bg);
+  color: #fff;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 7px 24px;
+  border-radius: 30px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 24px;
+}
+.save-card h2 {
+  font-family: 'Newsreader', serif;
+  font-size: 56px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.1;
+  margin-bottom: 28px;
+}
+.save-card h2 em { color: var(--accent); font-style: italic; }
+.save-items { display: flex; flex-direction: column; gap: 12px; }
+.save-item {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 18px 28px;
+  background: white;
+  border-radius: 14px;
+  box-shadow: 0 2px 12px rgba(100,80,30,0.07);
+  text-align: left;
+}
+.save-item .mono-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--accent);
+  flex-shrink: 0;
+  min-width: 200px;
+}
+.save-item .save-desc {
+  font-family: 'Newsreader', serif;
+  font-size: 21px;
+  font-weight: 400;
+  color: var(--text-mid);
+  font-style: italic;
+}
+.save-card .question {
+  margin-top: 28px;
+  font-family: 'Newsreader', serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--yellow-dark);
+  font-style: italic;
+}
+
+/* ═══ CTA SLIDE ═══ */
+.cta-card { text-align: center; }
+.cta-card .teaser {
+  font-family: 'Newsreader', serif;
+  font-size: 48px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.15;
+  margin-bottom: 36px;
+}
+.cta-card .teaser em { color: var(--accent); font-style: italic; }
+.cta-card .tagline {
+  margin-top: 20px;
+  font-family: 'Newsreader', serif;
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--text-light);
+  font-style: italic;
+}
+</style>
+</head>
+<body>
+<script>
+const slides = SLIDES_JSON_PLACEHOLDER;
+const BRAND = "@coding_tips_pro";
+const TOTAL = slides.length;
+
+function dots(idx) {
+  return Array.from({length: TOTAL}, (_, i) =>
+    `<div class="dot${i === idx ? ' active' : ''}"></div>`
+  ).join('');
+}
+
+function hl(code) {
+  const toks = [];
+  let t = code
+    .replace(/\/\/(.*)/g, m => { toks.push(`<span class="cm">${m}</span>`); return `__T${toks.length-1}__`; })
+    .replace(/(["'`])(.*?)\1/g, m => { toks.push(`<span class="str">${m}</span>`); return `__T${toks.length-1}__`; });
+  t = t
+    .replace(/\b(const|let|var|function|return|if|else|new|export|import|from|async|await|class|extends|typeof|for|of|in|try|catch|throw|using|yield|true|false|null)\b/g, '<span class="kw">$1</span>')
+    .replace(/\b(\d+\.?\d*)\b/g, '<span class="num">$1</span>')
+    .replace(/\b([A-Z][a-zA-Z]*)\b/g, '<span class="type">$1</span>')
+    .replace(/\.([a-zA-Z_]+)\s*\(/g, '.<span class="fn">$1</span>(');
+  toks.forEach((tok, i) => { t = t.replace(`__T${i}__`, tok); });
+  return t;
+}
+
+slides.forEach((s, idx) => {
+  const el = document.createElement('div');
+  el.className = 'slide';
+
+  const bar = `<div class="top-bar"><span class="brand">${BRAND}</span>${s.tag ? `<span class="tag">${s.tag}</span>` : ''}</div>`;
+  const foot = `<div class="foot"><div class="dots">${dots(idx)}</div><span class="foot-label">${idx < TOTAL-1 ? 'Swipe →' : BRAND}</span></div>`;
+
+  let content = '';
+
+  if (s.type === 'title') {
+    const chips = (s.hooks || []).map(h =>
+      `<span class="hook-chip">${hl(h)}</span>`
+    ).join('');
+    // Pick 4 hooks for floating chips around the hero
+    const floatChips = (s.hooks || []).slice(0, 4).map(h =>
+      `<span class="float-chip">${hl(h)}</span>`
+    ).join('');
+
+    content = `<div class="content title-card">
+      <div class="title-hero">
+        <div class="yellow-circle"></div>
+        <div class="orbit orbit-1"></div>
+        <div class="orbit orbit-2"></div>
+        <div class="orbit orbit-3"></div>
+        ${floatChips}
+        ${s.number ? `<div class="number-splash">${s.number}</div>` : ''}
+      </div>
+      <h1>${s.title}</h1>
+      <p class="subtitle">${s.subtitle || ''}</p>
+    </div>`;
+  }
+
+  else if (s.type === 'item') {
+    content = `<div class="content item-card">
+      <div class="item-number">${s.number || ''}</div>
+      <h2>${s.title}</h2>
+      <p class="desc">${s.desc || ''}</p>
+      <pre class="code-block">${hl(s.code)}</pre>
+      ${s.punchline ? `<p class="punchline">${s.punchline}</p>` : ''}
+    </div>`;
+  }
+
+  else if (s.type === 'save') {
+    const items = (s.items || []).map(i =>
+      `<div class="save-item"><span class="mono-label">${i.label}</span><span class="save-desc">${i.desc}</span></div>`
+    ).join('');
+    content = `<div class="content save-card">
+      <span class="save-badge">${s.badge || '📌 SAVE THIS'}</span>
+      <h2>${s.title}</h2>
+      <div class="save-items">${items}</div>
+      ${s.question ? `<p class="question">${s.question}</p>` : ''}
+    </div>`;
+  }
+
+  else if (s.type === 'cta') {
+    content = `<div class="content cta-card">
+      <p class="teaser">${s.teaser}</p>
+      <div class="handle-bar">${BRAND}</div>
+      <p class="tagline">${s.tagline || 'Pro snippets. Zero fluff.'}</p>
+    </div>`;
+  }
+
+  el.innerHTML = `<span class="chevrons">&gt;&gt;&gt;</span>` + bar + content + foot;
+  document.body.appendChild(el);
+});
+</script>
+</body>
+</html>

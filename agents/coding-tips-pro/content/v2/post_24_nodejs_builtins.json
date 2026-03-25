@@ -1,0 +1,26 @@
+{
+  "topic": "v2_24_nodejs_builtins",
+  "slides": [
+    {
+      "type": "title",
+      "bg": "#e4d6ff",
+      "accent": "#7c3aed",
+      "badge": "NODE.JS",
+      "number": "4",
+      "title": "Node.js built-ins you're <em>still npm installing</em>",
+      "subtitle": "fetch(), test runner, parseArgs, and more.",
+      "hooks": [
+        "fetch()",
+        "node:test",
+        "parseArgs",
+        "watch"
+      ]
+    },
+    {
+      "type": "cta",
+      "bg": "#e4d6ff",
+      "accent": "#7c3aed",
+      "teaser": "Follow for more"
+    }
+  ]
+}
