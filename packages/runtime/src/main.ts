@@ -11,12 +11,19 @@ async function bootstrap() {
   });
 
   // Allow the web app (Vite dev server) to talk to the runtime
+  const corsOrigins = [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'app://.',
+  ];
+
+  // Add production web URL if set
+  if (process.env.WEB_URL) {
+    corsOrigins.push(process.env.WEB_URL);
+  }
+
   app.enableCors({
-    origin: [
-      'http://localhost:5173',  // Vite default
-      'http://localhost:3000',
-      'app://.',                // macOS WebView / Tauri
-    ],
+    origin: corsOrigins,
     credentials: true,
   });
 
