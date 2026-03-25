@@ -27,7 +27,9 @@ export class AgentsService implements OnModuleInit {
   }
 
   async scanAgentsDir(agentsDir?: string) {
-    const dir = agentsDir ?? resolve(process.cwd(), '..', '..', 'agents');
+    const dir = agentsDir
+      ?? process.env.AGENTS_DIR
+      ?? resolve(process.cwd(), '..', '..', 'agents');
     if (!existsSync(dir)) {
       this.logger.warn(`Agents directory not found: ${dir}`);
       return;
