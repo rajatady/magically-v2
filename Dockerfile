@@ -7,7 +7,7 @@ COPY package.json bun.lock turbo.json tsconfig.base.json ./
 COPY packages/runtime/package.json packages/runtime/
 COPY packages/agent-sdk/package.json packages/agent-sdk/
 COPY packages/widget-dsl/package.json packages/widget-dsl/
-RUN bun install --frozen-lockfile
+RUN bun install
 
 COPY packages/runtime/ packages/runtime/
 COPY packages/agent-sdk/ packages/agent-sdk/
@@ -24,7 +24,7 @@ COPY --from=builder /app/package.json /app/bun.lock ./
 COPY --from=builder /app/packages/runtime/package.json packages/runtime/
 COPY --from=builder /app/packages/agent-sdk/package.json packages/agent-sdk/
 COPY --from=builder /app/packages/widget-dsl/package.json packages/widget-dsl/
-RUN bun install --frozen-lockfile --production
+RUN bun install --production
 
 COPY --from=builder /app/packages/runtime/dist packages/runtime/dist
 COPY --from=builder /app/packages/runtime/drizzle packages/runtime/drizzle
