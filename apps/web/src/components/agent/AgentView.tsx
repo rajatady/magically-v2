@@ -1,6 +1,6 @@
 import { useStore } from '../../lib/store';
 import { useAuthStore } from '../../lib/auth';
-import { BASE_URL_URL } from '../../lib/api';
+import { BASE_URL } from '../../lib/api';
 
 export function AgentView() {
   const { activeAgentId, agents } = useStore();
