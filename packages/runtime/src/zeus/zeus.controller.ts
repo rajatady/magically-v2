@@ -23,18 +23,18 @@ export class ZeusController {
   async chat(@Body() body: ChatDto, @Res() res: Response) {
     let convId = body.conversationId;
     if (!convId) {
-      const conv = this.zeus.createConversation(body.mode);
+      const conv = await this.zeus.createConversation(body.mode);
       convId = conv.id;
     }
 
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
-    res.setHeader('X-Conversation-Id', convId);
+    res.setHeader('X-Conversation-Id', convId!);
     res.flushHeaders();
 
     try {
-      for await (const chunk of this.zeus.chat(convId, body.message)) {
+      for await (const chunk of this.zeus.chat(convId!, body.message)) {
         res.write(`data: ${JSON.stringify({ content: chunk })}\n\n`);
       }
       res.write(`data: ${JSON.stringify({ done: true, conversationId: convId })}\n\n`);
@@ -47,37 +47,37 @@ export class ZeusController {
   }
 
   @Post('conversations')
-  createConversation(@Body() body: { mode?: 'chat' | 'build' | 'edit' | 'task' }) {
+  async createConversation(@Body() body: { mode?: 'chat' | 'build' | 'edit' | 'task' }) {
     return this.zeus.createConversation(body.mode ?? 'chat');
   }
 
   @Get('conversations/:id')
-  getConversation(@Param('id') id: string) {
-    const conv = this.zeus.getConversation(id);
+  async getConversation(@Param('id') id: string) {
+    const conv = await this.zeus.getConversation(id);
     if (!conv) return { error: 'Not found' };
     return conv;
   }
 
   @Get('memory')
-  getMemory() {
+  async getMemory() {
     return this.zeus.getMemory();
   }
 
   @Post('memory')
   @HttpCode(HttpStatus.OK)
-  setMemory(@Body() body: SetMemoryDto) {
-    this.zeus.setMemory(body.key, body.value, body.category, body.source ?? 'user');
+  async setMemory(@Body() body: SetMemoryDto) {
+    await this.zeus.setMemory(body.key, body.value, body.category, body.source ?? 'user');
     return { ok: true };
   }
 
   @Delete('memory/:key')
   @HttpCode(HttpStatus.NO_CONTENT)
-  deleteMemory(@Param('key') key: string) {
-    this.zeus.deleteMemory(key);
+  async deleteMemory(@Param('key') key: string) {
+    await this.zeus.deleteMemory(key);
   }
 
   @Get('tasks')
-  getTasks() {
+  async getTasks() {
     return this.zeus.getTasks();
   }
 }
