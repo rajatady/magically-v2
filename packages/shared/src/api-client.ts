@@ -17,14 +17,14 @@ export interface ApiClientConfig {
 }
 
 export class ApiClient {
-  constructor(private readonly config: ApiClientConfig) {}
+  constructor(private readonly options: ApiClientConfig) {}
 
   private get base() {
-    return this.config.baseUrl + '/api';
+    return this.options.baseUrl + '/api';
   }
 
   private async req<T>(path: string, opts?: RequestInit): Promise<T> {
-    const token = this.config.getToken();
+    const token = this.options.getToken();
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -34,7 +34,7 @@ export class ApiClient {
     const res = await fetch(`${this.base}${path}`, { ...opts, headers });
 
     if (res.status === 401) {
-      this.config.onUnauthorized?.();
+      this.options.onUnauthorized?.();
       throw new Error('Unauthorized');
     }
 
@@ -121,7 +121,7 @@ export class ApiClient {
     message: string,
     conversationId?: string,
   ): AsyncGenerator<{ content?: string; done?: boolean; conversationId?: string; error?: string }> {
-    const token = this.config.getToken();
+    const token = this.options.getToken();
     const res = await fetch(`${this.base}/zeus/chat`, {
       method: 'POST',
       headers: {
