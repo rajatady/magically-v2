@@ -1,5 +1,6 @@
 {
-  "buildCommand": "cd ../.. && bun install && turbo run build --filter=@magically/web",
+  "installCommand": "cd ../.. && bun install",
+  "buildCommand": "bun run build",
   "outputDirectory": "dist",
   "framework": "vite"
 }
