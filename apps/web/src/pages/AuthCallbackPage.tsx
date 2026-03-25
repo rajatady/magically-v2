@@ -10,18 +10,26 @@ export function AuthCallbackPage() {
 
   useEffect(() => {
     const token = params.get('token');
+    const cliRedirect = params.get('cli_redirect');
+
     if (!token) {
       navigate('/login');
       return;
     }
 
-    // Store token, fetch user info, redirect home
+    // Store token temporarily to make the /me call
     useAuthStore.getState().setAuth(token, { id: '', email: '', name: null });
 
     auth.me()
       .then((user) => {
         setAuth(token, { id: user.sub, email: user.email, name: user.name ?? null });
-        navigate('/');
+
+        if (cliRedirect) {
+          // Send token back to CLI's local server
+          window.location.href = `${cliRedirect}?token=${encodeURIComponent(token)}`;
+        } else {
+          navigate('/');
+        }
       })
       .catch(() => {
         navigate('/login');

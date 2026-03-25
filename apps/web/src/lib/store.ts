@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { AgentSummary, FeedItem, AppConfig } from './api.js';
+import type { AgentSummary, FeedItem, AppConfig } from './api';
 
 export type View = 'home' | 'feed' | 'zeus' | 'agent' | 'build' | 'gallery' | 'settings';
 

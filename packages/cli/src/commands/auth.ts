@@ -7,6 +7,8 @@ import { createServer } from 'http';
 const DEFAULT_DIR = join(homedir(), '.magically');
 
 export const authCommand = {
+  onLoginSuccess: null as (() => void) | null,
+
   saveToken(token: string, dir = DEFAULT_DIR): void {
     if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
     writeFileSync(join(dir, 'credentials.json'), JSON.stringify({ token }, null, 2));
@@ -43,7 +45,16 @@ export const authCommand = {
 
         if (token) {
           res.writeHead(200, { 'Content-Type': 'text/html' });
-          res.end('<html><body><h2>Logged in! You can close this tab.</h2><script>window.close()</script></body></html>');
+          res.end(`<!DOCTYPE html>
+<html><head><title>Magically</title></head>
+<body style="background:#0a0a0b;color:#e8e8ed;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0">
+<div style="text-align:center">
+<div style="font-size:48px;margin-bottom:16px">&#10003;</div>
+<h2 style="margin:0 0 8px">Logged in to Magically</h2>
+<p style="color:#6b6b76">You can close this tab and return to the terminal.</p>
+</div>
+<script>setTimeout(()=>window.close(),1500)</script>
+</body></html>`);
           server.close();
           resolve(token);
         } else {
@@ -55,10 +66,10 @@ export const authCommand = {
       });
 
       server.listen(port, () => {
-        // The Google OAuth callback redirects to WEB_URL/auth/callback?token=...
-        // For CLI, we redirect to our local server instead.
-        // We append a cli_redirect param so the runtime knows to redirect back to us.
-        const loginUrl = `${base}/api/auth/google?cli_redirect=http://localhost:${port}`;
+        // Open the web login page with cli_redirect param.
+        // After login (any method), the web app redirects the token to our local server.
+        const webUrl = process.env.WEB_URL ?? 'http://localhost:5173';
+        const loginUrl = `${webUrl}/login?cli_redirect=http://localhost:${port}`;
         console.log(`Opening browser for login...`);
         console.log(`If browser doesn't open, visit: ${loginUrl}`);
 
@@ -93,7 +104,8 @@ export const authCommand = {
     try {
       const token = await authCommand.loginWithBrowser(opts.base);
       authCommand.saveToken(token);
-      console.log('Logged in successfully.');
+      console.log('Logged in successfully.\n');
+      if (authCommand.onLoginSuccess) authCommand.onLoginSuccess();
     } catch (err: any) {
       console.error(`Login failed: ${err.message}`);
       process.exit(1);

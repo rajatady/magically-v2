@@ -38,12 +38,17 @@ export class AuthController {
 
   @Public()
   @Get('google')
-  googleRedirect(@Res() res: Response) {
+  googleRedirect(@Req() req: Request, @Res() res: Response) {
     const clientId = this.config.getOrThrow('GOOGLE_CLIENT_ID');
     const redirectUri = this.getGoogleCallbackUrl();
     const scope = 'openid email profile';
 
-    const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&access_type=offline&prompt=consent`;
+    // Pass cli_redirect through Google's state param so it survives the OAuth round-trip
+    const cliRedirect = req.query.cli_redirect as string | undefined;
+    const state = cliRedirect ? Buffer.from(JSON.stringify({ cli_redirect: cliRedirect })).toString('base64url') : '';
+
+    let url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&access_type=offline&prompt=consent`;
+    if (state) url += `&state=${state}`;
 
     res.redirect(url);
   }
@@ -91,9 +96,20 @@ export class AuthController {
       googleId: profile.id,
     });
 
-    // Redirect to web app with token
+    // Check if CLI started this flow
+    const stateParam = req.query.state as string | undefined;
+    let cliRedirect: string | undefined;
+    if (stateParam) {
+      try {
+        const state = JSON.parse(Buffer.from(stateParam, 'base64url').toString());
+        cliRedirect = state.cli_redirect;
+      } catch {}
+    }
+
+    // Redirect to web app with token (and cli_redirect if present)
     const webUrl = this.config.get('WEB_URL') ?? 'http://localhost:5173';
-    res.redirect(`${webUrl}/auth/callback?token=${result.accessToken}`);
+    const callbackUrl = `${webUrl}/auth/callback?token=${result.accessToken}${cliRedirect ? `&cli_redirect=${encodeURIComponent(cliRedirect)}` : ''}`;
+    res.redirect(callbackUrl);
   }
 
   // ─── API Keys ─────────────────────────────────────────────────────────────

@@ -1,151 +1,50 @@
+import { ApiClient } from '@magically/shared';
 import { useAuthStore } from './auth';
 
-export const BASE = (import.meta.env.VITE_API_URL ?? 'http://localhost:4321') + '/api';
+export type {
+  AgentSummary,
+  FeedItem,
+  AppConfig,
+  MemoryEntry,
+  ZeusTask,
+  RunResult,
+  AuthResult,
+} from '@magically/shared';
 
-function authHeaders(): Record<string, string> {
+export const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:4321';
+
+export const api = new ApiClient({
+  baseUrl: BASE_URL,
+  getToken: () => useAuthStore.getState().token,
+  onUnauthorized: () => {
+    useAuthStore.getState().logout();
+    window.location.href = '/login';
+  },
+});
+
+// Re-export for convenience
+export const { auth, agents, feed, zeus, config } = api;
+
+// Streaming needs direct access to fetch with auth — keep it here
+export async function* streamZeusChat(
+  message: string,
+  conversationId?: string,
+): AsyncGenerator<{ content?: string; done?: boolean; conversationId?: string; error?: string }> {
   const token = useAuthStore.getState().token;
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
-
-async function req<T>(path: string, opts?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...authHeaders(), ...opts?.headers },
-    ...opts,
+  const res = await fetch(`${BASE_URL}/api/zeus/chat`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ message, conversationId }),
   });
+
   if (res.status === 401) {
     useAuthStore.getState().logout();
     window.location.href = '/login';
     throw new Error('Unauthorized');
   }
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`API ${opts?.method ?? 'GET'} ${path} → ${res.status}: ${text}`);
-  }
-  return res.json() as Promise<T>;
-}
-
-// ─── Auth ────────────────────────────────────────────────────────────────────
-
-export const auth = {
-  signup: (email: string, password: string, name?: string) =>
-    req<{ user: { id: string; email: string; name: string | null }; accessToken: string }>('/auth/signup', {
-      method: 'POST',
-      body: JSON.stringify({ email, password, name }),
-    }),
-  login: (email: string, password: string) =>
-    req<{ user: { id: string; email: string; name: string | null }; accessToken: string }>('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    }),
-  me: () => req<{ sub: string; email: string; name?: string }>('/auth/me'),
-  createApiKey: (name: string) =>
-    req<{ rawKey: string; apiKey: { id: string; name: string } }>('/auth/api-keys', {
-      method: 'POST',
-      body: JSON.stringify({ name }),
-    }),
-  googleUrl: `${BASE}/auth/google`,
-};
-
-// ─── Agents ──────────────────────────────────────────────────────────────────
-
-export interface AgentSummary {
-  id: string;
-  name: string;
-  version: string;
-  description?: string;
-  icon?: string;
-  color?: string;
-  enabled: boolean;
-  hasWidget: boolean;
-  functions: Array<{ name: string; description: string }>;
-}
-
-export const agents = {
-  list: () => req<AgentSummary[]>('/agents'),
-  get: (id: string) => req<AgentSummary>(`/agents/${id}`),
-  widget: (id: string) => req<unknown>(`/agents/${id}/widget`),
-  action: (id: string, action: string, payload?: unknown) =>
-    req(`/agents/${id}/action`, { method: 'POST', body: JSON.stringify({ action, payload }) }),
-  enable: (id: string) => req(`/agents/${id}/enable`, { method: 'PUT' }),
-  disable: (id: string) => req(`/agents/${id}/disable`, { method: 'PUT' }),
-};
-
-// ─── Feed ─────────────────────────────────────────────────────────────────────
-
-export interface FeedItem {
-  id: string;
-  agentId?: string;
-  type: 'info' | 'success' | 'warning' | 'error' | 'audio';
-  title: string;
-  body?: string;
-  data?: unknown;
-  audioUrl?: string;
-  read: boolean;
-  createdAt: string;
-}
-
-export const feed = {
-  list: (limit?: number) => req<FeedItem[]>(`/feed${limit ? `?limit=${limit}` : ''}`),
-  markRead: (id: string) => req(`/feed/${id}/read`, { method: 'POST' }),
-  dismiss: (id: string) => req(`/feed/${id}/dismiss`, { method: 'POST' }),
-};
-
-// ─── Zeus ─────────────────────────────────────────────────────────────────────
-
-export interface MemoryEntry {
-  id: string;
-  key: string;
-  value: string;
-  category: string;
-  source: string;
-}
-
-export interface ZeusTask {
-  id: string;
-  requesterId: string;
-  goal: string;
-  status: string;
-  priority: string;
-  createdAt: string;
-}
-
-export const zeus = {
-  createConversation: (mode?: string) =>
-    req<{ id: string; mode: string; messages: unknown[] }>('/zeus/conversations', {
-      method: 'POST',
-      body: JSON.stringify({ mode }),
-    }),
-  memory: () => req<MemoryEntry[]>('/zeus/memory'),
-  tasks: () => req<ZeusTask[]>('/zeus/tasks'),
-};
-
-// ─── Config ───────────────────────────────────────────────────────────────────
-
-export interface AppConfig {
-  hasApiKey: boolean;
-  defaultModel?: string;
-  zeusName?: string;
-  theme?: string;
-  accentColor?: string;
-}
-
-export const config = {
-  get: () => req<AppConfig>('/config'),
-  update: (partial: Partial<AppConfig & { openrouterApiKey?: string }>) =>
-    req<AppConfig>('/config', { method: 'PUT', body: JSON.stringify(partial) }),
-};
-
-// ─── Zeus streaming chat ─────────────────────────────────────────────────────
-
-export async function* streamZeusChat(
-  message: string,
-  conversationId?: string,
-): AsyncGenerator<{ content?: string; done?: boolean; conversationId?: string; error?: string }> {
-  const res = await fetch(`${BASE}/zeus/chat`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...authHeaders() },
-    body: JSON.stringify({ message, conversationId }),
-  });
 
   if (!res.ok || !res.body) {
     throw new Error(`Zeus chat failed: ${res.status}`);

@@ -1,6 +1,6 @@
 import { useStore } from '../../lib/store';
 import { useAuthStore } from '../../lib/auth';
-import { BASE } from '../../lib/api';
+import { BASE_URL_URL } from '../../lib/api';
 
 export function AgentView() {
   const { activeAgentId, agents } = useStore();
@@ -40,7 +40,7 @@ export function AgentView() {
     );
   }
 
-  const src = `${BASE}/agents/${agent.id}/ui?token=${encodeURIComponent(token ?? '')}`;
+  const src = `${BASE_URL}/agents/${agent.id}/ui?token=${encodeURIComponent(token ?? '')}`;
 
   return (
     <div

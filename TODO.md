@@ -4,7 +4,7 @@
 
 | Done | Task | Description |
 |------|------|-------------|
-| [ ] | Authentication | Config API is completely open. Add auth middleware (API keys or JWT) before production. |
+| [x] | Authentication | Google OAuth + email/password, JWT, API keys, global guard, CLI login flow. |
 | [ ] | Agent install/uninstall at runtime | Currently filesystem-scan only. Can't add/remove agents without restart. Need registry-backed install. |
 | [ ] | Agent registry | No way to publish, discover, or pull agents. Need DB-backed registry with versioning. |
 | [ ] | Secrets management API | Table exists, no endpoints. Need CRUD API for per-agent secrets. |
@@ -47,6 +47,7 @@
 | [ ] | Agent install UI | Browse registry, one-click install, permission grants. |
 | [ ] | Notifications | Agent feed posts trigger notifications. |
 | [ ] | Mobile responsive | OS should work on phone screens. |
+| [ ] | Frontend optimization | Each view makes its own API calls. Centralize data fetching, remove duplicate calls, use shared ApiClient properly. |
 
 ## Infrastructure
 

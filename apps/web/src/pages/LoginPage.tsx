@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { auth } from '../lib/api';
 import { useAuthStore } from '../lib/auth';
 
@@ -11,7 +11,22 @@ export function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [params] = useSearchParams();
   const setAuth = useAuthStore((s) => s.setAuth);
+
+  // If CLI started the login, redirect the token back to CLI instead of navigating to /
+  const cliRedirect = params.get('cli_redirect');
+
+  const onLoginSuccess = (token: string, user: { id: string; email: string; name: string | null }) => {
+    setAuth(token, user);
+
+    if (cliRedirect) {
+      // Send token to CLI's local server and show success message
+      window.location.href = `${cliRedirect}?token=${encodeURIComponent(token)}`;
+    } else {
+      navigate('/');
+    }
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -23,13 +38,11 @@ export function LoginPage() {
         ? await auth.login(email, password)
         : await auth.signup(email, password, name);
 
-      setAuth(result.accessToken, {
+      onLoginSuccess(result.accessToken, {
         id: result.user.id,
         email: result.user.email,
         name: result.user.name,
       });
-
-      navigate('/');
     } catch (err: any) {
       setError(err.message || 'Something went wrong');
     } finally {
@@ -62,7 +75,7 @@ export function LoginPage() {
         </p>
 
         <a
-          href={auth.googleUrl}
+          href={auth.googleUrl + (cliRedirect ? `?cli_redirect=${encodeURIComponent(cliRedirect)}` : '')}
           style={{
             display: 'flex',
             alignItems: 'center',
