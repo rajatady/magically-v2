@@ -9,6 +9,7 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "noEmit": true,
+    "types": ["vite/client"],
     "esModuleInterop": true,
     "paths": {
       "@magically/agent-sdk": ["../../packages/agent-sdk/src/index.ts"],
