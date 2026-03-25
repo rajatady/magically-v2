@@ -1,17 +1,29 @@
 {
-  "id": "coding-tips-pro",
-  "name": "Coding Tips Pro",
+  "id": "instagram-auto-poster",
+  "name": "Instagram Auto Poster",
   "version": "1.0.0",
-  "description": "Autonomous Instagram content engine — generates, renders, publishes, and tracks programming tip carousels",
-  "icon": "💻",
-  "color": "#6366f1",
+  "description": "Autonomous Instagram content engine — generates, renders, publishes, and tracks carousels and reels on a schedule",
+  "icon": "📸",
+  "color": "#E1306C",
   "author": "kumar",
+  "category": "social",
+  "tags": ["instagram", "social-media", "content", "automation"],
 
   "secrets": [
-    "IG_CT_ACCESS_TOKEN",
-    "IG_CT_ACCOUNT_ID",
+    "IG_ACCESS_TOKEN",
+    "IG_ACCOUNT_ID",
     "BLOB_READ_WRITE_TOKEN"
   ],
+
+  "config": {
+    "accountHandle": { "type": "string", "label": "Instagram handle", "required": true },
+    "postingFrequency": { "type": "string", "label": "Hours between posts", "default": "4" },
+    "contentNiche": { "type": "string", "label": "What kind of content?", "required": true },
+    "targetAudience": { "type": "string", "label": "Who is your audience?" },
+    "languages": { "type": "array", "label": "Programming languages to cover", "default": ["javascript", "python"] },
+    "autoPublish": { "type": "boolean", "label": "Publish without approval", "default": false },
+    "postsPerCycle": { "type": "number", "label": "Posts per growth cycle", "default": 4 }
+  },
 
   "runtime": {
     "base": "python:3.12-slim",

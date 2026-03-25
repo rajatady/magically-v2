@@ -153,6 +153,60 @@ export const apiKeys = pgTable('api_keys', {
 export type ApiKey = typeof apiKeys.$inferSelect;
 export type NewApiKey = typeof apiKeys.$inferInsert;
 
+// ─── Registry: Agents ────────────────────────────────────────────────────────
+
+export const registryAgents = pgTable('registry_agents', {
+  id: text('id').primaryKey(),                            // e.g. 'instagram-auto-poster'
+  name: text('name').notNull(),
+  description: text('description'),
+  icon: text('icon'),
+  color: text('color'),
+  authorId: text('author_id').notNull().references(() => users.id),
+  category: text('category'),
+  tags: jsonb('tags').$type<string[]>().default([]),
+  latestVersion: text('latest_version').notNull(),
+  status: text('status').notNull().default('draft'),       // 'draft' | 'live' | 'deprecated' | 'yanked'
+  installs: integer('installs').notNull().default(0),
+  createdAt: timestamp('created_at').notNull(),
+  updatedAt: timestamp('updated_at').notNull(),
+});
+
+export type RegistryAgentRow = typeof registryAgents.$inferSelect;
+export type NewRegistryAgent = typeof registryAgents.$inferInsert;
+
+// ─── Registry: Versions ─────────────────────────────────────────────────────
+
+export const registryVersions = pgTable('registry_versions', {
+  id: text('id').primaryKey(),
+  agentId: text('agent_id').notNull().references(() => registryAgents.id, { onDelete: 'cascade' }),
+  version: text('version').notNull(),
+  manifest: jsonb('manifest').notNull(),
+  bundleUrl: text('bundle_url'),                           // S3/Tigris URL to tarball
+  imageRef: text('image_ref'),                             // Docker/Fly image reference
+  changelog: text('changelog'),
+  status: text('status').notNull().default('live'),
+  publishedAt: timestamp('published_at').notNull(),
+});
+
+export type RegistryVersionRow = typeof registryVersions.$inferSelect;
+export type NewRegistryVersion = typeof registryVersions.$inferInsert;
+
+// ─── User Agent Installs ────────────────────────────────────────────────────
+
+export const userAgentInstalls = pgTable('user_agent_installs', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  agentId: text('agent_id').notNull().references(() => registryAgents.id),
+  version: text('version').notNull(),
+  config: jsonb('config').$type<Record<string, unknown>>().default({}),
+  enabled: boolean('enabled').notNull().default(true),
+  installedAt: timestamp('installed_at').notNull(),
+  updatedAt: timestamp('updated_at').notNull(),
+});
+
+export type UserAgentInstallRow = typeof userAgentInstalls.$inferSelect;
+export type NewUserAgentInstall = typeof userAgentInstalls.$inferInsert;
+
 // ─── User Config ─────────────────────────────────────────────────────────────
 
 export const userConfig = pgTable('user_config', {

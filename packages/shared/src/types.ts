@@ -107,6 +107,55 @@ export interface FeedItem {
   createdAt: string;
 }
 
+// ─── Registry ───────────────────────────────────────────────────────────────
+
+export type RegistryAgentStatus = 'draft' | 'live' | 'deprecated' | 'yanked';
+
+export interface ConfigField {
+  type: 'string' | 'number' | 'boolean' | 'array' | 'text';
+  label: string;
+  required?: boolean;
+  default?: unknown;
+}
+
+export interface RegistryAgent {
+  id: string;
+  name: string;
+  description?: string;
+  icon?: string;
+  color?: string;
+  author: string;
+  category?: string;
+  tags?: string[];
+  latestVersion: string;
+  status: RegistryAgentStatus;
+  installs: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RegistryVersion {
+  id: string;
+  agentId: string;
+  version: string;
+  manifest: Record<string, unknown>;
+  bundleUrl?: string;
+  imageRef?: string;
+  changelog?: string;
+  status: RegistryAgentStatus;
+  publishedAt: string;
+}
+
+export interface UserAgentInstall {
+  id: string;
+  userId: string;
+  agentId: string;
+  version: string;
+  config: Record<string, unknown>;
+  enabled: boolean;
+  installedAt: string;
+}
+
 // ─── Config ──────────────────────────────────────────────────────────────────
 
 export interface AppConfig {

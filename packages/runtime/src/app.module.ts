@@ -9,6 +9,7 @@ import { AgentsModule } from './agents/agents.module';
 import { EventsModule } from './events/events.module';
 import { ZeusModule } from './zeus/zeus.module';
 import { AuthModule } from './auth';
+import { RegistryModule } from './registry/registry.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { AuthModule } from './auth';
     AgentsModule,
     EventsModule,
     ZeusModule,
+    RegistryModule,
   ],
 })
 export class AppModule {}
