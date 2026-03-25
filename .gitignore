@@ -136,7 +136,6 @@ sidecar
 CLAUDE.md
 AGENTS.md
 plans
-docs
 .turbo/
 *.sqlite
 *.db
