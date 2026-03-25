@@ -121,6 +121,38 @@ export const agentRuns = pgTable('agent_runs', {
 export type AgentRun = typeof agentRuns.$inferSelect;
 export type NewAgentRun = typeof agentRuns.$inferInsert;
 
+// ─── Users ───────────────────────────────────────────────────────────────────
+
+export const users = pgTable('users', {
+  id: text('id').primaryKey(),
+  email: text('email').notNull().unique(),
+  passwordHash: text('password_hash'),             // null for OAuth-only users
+  name: text('name'),
+  avatarUrl: text('avatar_url'),
+  provider: text('provider').notNull().default('local'),  // 'google' | 'local'
+  providerId: text('provider_id'),                 // Google sub ID
+  createdAt: timestamp('created_at').notNull(),
+  updatedAt: timestamp('updated_at').notNull(),
+});
+
+export type User = typeof users.$inferSelect;
+export type NewUser = typeof users.$inferInsert;
+
+// ─── API Keys ────────────────────────────────────────────────────────────────
+
+export const apiKeys = pgTable('api_keys', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  keyHash: text('key_hash').notNull(),
+  keyPrefix: text('key_prefix').notNull(),     // first 8 chars for display: "mg_abc123..."
+  name: text('name').notNull(),
+  lastUsedAt: timestamp('last_used_at'),
+  createdAt: timestamp('created_at').notNull(),
+});
+
+export type ApiKey = typeof apiKeys.$inferSelect;
+export type NewApiKey = typeof apiKeys.$inferInsert;
+
 // ─── User Config ─────────────────────────────────────────────────────────────
 
 export const userConfig = pgTable('user_config', {

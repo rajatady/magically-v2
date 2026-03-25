@@ -8,19 +8,21 @@ import { LlmModule } from './llm/llm.module';
 import { AgentsModule } from './agents/agents.module';
 import { EventsModule } from './events/events.module';
 import { ZeusModule } from './zeus/zeus.module';
+import { AuthModule } from './auth';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: [
-        '.env',                    // cwd (if running from root)
-        '../../.env',              // monorepo root (if running from packages/runtime)
+        '.env',
+        '../../.env',
       ],
     }),
     EventEmitterModule.forRoot(),
     ScheduleModule.forRoot(),
     DbModule,
+    AuthModule,
     AppConfigModule,
     LlmModule,
     AgentsModule,

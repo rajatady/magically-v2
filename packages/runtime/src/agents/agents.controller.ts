@@ -15,6 +15,7 @@ import {AgentsService} from './agents.service';
 import {AgentUiService} from './agent-ui.service';
 import {FunctionRunnerService} from './function-runner.service';
 import {AgentActionDto} from './dto/agent-action.dto';
+import {Public} from '../auth';
 import {readFileSync, existsSync} from 'fs';
 import {join} from 'path';
 

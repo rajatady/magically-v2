@@ -1,16 +1,50 @@
-const BASE = (import.meta.env.VITE_API_URL ?? 'http://localhost:4321') + '/api';
+import { useAuthStore } from './auth';
+
+export const BASE = (import.meta.env.VITE_API_URL ?? 'http://localhost:4321') + '/api';
+
+function authHeaders(): Record<string, string> {
+  const token = useAuthStore.getState().token;
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
 
 async function req<T>(path: string, opts?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...opts?.headers },
+    headers: { 'Content-Type': 'application/json', ...authHeaders(), ...opts?.headers },
     ...opts,
   });
+  if (res.status === 401) {
+    useAuthStore.getState().logout();
+    window.location.href = '/login';
+    throw new Error('Unauthorized');
+  }
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`API ${opts?.method ?? 'GET'} ${path} → ${res.status}: ${text}`);
   }
   return res.json() as Promise<T>;
 }
+
+// ─── Auth ────────────────────────────────────────────────────────────────────
+
+export const auth = {
+  signup: (email: string, password: string, name?: string) =>
+    req<{ user: { id: string; email: string; name: string | null }; accessToken: string }>('/auth/signup', {
+      method: 'POST',
+      body: JSON.stringify({ email, password, name }),
+    }),
+  login: (email: string, password: string) =>
+    req<{ user: { id: string; email: string; name: string | null }; accessToken: string }>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    }),
+  me: () => req<{ sub: string; email: string; name?: string }>('/auth/me'),
+  createApiKey: (name: string) =>
+    req<{ rawKey: string; apiKey: { id: string; name: string } }>('/auth/api-keys', {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    }),
+  googleUrl: `${BASE}/auth/google`,
+};
 
 // ─── Agents ──────────────────────────────────────────────────────────────────
 
@@ -109,7 +143,7 @@ export async function* streamZeusChat(
 ): AsyncGenerator<{ content?: string; done?: boolean; conversationId?: string; error?: string }> {
   const res = await fetch(`${BASE}/zeus/chat`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify({ message, conversationId }),
   });
 
