@@ -3,6 +3,9 @@ primary_region = "bom"
 
 [build]
 
+[deploy]
+  release_command = "node packages/runtime/dist/migrate.js"
+
 [env]
   PORT = "4321"
   NODE_ENV = "production"
