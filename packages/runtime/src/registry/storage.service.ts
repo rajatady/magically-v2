@@ -37,4 +37,32 @@ export class StorageService {
     this.logger.log(`Uploaded bundle: ${url}`);
     return url;
   }
+
+  async downloadBundle(bundleUrl: string): Promise<Buffer> {
+    const { S3Client, GetObjectCommand } = await import('@aws-sdk/client-s3');
+
+    const client = new S3Client({
+      region: this.config.get('AWS_REGION') ?? 'auto',
+      endpoint: this.config.get('AWS_ENDPOINT_URL_S3'),
+      credentials: {
+        accessKeyId: this.config.getOrThrow('AWS_ACCESS_KEY_ID'),
+        secretAccessKey: this.config.getOrThrow('AWS_SECRET_ACCESS_KEY'),
+      },
+    });
+
+    const bucket = this.config.getOrThrow('BUCKET_NAME');
+    const endpoint = this.config.get('AWS_ENDPOINT_URL_S3');
+
+    // Parse key from URL: {endpoint}/{bucket}/{key}
+    const prefix = `${endpoint}/${bucket}/`;
+    const key = bundleUrl.startsWith(prefix)
+      ? bundleUrl.slice(prefix.length)
+      : bundleUrl;
+
+    const response = await client.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+    const bytes = await response.Body!.transformToByteArray();
+
+    this.logger.log(`Downloaded bundle: ${key}`);
+    return Buffer.from(bytes);
+  }
 }

@@ -1,10 +1,10 @@
-# Phase 4 — Sidekick Intelligence (Week 3-4)
+# Phase 4 — Zeus Intelligence (Week 3-4)
 
-Goal: Make the Sidekick genuinely intelligent — persistent memory, multi-agent orchestration, agent building, and proactive behavior.
+Goal: Make the Zeus genuinely intelligent — persistent memory, multi-agent orchestration, agent building, and proactive behavior.
 
-## 4.1 Sidekick Architecture
+## 4.1 Zeus Architecture
 
-The Sidekick is NOT a wrapper around an LLM. It's a reasoning engine with:
+The Zeus is NOT a wrapper around an LLM. It's a reasoning engine with:
 
 ```
 ┌─────────────────────────────────────────┐
@@ -30,7 +30,7 @@ The Sidekick is NOT a wrapper around an LLM. It's a reasoning engine with:
 
 ## 4.2 Memory System
 
-Sidekick builds persistent memory about the user:
+Zeus builds persistent memory about the user:
 
 ```typescript
 interface MemoryEntry {
@@ -51,13 +51,13 @@ Memory is populated from:
 - Extracted from tool data (calendar shows kids' school events → user has kids)
 
 Memory retrieval:
-- On every Sidekick conversation, relevant memories are injected into context
+- On every Zeus conversation, relevant memories are injected into context
 - Retrieval uses embedding similarity + category matching
 - Memory is never shared with agents unless explicitly permissioned
 
-## 4.3 Agent Builder (Sidekick as Software Engineer)
+## 4.3 Agent Builder (Zeus as Software Engineer)
 
-When user says "build me an agent", the Sidekick becomes a coding agent:
+When user says "build me an agent", the Zeus becomes a coding agent:
 
 ```
 Step 1: UNDERSTAND
@@ -87,22 +87,21 @@ Step 4: TEST
   - Report any issues to user
 
 Step 5: DEPLOY
-  - Save agent to ~/.magically/agents/{id}/
-  - Register in agent database
+  - Zeus runs `magically build` and `magically publish` to install
   - Add widget to Home grid
   - Add icon to sidebar
   - Push feed event: "New agent installed: {name}"
 
 Step 6: ITERATE
   - User can say "change the UI" or "add a feature"
-  - Sidekick reads existing agent code
-  - Makes targeted edits
+  - Zeus reads existing agent code
+  - Zeus runs `magically validate` and reloads
   - Hot-reloads the agent
 ```
 
 ### Build System Prompt Strategy:
 
-The Sidekick uses a structured system prompt when building agents:
+The Zeus uses a structured system prompt when building agents:
 
 ```
 You are building an agent for the Magically platform.
@@ -115,7 +114,7 @@ AGENT SDK HOOKS:
 - useTool(toolId) — call a platform tool
 - useFeed() — push events to user's feed
 - useWidget() — update the Home screen widget
-- useMemory() — read user's Sidekick memory (permissioned)
+- useMemory() — read user's Zeus memory (permissioned)
 
 UI CONSTRAINTS:
 - React 19 + Tailwind CSS 4
@@ -136,15 +135,15 @@ Generate:
 
 ## 4.4 Proactive Behavior
 
-Sidekick doesn't just respond — it initiates:
+Zeus doesn't just respond — it initiates:
 
 ```typescript
-// packages/runtime/src/sidekick/proactive.ts
+// packages/runtime/src/zeus/proactive.ts
 
 interface ProactiveCheck {
   id: string;
   schedule: string;           // cron expression
-  check: (context: SidekickContext) => Promise<ProactiveAction | null>;
+  check: (context: ZeusContext) => Promise<ProactiveAction | null>;
 }
 
 // Examples:
@@ -181,7 +180,7 @@ const checks: ProactiveCheck[] = [
 ];
 ```
 
-## 4.5 Sidekick Conversation Modes
+## 4.5 Zeus Conversation Modes
 
 1. **Chat** — normal conversation, can call tools and agents inline
 2. **Build** — agent creation mode, structured builder workflow
@@ -193,13 +192,13 @@ The mode is inferred from context. User says "build me an agent" → switches to
 
 ## 4.6 Deliverables
 
-- [ ] Sidekick memory system (store, retrieve, decay, refresh)
+- [ ] Zeus memory system (store, retrieve, decay, refresh)
 - [ ] Memory injection into LLM context (relevant memories per conversation)
 - [ ] Agent Builder: full build pipeline (understand → blueprint → build → test → deploy)
 - [ ] Agent editing: read existing code → make targeted changes → hot-reload
 - [ ] Proactive checks: morning briefing, conflict detection, suggestions
 - [ ] Conversation modes: chat, build, edit, task, remix
-- [ ] Reasoning chain visibility (show user what Sidekick is thinking)
-- [ ] Multi-agent orchestration (Sidekick calls multiple agents in sequence)
+- [ ] Reasoning chain visibility (show user what Zeus is thinking)
+- [ ] Multi-agent orchestration (Zeus calls multiple agents in sequence)
 - [ ] Task system: propose → approve → execute → report (with progress updates)
-- [ ] Error recovery: if agent build fails, Sidekick diagnoses and fixes
+- [ ] Error recovery: if agent build fails, Zeus diagnoses and fixes

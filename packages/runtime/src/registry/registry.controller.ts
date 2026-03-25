@@ -10,7 +10,11 @@ import {
   Req,
   HttpCode,
   HttpStatus,
+  UseInterceptors,
+  UploadedFile,
+  NotFoundException,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { RegistryService } from './registry.service';
 
 @Controller('api/registry')
@@ -18,9 +22,18 @@ export class RegistryController {
   constructor(private readonly registry: RegistryService) {}
 
   @Post('publish')
-  async publish(@Req() req: any, @Body() body: { manifest: Record<string, any> }) {
+  @UseInterceptors(FileInterceptor('bundle'))
+  async publish(
+    @Req() req: any,
+    @Body('manifest') manifestField: string | Record<string, any>,
+    @UploadedFile() bundle?: Express.Multer.File,
+  ) {
     const userId = req.user?.id ?? req.user?.sub;
-    return this.registry.publish(userId, body.manifest);
+    // Support both JSON string (multipart) and object (JSON body)
+    const manifest = typeof manifestField === 'string'
+      ? JSON.parse(manifestField)
+      : manifestField;
+    return this.registry.publish(userId, manifest, bundle?.buffer);
   }
 
   @Get('agents')
@@ -46,6 +59,13 @@ export class RegistryController {
   @Get('agents/:id/versions/:version')
   async getVersion(@Param('id') id: string, @Param('version') version: string) {
     return this.registry.getVersion(id, version);
+  }
+
+  @Get('agents/:id/versions/:version/status')
+  async getVersionStatus(@Param('id') id: string, @Param('version') version: string) {
+    const v = await this.registry.getVersion(id, version);
+    if (!v) throw new NotFoundException(`Version ${version} not found for ${id}`);
+    return { status: v.status, buildError: v.buildError, imageRef: v.imageRef };
   }
 
   @Post('agents/:id/install')

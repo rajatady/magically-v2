@@ -8,10 +8,10 @@ Goal: Build the full agent lifecycle — creation, execution, triggers, data, an
 CREATE → INSTALL → CONFIGURE → RUN → UPDATE → SHARE
 ```
 
-### Creation (via Sidekick Builder):
+### Creation (via Zeus Builder):
 1. User describes what they want in natural language
-2. Sidekick generates a "blueprint" (structured plan) — user can review/edit
-3. User approves → Sidekick generates:
+2. Zeus generates a "blueprint" (structured plan) — user can review/edit
+3. User approves → Zeus generates:
    - `manifest.json` (agent metadata, tools, triggers, permissions)
    - `prompt.md` (system instructions for the agent's AI brain)
    - `widget.json` (Home screen widget spec)
@@ -45,34 +45,34 @@ Trigger fires (cron, webhook, file shared, email received)
   → user sees update on Home / in Feed
 ```
 
-**Sidekick Task** — Heavy agentic work, triggered by user OR by agents
+**Zeus Task** — Heavy agentic work, triggered by user OR by agents
 ```
 Two entry points:
 
-A) User → Sidekick → Task (user asks something complex in chat)
-  Sidekick determines task needs deep work
-    → Sidekick proposes a "Sidekick Task" to user
+A) User → Zeus → Task (user asks something complex in chat)
+  Zeus determines task needs deep work
+    → Zeus proposes a "Zeus Task" to user
     → User approves
     → Runtime spawns task execution
     → Task completes, results stored
     → Feed event + notification pushed
 
-B) Agent → Sidekick Task (agent delegates heavy work)
+B) Agent → Zeus Task (agent delegates heavy work)
   This is critical. Agents are lightweight — they handle UI and simple logic.
   For anything requiring deep reasoning, multi-tool orchestration, or cross-agent
-  data access, agents kick off a Sidekick Task.
+  data access, agents kick off a Zeus Task.
 
   Example: Calendar Hero
     → Calendar Hero trigger fires (new meeting in 23 minutes)
-    → Calendar Hero calls: sdk.createSidekickTask({
+    → Calendar Hero calls: sdk.createZeusTask({
         goal: "Prepare briefing for meeting with Ali Rougani",
         context: { meetingId, attendees, calendarEvent },
         deliverables: ["briefing_summary", "last_interaction", "linkedin_profile"]
       })
-    → Sidekick Task executes:
+    → Zeus Task executes:
         1. Searches email for past threads with Ali
         2. Searches calendar for previous meetings
-        3. Reads Sidekick memory for known context about Ali
+        3. Reads Zeus memory for known context about Ali
         4. Searches web for Ali's LinkedIn profile
         5. Synthesizes into a briefing
     → Results stored in Calendar Hero's data tables
@@ -81,12 +81,12 @@ B) Agent → Sidekick Task (agent delegates heavy work)
 
   Example: SuperDo
     → User adds todo: "Take Mateo to see monster trucks"
-    → SuperDo agent calls: sdk.createSidekickTask({
+    → SuperDo agent calls: sdk.createZeusTask({
         goal: "Research monster truck events for a 19-month-old near San Francisco",
         context: { todoItem, childAge: "19 months", location: "SF Bay Area" },
         deliverables: ["events", "tickets", "tips"]
       })
-    → Sidekick Task executes:
+    → Zeus Task executes:
         1. Reads memory: Mateo is 19 months old, lives in SF Bay Area
         2. Searches web for monster truck events near SF
         3. Finds Monster Jam at Oakland Arena, Apr 3-5
@@ -96,14 +96,14 @@ B) Agent → Sidekick Task (agent delegates heavy work)
     → SuperDo's todo item now shows "Insights ready" badge
 
   This is what makes agents on this platform fundamentally different from
-  traditional apps. Any agent can leverage the full power of the Sidekick
+  traditional apps. Any agent can leverage the full power of the Zeus
   (all tools, all memory, all cross-agent data) without implementing that
   complexity itself.
 ```
 
 ```typescript
 // In the Agent SDK:
-interface SidekickTaskRequest {
+interface ZeusTaskRequest {
   goal: string;                          // Natural language goal
   context: Record<string, any>;          // Structured context from the agent
   deliverables: string[];                // What the agent expects back
@@ -113,7 +113,7 @@ interface SidekickTaskRequest {
 }
 
 // Usage in agent code:
-const { createTask, taskStatus } = useSidekickTask();
+const { createTask, taskStatus } = useZeusTask();
 
 const task = await createTask({
   goal: "Prepare briefing for meeting with Ali Rougani",
@@ -186,7 +186,7 @@ const { openUrl, openAgent } = useNavigation();
 
 ## 3.3 Agent Data Model
 
-Each agent gets its own SQLite tables, namespaced:
+Each agent gets its own PostgreSQL tables, namespaced:
 
 ```sql
 -- System tables (shared)
@@ -211,7 +211,7 @@ CREATE TABLE feed_events (
   FOREIGN KEY (agent_id) REFERENCES agents(id)
 );
 
-CREATE TABLE sidekick_memory (
+CREATE TABLE zeus_memory (
   id TEXT PRIMARY KEY,
   key TEXT NOT NULL UNIQUE,
   value TEXT NOT NULL,
@@ -220,7 +220,7 @@ CREATE TABLE sidekick_memory (
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE sidekick_conversations (
+CREATE TABLE zeus_conversations (
   id TEXT PRIMARY KEY,
   messages JSON NOT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -232,9 +232,9 @@ CREATE TABLE sidekick_conversations (
 -- Agents define their schema in manifest.json or via SDK calls
 ```
 
-## 3.4 Tool System
+## 3.4 Tool System (MCP Native)
 
-Tools are the capabilities agents can use. Each tool is a module:
+Tools are the capabilities agents can use. The platform is natively compatible with the **Model Context Protocol (MCP)**. Each tool is an MCP server or adapter:
 
 ```typescript
 // packages/runtime/src/tools/types.ts
@@ -277,7 +277,7 @@ Built-in tools for Phase 3:
 
 ## 3.5 Inter-Agent Communication
 
-Agents don't talk to each other directly. The Sidekick mediates:
+Agents don't talk to each other directly. The Zeus mediates:
 
 ```
 Agent A needs data from Agent B
@@ -289,15 +289,15 @@ Agent A needs data from Agent B
   → If no: runtime rejects, Agent A shows "permission needed" UI
 ```
 
-The Sidekick has universal access and can orchestrate multi-agent tasks:
+The Zeus has universal access and can orchestrate multi-agent tasks:
 
 ```
 User: "Send tonight's dinner menu to David via Slack"
-  → Sidekick identifies: need meal-service agent + Slack tool
-  → Sidekick calls meal-service agent's data endpoint
+  → Zeus identifies: need meal-service agent + Slack tool
+  → Zeus calls meal-service agent's data endpoint
   → Gets tonight's menu
-  → Sidekick calls Slack tool to send DM to David
-  → Sidekick reports back to user + pushes feed event
+  → Zeus calls Slack tool to send DM to David
+  → Zeus reports back to user + pushes feed event
 ```
 
 ## 3.6 Deliverables
@@ -307,8 +307,8 @@ User: "Send tonight's dinner menu to David via Slack"
 - [ ] Sandboxed iframe renderer with CSP
 - [ ] Agent SDK: postMessage bridge, React hooks (useAgentData, useTool, useFeed, useWidget)
 - [ ] Background trigger system (cron scheduler, event listeners)
-- [ ] Sidekick Task execution (multi-step, multi-tool chains)
-- [ ] Agent data model (per-agent SQLite tables)
+- [ ] Zeus Task execution (multi-step, multi-tool chains)
+- [ ] Agent data model (per-agent PostgreSQL tables)
 - [ ] Tool system: registry, execution, auth management
 - [ ] 5+ built-in tools (calendar, search, weather, email, slack)
 - [ ] Inter-agent data access with permission model

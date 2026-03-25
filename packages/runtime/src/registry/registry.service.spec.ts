@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { getQueueToken } from '@nestjs/bullmq';
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { DRIZZLE, DrizzleDB } from '../db';
@@ -11,12 +12,15 @@ describe('RegistryService', () => {
   let service: RegistryService;
   let db: DrizzleDB;
   let module: TestingModule;
+  let mockQueue: { add: jest.Mock };
   const testUserId = 'test-user-registry';
 
   beforeAll(async () => {
     const mockStorage: Partial<StorageService> = {
       uploadBundle: jest.fn().mockResolvedValue('https://storage.example.com/bundle.tar.gz'),
     };
+
+    mockQueue = { add: jest.fn().mockResolvedValue({ id: 'job-1' }) };
 
     module = await Test.createTestingModule({
       providers: [
@@ -29,6 +33,7 @@ describe('RegistryService', () => {
         },
         RegistryService,
         { provide: StorageService, useValue: mockStorage },
+        { provide: getQueueToken('agent-build'), useValue: mockQueue },
       ],
     }).compile();
 
@@ -53,6 +58,7 @@ describe('RegistryService', () => {
     await db.delete(userAgentInstalls);
     await db.delete(registryVersions);
     await db.delete(registryAgents);
+    mockQueue.add.mockClear();
   });
 
   afterAll(async () => {
@@ -87,6 +93,44 @@ describe('RegistryService', () => {
 
       const agent = await service.getAgent('versioned');
       expect(agent?.latestVersion).toBe('2.0.0');
+    });
+
+    it('returns status processing and enqueues build for container agents with bundle', async () => {
+      const manifest = {
+        id: 'container-agent',
+        name: 'Container Agent',
+        version: '1.0.0',
+        runtime: { base: 'python:3.12-slim', system: [], install: 'pip install requests' },
+        functions: [],
+      };
+
+      const bundle = Buffer.from('fake-tar-gz');
+      const result = await service.publish(testUserId, manifest, bundle);
+
+      expect(result.status).toBe('processing');
+      expect(result.versionId).toBeDefined();
+      expect(mockQueue.add).toHaveBeenCalledWith(
+        'build-container-agent-1.0.0',
+        expect.objectContaining({
+          agentId: 'container-agent',
+          version: '1.0.0',
+          versionId: result.versionId,
+        }),
+        expect.objectContaining({ attempts: 3 }),
+      );
+    });
+
+    it('returns status live for lightweight agents (no runtime block)', async () => {
+      const manifest = {
+        id: 'light-agent',
+        name: 'Light Agent',
+        version: '1.0.0',
+        functions: [],
+      };
+
+      const result = await service.publish(testUserId, manifest);
+      expect(result.status).toBe('live');
+      expect(mockQueue.add).not.toHaveBeenCalled();
     });
 
     it('rejects publishing by a different author', async () => {

@@ -9,7 +9,7 @@ Agents today are fragmented — calendar agent here, finance agent there, grocer
 It is NOT a chatbot. It is NOT a dashboard. It is an operating system layer where:
 - Agents live as apps with their own UI
 - A widget grid gives you a glanceable home screen
-- A Sidekick orchestrates everything and talks to all agents
+- A Zeus kernel orchestrates everything and talks to all agents
 - A feed shows you what agents did while you were away
 - Anyone can build, remix, and share agents
 
@@ -24,9 +24,9 @@ It is NOT a chatbot. It is NOT a dashboard. It is an operating system layer wher
 ├─────────────────────────────────────────────┤
 │                UI LAYER                      │
 │  React app — the actual OS interface         │
-│  Home grid, Feed, Sidekick chat, Gallery,    │
+│  Home grid, Feed, Zeus dashboard, Gallery,   │
 │  Build flow, Settings                        │
-│  Rendered in native WebView                  │
+│  Hosted on Vercel / Native WebView later     │
 ├─────────────────────────────────────────────┤
 │           AGENT UI LAYER                     │
 │  Each agent = React artifact in iframe       │
@@ -34,16 +34,16 @@ It is NOT a chatbot. It is NOT a dashboard. It is an operating system layer wher
 │  Communicates with runtime via postMessage   │
 ├─────────────────────────────────────────────┤
 │              RUNTIME LAYER                   │
-│  Local server (Bun/Node) on localhost        │
+│  Cloud server (Fly.io) + Local Dev server    │
 │  Agent execution, tool calls, LLM routing,   │
-│  SQLite storage, event bus, OAuth tokens     │
-│  Exposes REST + WebSocket API                │
+│  PostgreSQL storage, event bus, API keys     │
+│  Abstract Compute Providers (Fly, Daytona)   │
 └─────────────────────────────────────────────┘
 ```
 
 ## Key Principles
 
-1. **Local-first.** Your data never leaves your machine unless you choose to share. No cloud dependency. Bring your own LLM keys via OpenRouter or direct provider APIs.
+1. **Cloud-first with Local Options.** Production runs on Vercel/Fly.io/Neon with Tigris storage for instant availability anywhere. Dev environment runs locally using Docker and local Postgres. Your personal LLM keys are routed securely via OpenRouter or direct provider APIs.
 
 2. **Agents are React.** LLMs are exceptionally good at generating React + Tailwind. Every agent UI is a React artifact rendered in a sandboxed iframe. No Python. No DSL. No visual flow builders.
 
@@ -55,9 +55,10 @@ It is NOT a chatbot. It is NOT a dashboard. It is an operating system layer wher
 
 ## Platform Strategy
 
-### Phase 1: macOS + Web
-- macOS: Swift app (menu bar + main window hosting WKWebView)
-- Web: Same React app served from local runtime, accessible at localhost
+### Phase 1: Cloud Runtime + Vercel Web App
+- Web: React app deployed on Vercel
+- Runtime: Fly.io Node server + Neon Postgres + Tigris
+- Desktop: Electron or minimal native shell connecting to cloud later
 
 ### Phase 2: iOS
 - Swift app with WKWebView + push notifications + share extension

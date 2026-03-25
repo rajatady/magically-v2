@@ -1,51 +1,43 @@
-# Phase 9 — Cloud Runtime & Social (Week 12-16)
+# Phase 9 — Multi-tenancy & Social (Week 12-16)
 
-Goal: Optional cloud layer for users who want mobile-only access, sharing, and collaboration.
+Goal: Since the Cloud Runtime shipped in Phase 1, Phase 9 focuses entirely on multi-tenancy (scale), user accounts, sharing, and collaboration.
 
-## 9.1 Cloud Runtime (Optional, Paid)
+## 9.1 Multi-tenant Cloud Runtime (Scale)
 
-For users who don't want to run a Mac/PC 24/7 but want agents running in the background:
+The foundational Fly.io architectural elements scale up to handle multi-tenancy securely:
 
 ```
 ┌─────────────────────────────────────────┐
 │           CLOUD RUNTIME                  │
-│  (Same Bun runtime, hosted)              │
+│  (Fly.io Deployments + Neon DB)          │
 │                                          │
 │  ┌─────────┐ ┌──────────┐ ┌──────────┐ │
-│  │ Agent   │ │ Sidekick │ │ Trigger  │ │
+│  │ Agent   │ │ Zeus     │ │ Trigger  │ │
 │  │ Executor│ │ Memory   │ │ Scheduler│ │
 │  └─────────┘ └──────────┘ └──────────┘ │
 │                                          │
 │  ┌──────────┐ ┌──────────────────────┐  │
-│  │ SQLite   │ │ Push Notification    │  │
-│  │ (Turso)  │ │ Service (APNs/FCM)  │  │
+│  │ Postgres │ │ Push Notification    │  │
+│  │ (Neon)   │ │ Service (APNs/FCM)  │  │
 │  └──────────┘ └──────────────────────┘  │
 │                                          │
 │  Accessible from any device via API      │
-│  Syncs with local runtime when online    │
 └─────────────────────────────────────────┘
 ```
 
-### Deployment Options:
-1. **Magically Cloud** — we host it, user pays subscription
-2. **Self-hosted** — Docker image, deploy to Railway/Fly/VPS
-3. **Hybrid** — local runtime primary, cloud for background tasks only
+### Multi-tenant Architecture:
+1. **Magically Cloud (Managed)** — we host it, user pays subscription
+2. **Abstract Providers** — user spins up their own Daytona/Fly workspace securely
 
-### Sync Protocol:
+### Edge & Sync Protocol:
+Since the React App (Vercel) and Native Clients connect to the Cloud API directly, "syncing" natively to a desktop app is now simplified:
 ```
-Local Runtime ←→ Cloud Runtime
+Native Shell ←→ Cloud Runtime
 
-Sync direction: bidirectional
-Conflict resolution: last-write-wins with vector clock
 What syncs:
-  - Agent installations and configurations
-  - Sidekick memory
-  - Feed events
-  - Widget data cache
-What doesn't sync:
-  - Agent source code (only manifest references)
-  - OAuth tokens (re-auth on each device)
-  - LLM conversation history (too large, privacy-sensitive)
+  - Widget push updates
+  - JWT Auth refreshing
+  - Optimistic offline caching (later)
 ```
 
 ## 9.2 User Accounts & Identity

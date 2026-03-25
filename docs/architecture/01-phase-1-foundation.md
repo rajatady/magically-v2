@@ -1,6 +1,6 @@
 # Phase 1 — Foundation (Days 1-2)
 
-Goal: Ship a working macOS + web app with Home, Sidekick, Feed, and one demo agent.
+Goal: Ship a working macOS + web app with Home, Zeus, Feed, and one demo agent.
 
 ## What Gets Built
 
@@ -15,7 +15,7 @@ magically/
 │   │   │   │   ├── shell/    # Sidebar, layout, navigation
 │   │   │   │   ├── home/     # Widget grid, widget renderer
 │   │   │   │   ├── feed/     # Activity feed
-│   │   │   │   ├── sidekick/ # Chat panel
+│   │   │   │   ├── zeus/ # Chat panel
 │   │   │   │   ├── agent/    # Agent view container (iframe host)
 │   │   │   │   ├── build/    # Agent builder UI
 │   │   │   │   └── gallery/  # Agent gallery browser
@@ -42,8 +42,8 @@ magically/
 │   │   │   │   ├── manager.ts    # Load, run, manage agents
 │   │   │   │   ├── executor.ts   # Agent task execution
 │   │   │   │   └── builder.ts    # LLM-powered agent creation
-│   │   │   ├── sidekick/
-│   │   │   │   ├── chat.ts       # Sidekick conversation handler
+│   │   │   ├── zeus/
+│   │   │   │   ├── chat.ts       # Zeus conversation handler
 │   │   │   │   ├── memory.ts     # Persistent user memory
 │   │   │   │   └── router.ts     # Route requests to agents/tools
 │   │   │   ├── tools/
@@ -102,15 +102,15 @@ magically/
 | Styling | Tailwind CSS 4 | LLMs generate excellent Tailwind. Agent artifacts use it too |
 | State | Zustand | Minimal, fast, no boilerplate |
 | Local server | Bun + Hono | Bun is fast, Hono is lightweight and typed |
-| Database | SQLite via better-sqlite3 + Drizzle ORM | Zero-config, embedded, fast, local-first |
+| Database | Postgres via Drizzle ORM | Neon for Prod, Postgres Docker for Dev |
 | LLM | OpenRouter (default) + direct provider support | One API for all models. User brings own keys |
-| Real-time | WebSocket (native Bun WS) | Agent events, Sidekick streaming, feed updates |
+| Real-time | WebSocket (native Bun WS) | Agent events, Zeus streaming, feed updates |
 | Agent UI | React in sandboxed iframe | LLMs excel at React generation. Iframe = security |
 | Widget spec | JSON DSL → React renderer | Declarative, cross-platform renderable |
 
 ### 1.3 Runtime API Design
 
-The runtime is a local HTTP + WebSocket server on `localhost:4321`.
+The runtime is deployed on Fly.io (production) and localhost:4321 (development).
 
 ```
 REST API:
@@ -125,8 +125,8 @@ REST API:
   GET    /api/feed                    — Get feed items
   POST   /api/feed/:id/action         — Act on a feed item (dismiss, approve)
 
-  POST   /api/sidekick/chat           — Send message to Sidekick (SSE streaming response)
-  GET    /api/sidekick/memory         — Get Sidekick memory entries
+  POST   /api/zeus/chat           — Send message to Zeus (SSE streaming response)
+  GET    /api/zeus/memory         — Get Zeus memory entries
 
   GET    /api/tools                   — List available tools
   POST   /api/tools/:id/execute       — Execute a tool directly
@@ -138,8 +138,8 @@ WebSocket: ws://localhost:4321/ws
   Events:
     agent:update     — Agent pushed new widget data
     feed:new         — New feed item from an agent
-    sidekick:typing  — Sidekick is generating
-    sidekick:message — Sidekick response chunk (streaming)
+    zeus:typing  — Zeus is generating
+    zeus:message — Zeus response chunk (streaming)
     agent:build:log  — Build progress during agent creation
 ```
 
@@ -235,11 +235,11 @@ This DSL:
 ### 1.6 Day 1 Deliverables
 
 - [ ] Monorepo scaffolded (Turborepo + Bun)
-- [ ] Vite + React app with shell layout (Sidebar, Home, Feed, Sidekick panel)
-- [ ] Runtime server running on localhost with SQLite
+- [ ] Vite + React app with shell layout (Sidebar, Home, Feed, Zeus panel)
+- [ ] Runtime server running on Fly.io (production) and localhost with PostgreSQL
 - [ ] REST + WebSocket API skeleton
 - [ ] LLM provider abstraction (OpenRouter integration)
-- [ ] Sidekick chat working (send message → stream response)
+- [ ] Zeus chat working (send message → stream response)
 - [ ] Widget DSL types + React renderer
 - [ ] Home grid with hardcoded demo widgets
 
@@ -251,7 +251,8 @@ This DSL:
 - [ ] Agent SDK with postMessage bridge + React hooks
 - [ ] One complete demo agent (Calendar Hero or a simpler one)
 - [ ] Feed system: agents push events → feed displays them
-- [ ] Build flow: describe agent → Sidekick generates manifest + UI
+- [ ] Build flow: describe agent → Zeus generates manifest + UI
+- [ ] `magically` CLI for scaffolding, testing, and validations
 - [ ] Basic config UI (enter API keys, set preferences)
 - [ ] README + quick start guide
 - [ ] Ship to GitHub

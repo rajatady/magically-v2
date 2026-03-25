@@ -182,9 +182,10 @@ export const registryVersions = pgTable('registry_versions', {
   version: text('version').notNull(),
   manifest: jsonb('manifest').notNull(),
   bundleUrl: text('bundle_url'),                           // S3/Tigris URL to tarball
-  imageRef: text('image_ref'),                             // Docker/Fly image reference
+  imageRef: text('image_ref'),                             // Docker/GHCR image reference
   changelog: text('changelog'),
-  status: text('status').notNull().default('live'),
+  status: text('status').notNull().default('processing'),  // processing | building | live | failed
+  buildError: text('build_error'),                         // failure message when status = failed
   publishedAt: timestamp('published_at').notNull(),
 });
 

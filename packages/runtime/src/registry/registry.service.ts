@@ -1,4 +1,6 @@
 import { Injectable, Logger, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 import { eq, and, ilike, sql } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { InjectDB, type DrizzleDB } from '../db';
@@ -8,10 +10,12 @@ import {
   userAgentInstalls,
 } from '../db/schema';
 import { StorageService } from './storage.service';
+import type { AgentBuildJobData } from '../build/build.processor';
 
 export interface PublishResult {
   agentId: string;
   version: string;
+  versionId: string;
   status: string;
 }
 
@@ -29,6 +33,7 @@ export class RegistryService {
   constructor(
     @InjectDB() private readonly db: DrizzleDB,
     private readonly storage: StorageService,
+    @InjectQueue('agent-build') private readonly buildQueue: Queue,
   ) {}
 
   // ─── Publish ────────────────────────────────────────────────────────────────
@@ -90,20 +95,43 @@ export class RegistryService {
       bundleUrl = await this.storage.uploadBundle(agentId, version, bundle);
     }
 
+    // Determine initial status: if has runtime block and bundle, needs building
+    const needsBuild = !!manifest.runtime && !!bundle;
+    const status = needsBuild ? 'processing' : 'live';
+    const versionId = randomUUID();
+
     // Create version record
     await this.db.insert(registryVersions).values({
-      id: randomUUID(),
+      id: versionId,
       agentId,
       version,
       manifest,
       bundleUrl,
-      status: 'live',
+      status,
       publishedAt: now,
     });
 
-    this.logger.log(`Published ${agentId}@${version}`);
+    // Enqueue build job if needed
+    if (needsBuild) {
+      const jobData: AgentBuildJobData = {
+        versionId,
+        agentId,
+        version,
+        bundleUrl: bundleUrl!,
+        manifest,
+      };
 
-    return { agentId, version, status: 'live' };
+      await this.buildQueue.add(`build-${agentId}-${version}`, jobData, {
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 5000 },
+      });
+
+      this.logger.log(`Published ${agentId}@${version} — build queued`);
+    } else {
+      this.logger.log(`Published ${agentId}@${version} — live`);
+    }
+
+    return { agentId, version, versionId, status };
   }
 
   // ─── Discovery ──────────────────────────────────────────────────────────────

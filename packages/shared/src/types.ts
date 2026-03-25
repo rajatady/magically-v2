@@ -110,6 +110,7 @@ export interface FeedItem {
 // ─── Registry ───────────────────────────────────────────────────────────────
 
 export type RegistryAgentStatus = 'draft' | 'live' | 'deprecated' | 'yanked';
+export type RegistryVersionStatus = 'processing' | 'building' | 'live' | 'failed';
 
 export interface ConfigField {
   type: 'string' | 'number' | 'boolean' | 'array' | 'text';
@@ -142,8 +143,22 @@ export interface RegistryVersion {
   bundleUrl?: string;
   imageRef?: string;
   changelog?: string;
-  status: RegistryAgentStatus;
+  status: RegistryVersionStatus;
+  buildError?: string;
   publishedAt: string;
+}
+
+export interface PublishResult {
+  agentId: string;
+  version: string;
+  versionId: string;
+  status: RegistryVersionStatus;
+}
+
+export interface VersionStatus {
+  status: RegistryVersionStatus;
+  buildError?: string | null;
+  imageRef?: string | null;
 }
 
 export interface UserAgentInstall {

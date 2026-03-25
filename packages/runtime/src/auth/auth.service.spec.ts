@@ -2,10 +2,13 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
+import { eq, inArray } from 'drizzle-orm';
 import { AuthService } from './auth.service';
 import { DRIZZLE, type DrizzleDB } from '../db';
 import * as schema from '../db/schema';
 import { users, apiKeys } from '../db/schema';
+
+const TEST_EMAILS = ['test@example.com', 'google@example.com'];
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -38,13 +41,14 @@ describe('AuthService', () => {
     service = module.get(AuthService);
     db = module.get(DRIZZLE);
 
+    // Clean up only rows created by this test suite
     await db.delete(apiKeys);
-    await db.delete(users);
+    await db.delete(users).where(inArray(users.email, TEST_EMAILS));
   });
 
   afterAll(async () => {
     await db.delete(apiKeys);
-    await db.delete(users);
+    await db.delete(users).where(inArray(users.email, TEST_EMAILS));
     await module.close();
   });
 

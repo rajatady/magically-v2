@@ -1,3 +1,5 @@
+import { authCommand } from './auth';
+
 export const runCommand = {
   buildUrl(base: string, agentId: string, functionName: string): string {
     const clean = base.replace(/\/$/, '');
@@ -19,9 +21,18 @@ export const runCommand = {
 
     console.log(`Running ${agentId}/${functionName}...`);
 
+    const token = authCommand.loadToken();
+    if (!token) {
+      console.error('Not logged in. Run: magically login');
+      process.exit(1);
+    }
+
     const res = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
       body: JSON.stringify(body),
     });
 

@@ -38,26 +38,19 @@ Goal: Bring Magically to your pocket. Native iOS app with widgets, share extensi
 
 ## 5.2 Key Difference: Where Does the Runtime Run?
 
-On macOS, the runtime runs locally (Bun on localhost). On iOS, we have two options:
+In the current Magically architecture (Phase 1), the runtime runs in the cloud (Fly.io).
 
-### Option A: Embedded Runtime (Preferred)
-- Bundle a lightweight JS runtime in the iOS app (JavaScriptCore or Hermes)
-- SQLite runs natively on iOS
-- LLM calls go to OpenRouter/API directly from device
-- True local-first, no server dependency
-- Limitation: no Bun, no Node APIs — need a compatible runtime subset
+### Option A: Cloud Client (Primary)
+- iOS app is a thin client connecting to `api.magically.run` (or user's custom deployment)
+- Auth via JWT
+- Lowest battery impact, highest reliability
+- True cross-device state out of the box
 
-### Option B: Companion Mode
-- iOS connects to the macOS runtime over local network (Bonjour/mDNS)
-- Requires Mac to be running
-- Good for Phase 5 MVP, replaced by Option A later
+### Option B: Local Network Companion (Dev/Power Users)
+- iOS connects to the macOS/Docker runtime over local network (Bonjour/mDNS)
+- Requires Mac to be running on same network
 
-### Option C: Cloud Runtime (Later)
-- Optional cloud-hosted runtime for users who want mobile-only
-- Paid tier
-- Runtime runs on user's cloud instance (Railway, Fly.io, self-hosted)
-
-**Phase 5 ships Option B (companion mode) with Option A as a fast-follow.**
+**Phase 5 ships Option A (Cloud Client) as the primary mode.**
 
 ## 5.3 Native iOS Widgets (WidgetKit)
 
@@ -167,7 +160,7 @@ packages/swift-shared/
 ## 5.7 Deliverables
 
 - [ ] iOS app with WKWebView hosting React app
-- [ ] Companion mode: iOS connects to Mac runtime over LAN
+- [ ] Cloud API Client: Connects to Fly.io runtime deployment
 - [ ] Share extension: share files from any app to agents
 - [ ] Native iOS widgets via WidgetKit (compiled from widget.json)
 - [ ] Widget DSL → SwiftUI compiler

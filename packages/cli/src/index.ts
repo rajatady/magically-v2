@@ -6,6 +6,8 @@ import { buildCommand } from './commands/build';
 import { pushCommand } from './commands/push';
 import { runCommand } from './commands/run';
 import { authCommand } from './commands/auth';
+import { publishCommand } from './commands/publish';
+import { statusCommand } from './commands/status';
 
 const program = new Command();
 
@@ -105,6 +107,23 @@ program
   .option('--payload <json>', 'JSON payload to pass to the function')
   .action((agentId: string, functionName: string, opts: { base: string; payload?: string }) => {
     runCommand.exec(agentId, functionName, opts);
+  });
+
+program
+  .command('publish [dir]')
+  .description('Publish an agent to the registry')
+  .option('--base <url>', 'Runtime base URL', 'http://localhost:4321')
+  .action((dir: string | undefined, opts: { base: string }) => {
+    publishCommand.exec(resolve(dir ?? '.'), opts);
+  });
+
+program
+  .command('status <agentId>')
+  .description('Check build status of an agent')
+  .option('--base <url>', 'Runtime base URL', 'http://localhost:4321')
+  .option('--version <version>', 'Specific version to check')
+  .action((agentId: string, opts: { base: string; version?: string }) => {
+    statusCommand.exec(agentId, opts);
   });
 
 program.parse();

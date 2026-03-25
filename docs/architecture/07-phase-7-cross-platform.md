@@ -126,23 +126,17 @@ widget.json
 
 Each compiler reads the same JSON spec and outputs platform-native UI code.
 
-## 7.4 Embedded Runtime for Mobile (replacing Companion Mode)
+## 7.4 Cloud API Client for Mobile
 
-Phase 5 shipped iOS with Companion Mode (connects to Mac). Now we ship a self-contained mobile runtime:
+Phase 5 shipped iOS with a Cloud API Client. Android follows the exact same pattern:
 
 ```
-Embedded Runtime (runs on device):
-  - JavaScriptCore (iOS) or Hermes (Android) for agent logic
-  - SQLite (native on both platforms) for data
-  - HTTP client for LLM API calls (OpenRouter)
-  - OAuth token storage in Keychain/Keystore
-  - Background execution via platform schedulers
+Android connects directly to the Magically Cloud Runtime (Fly.io) via REST/WebSocket APIs.
+There is no local embedded runtime or local SQLite sync required on the device.
+Auth is handled via JWT tokens.
 
-Limitations vs Desktop Runtime:
-  - No Bun APIs (use fetch, not node:http)
-  - No filesystem tools (use app sandbox storage)
-  - Background execution is time-limited (iOS: ~30s, Android: ~10min)
-  - Heavy Sidekick Tasks may need to offload to cloud
+Limitations vs Desktop React App:
+  - Background execution is time-limited by OS (use Cloud crons instead)
 ```
 
 ## 7.5 Deliverables
@@ -154,6 +148,6 @@ Limitations vs Desktop Runtime:
 - [ ] Android home screen widgets (widget.json → Glance)
 - [ ] Android share intent receiver
 - [ ] Widget DSL → Jetpack Compose compiler
-- [ ] Embedded JS runtime for mobile (replacing companion mode)
+- [ ] Cloud API Client for mobile (replacing companion mode)
 - [ ] Cross-platform CI/CD (build all platforms from one repo)
 - [ ] Platform-specific release pipelines (DMG, MSI, AppImage, APK, TestFlight)

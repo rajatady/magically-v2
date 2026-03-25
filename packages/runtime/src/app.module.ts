@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleModule } from '@nestjs/schedule';
+import { BullModule } from '@nestjs/bullmq';
 import { DbModule } from './db/db.module';
 import { AppConfigModule } from './config/config.module';
 import { LlmModule } from './llm/llm.module';
@@ -10,6 +11,7 @@ import { EventsModule } from './events/events.module';
 import { ZeusModule } from './zeus/zeus.module';
 import { AuthModule } from './auth';
 import { RegistryModule } from './registry/registry.module';
+import { BuildModule } from './build/build.module';
 
 @Module({
   imports: [
@@ -22,6 +24,14 @@ import { RegistryModule } from './registry/registry.module';
     }),
     EventEmitterModule.forRoot(),
     ScheduleModule.forRoot(),
+    BullModule.forRootAsync({
+      useFactory: (config: ConfigService) => ({
+        connection: {
+          url: config.get('REDIS_URL') ?? 'redis://localhost:6379',
+        },
+      }),
+      inject: [ConfigService],
+    }),
     DbModule,
     AuthModule,
     AppConfigModule,
@@ -30,6 +40,7 @@ import { RegistryModule } from './registry/registry.module';
     EventsModule,
     ZeusModule,
     RegistryModule,
+    BuildModule,
   ],
 })
 export class AppModule {}

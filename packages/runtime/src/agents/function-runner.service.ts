@@ -2,16 +2,17 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService as NestConfigService } from '@nestjs/config';
 import { existsSync } from 'fs';
 import { join } from 'path';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { InjectDB, type DrizzleDB } from '../db';
-import { agentSecrets, agentRuns } from '../db/schema';
+import { agentSecrets, agentRuns, registryVersions } from '../db/schema';
 import { AgentsService } from './agents.service';
 import { FeedService } from '../events/feed.service';
 import { LlmService } from '../llm/llm.service';
 import { ComputeProvider } from './compute/compute-provider';
 import { DockerProvider } from './compute/docker-provider';
 import { FlyProvider } from './compute/fly-provider';
+import { DaytonaProvider } from './compute/daytona-provider';
 import type { AgentContext, AgentFunctionHandler, AgentLog } from './agent-context';
 import type { AgentInstance } from './types';
 
@@ -56,6 +57,16 @@ export class FunctionRunnerService implements OnModuleInit {
 
     const preference = this.nestConfig.get<string>('COMPUTE_PROVIDER', 'auto');
 
+    if (preference === 'daytona') {
+      const daytona = new DaytonaProvider(this.nestConfig);
+      if (await daytona.isAvailable()) {
+        this.computeProvider = daytona;
+        this.logger.log('Compute provider: Daytona (configured)');
+        return daytona;
+      }
+      throw new Error('COMPUTE_PROVIDER=daytona but Daytona is not configured (missing DAYTONA_API_KEY)');
+    }
+
     if (preference === 'fly') {
       const fly = new FlyProvider(this.nestConfig);
       if (await fly.isAvailable()) {
@@ -76,7 +87,14 @@ export class FunctionRunnerService implements OnModuleInit {
       throw new Error('COMPUTE_PROVIDER=docker but Docker is not available');
     }
 
-    // auto: try Fly first, then Docker
+    // auto: try Daytona first, then Fly, then Docker
+    const daytona = new DaytonaProvider(this.nestConfig);
+    if (await daytona.isAvailable()) {
+      this.computeProvider = daytona;
+      this.logger.log('Compute provider: Daytona (auto)');
+      return daytona;
+    }
+
     const fly = new FlyProvider(this.nestConfig);
     if (await fly.isAvailable()) {
       this.computeProvider = fly;
@@ -92,11 +110,26 @@ export class FunctionRunnerService implements OnModuleInit {
     }
 
     throw new Error(
-      'No compute provider available. Set COMPUTE_PROVIDER=fly or COMPUTE_PROVIDER=docker, or install Docker.',
+      'No compute provider available. Set COMPUTE_PROVIDER=daytona, fly, or docker.',
     );
   }
 
   /** Load secrets for an agent from the DB, filtered to what the manifest declares. */
+  /** Look up a pre-built image ref from the registry (GHCR). */
+  private async getRegistryImageRef(agentId: string, version: string): Promise<string | null> {
+    const rows = await this.db
+      .select({ imageRef: registryVersions.imageRef })
+      .from(registryVersions)
+      .where(and(
+        eq(registryVersions.agentId, agentId),
+        eq(registryVersions.version, version),
+        eq(registryVersions.status, 'live'),
+      ))
+      .limit(1);
+
+    return rows[0]?.imageRef ?? null;
+  }
+
   private async loadSecrets(agentId: string, declaredSecrets: string[]): Promise<Record<string, string>> {
     if (declaredSecrets.length === 0) return {};
 
@@ -249,15 +282,14 @@ export class FunctionRunnerService implements OnModuleInit {
       MAGICALLY_TRIGGER: triggerJson,
     };
 
-    // For Fly: use registry image if agent has custom deps (pre-pushed),
-    // otherwise use the public base image directly
+    // Resolve image: check registry for a pre-built GHCR image first,
+    // then fall back to local image tag or base image
     let image = imageTag;
-    if (provider.name === 'fly') {
-      if (runtime.install) {
-        image = `registry.fly.io/${this.nestConfig.get('FLY_AGENTS_APP')}:${agentId}-${manifest.version}`;
-      } else {
-        image = runtime.base;
-      }
+    const registryImage = await this.getRegistryImageRef(agentId, manifest.version);
+    if (registryImage) {
+      image = registryImage;
+    } else if (provider.name === 'fly') {
+      image = runtime.base;
     }
 
     // Run
