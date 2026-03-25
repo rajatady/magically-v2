@@ -2,12 +2,12 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleModule } from '@nestjs/schedule';
-import { DbModule } from './db/db.module.js';
-import { AppConfigModule } from './config/config.module.js';
-import { LlmModule } from './llm/llm.module.js';
-import { AgentsModule } from './agents/agents.module.js';
-import { EventsModule } from './events/events.module.js';
-import { ZeusModule } from './zeus/zeus.module.js';
+import { DbModule } from './db/db.module';
+import { AppConfigModule } from './config/config.module';
+import { LlmModule } from './llm/llm.module';
+import { AgentsModule } from './agents/agents.module';
+import { EventsModule } from './events/events.module';
+import { ZeusModule } from './zeus/zeus.module';
 
 @Module({
   imports: [

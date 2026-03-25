@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
-import { AgentsService } from './agents.service.js';
-import { AgentsController } from './agents.controller.js';
-import { AgentUiService } from './agent-ui.service.js';
-import { FunctionRunnerService } from './function-runner.service.js';
-import { TriggerSchedulerService } from './trigger-scheduler.service.js';
-import { EventsModule } from '../events/events.module.js';
-import { LlmModule } from '../llm/llm.module.js';
+import { AgentsService } from './agents.service';
+import { AgentsController } from './agents.controller';
+import { AgentUiService } from './agent-ui.service';
+import { FunctionRunnerService } from './function-runner.service';
+import { TriggerSchedulerService } from './trigger-scheduler.service';
+import { EventsModule } from '../events/events.module';
+import { LlmModule } from '../llm/llm.module';
 
 @Module({
   imports: [EventsModule, LlmModule],

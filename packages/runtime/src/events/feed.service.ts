@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { eq, desc } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
-import { DatabaseService } from '../db/database.service.js';
-import { feedEvents, type NewFeedEvent } from '../db/schema.js';
+import { InjectDB, type DrizzleDB } from '../db';
+import { feedEvents, type NewFeedEvent } from '../db/schema';
 
 export type FeedItemType = 'info' | 'success' | 'warning' | 'error' | 'audio';
 
@@ -19,7 +19,7 @@ export interface CreateFeedItemDto {
 @Injectable()
 export class FeedService {
   constructor(
-    private readonly db: DatabaseService,
+    @InjectDB() private readonly db: DrizzleDB,
     private readonly emitter: EventEmitter2,
   ) {}
 
@@ -36,7 +36,7 @@ export class FeedService {
       createdAt: new Date(),
     };
 
-    this.db.db.insert(feedEvents).values(item).run();
+    await this.db.insert(feedEvents).values(item);
 
     // Emit to event bus → WebSocket gateway picks it up
     this.emitter.emit('feed.new', item);
@@ -44,27 +44,24 @@ export class FeedService {
     return item;
   }
 
-  findAll(limit = 50) {
-    return this.db.db
+  async findAll(limit = 50) {
+    return this.db
       .select()
       .from(feedEvents)
       .orderBy(desc(feedEvents.createdAt))
-      .limit(limit)
-      .all();
+      .limit(limit);
   }
 
-  markRead(id: string) {
-    this.db.db
+  async markRead(id: string) {
+    await this.db
       .update(feedEvents)
       .set({ read: true })
-      .where(eq(feedEvents.id, id))
-      .run();
+      .where(eq(feedEvents.id, id));
   }
 
-  dismiss(id: string) {
-    this.db.db
+  async dismiss(id: string) {
+    await this.db
       .delete(feedEvents)
-      .where(eq(feedEvents.id, id))
-      .run();
+      .where(eq(feedEvents.id, id));
   }
 }

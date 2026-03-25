@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
-import { EventsGateway } from './events.gateway.js';
-import { FeedService } from './feed.service.js';
-import { FeedController } from './feed.controller.js';
+import { EventsGateway } from './events.gateway';
+import { FeedService } from './feed.service';
+import { FeedController } from './feed.controller';
 
 @Module({
   providers: [EventsGateway, FeedService],

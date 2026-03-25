@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import OpenAI from 'openai';
-import { ConfigService } from '../config/config.service.js';
+import { ConfigService } from '../config/config.service';
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant' | 'tool';

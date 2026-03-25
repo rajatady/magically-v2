@@ -3,13 +3,17 @@ import { writeFileSync, mkdirSync, rmSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { FunctionRunnerService } from './function-runner.service.js';
-import { AgentsService } from './agents.service.js';
-import { DatabaseService } from '../db/database.service.js';
-import { FeedService } from '../events/feed.service.js';
+import { Pool } from 'pg';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import { ConfigModule } from '@nestjs/config';
+import { FunctionRunnerService } from './function-runner.service';
+import { AgentsService } from './agents.service';
+import { FeedService } from '../events/feed.service';
 import { ConfigService as NestConfigService } from '@nestjs/config';
-import { LlmService } from '../llm/llm.service.js';
-import { agentSecrets } from '../db/schema.js';
+import { LlmService } from '../llm/llm.service';
+import { DRIZZLE, type DrizzleDB } from '../db';
+import * as schema from '../db/schema';
+import { agentSecrets } from '../db/schema';
 
 function makeTempAgent(
   dir: string,
@@ -35,12 +39,11 @@ function makeTempAgent(
 describe('FunctionRunnerService', () => {
   let runner: FunctionRunnerService;
   let agents: AgentsService;
-  let dbService: DatabaseService;
+  let db: DrizzleDB;
   let emitter: EventEmitter2;
   let tmpDir: string;
 
   beforeEach(async () => {
-    process.env.DB_PATH = ':memory:';
     tmpDir = join(tmpdir(), `magically-fn-test-${Date.now()}`);
     mkdirSync(tmpDir, { recursive: true });
 
@@ -51,8 +54,17 @@ describe('FunctionRunnerService', () => {
     };
 
     const module: TestingModule = await Test.createTestingModule({
+      imports: [
+        ConfigModule.forRoot({ envFilePath: ['../../.env', '.env'] }),
+      ],
       providers: [
-        DatabaseService,
+        {
+          provide: DRIZZLE,
+          useFactory: () => {
+            const pool = new Pool({ connectionString: process.env.DATABASE_URL ?? 'postgres://localhost:5432/magically_v2' });
+            return drizzle(pool, { schema });
+          },
+        },
         AgentsService,
         FeedService,
         FunctionRunnerService,
@@ -62,18 +74,16 @@ describe('FunctionRunnerService', () => {
       ],
     }).compile();
 
-    dbService = module.get(DatabaseService);
-    dbService.onModuleInit();
+    db = module.get<DrizzleDB>(DRIZZLE);
 
     agents = module.get(AgentsService);
     jest.spyOn(agents as any, 'scanAgentsDir').mockImplementationOnce(() => {});
-    agents.onModuleInit();
+    await agents.onModuleInit();
 
     runner = module.get(FunctionRunnerService);
   });
 
   afterEach(() => {
-    dbService.onModuleDestroy();
     rmSync(tmpDir, { recursive: true, force: true });
   });
 
@@ -87,7 +97,7 @@ describe('FunctionRunnerService', () => {
       'add': `module.exports = async function(ctx, params) { return (params.a || 0) + (params.b || 0); };`,
     });
 
-    agents.loadAgent(join(tmpDir, 'adder'), join(tmpDir, 'adder', 'manifest.json'));
+    await agents.loadAgent(join(tmpDir, 'adder'), join(tmpDir, 'adder', 'manifest.json'));
 
     const result = await runner.run('adder', 'add', {
       type: 'manual',
@@ -108,7 +118,7 @@ describe('FunctionRunnerService', () => {
       'greet': `module.exports = async function(ctx) { ctx.log.info('hello world'); return 'done'; };`,
     });
 
-    agents.loadAgent(join(tmpDir, 'logger'), join(tmpDir, 'logger', 'manifest.json'));
+    await agents.loadAgent(join(tmpDir, 'logger'), join(tmpDir, 'logger', 'manifest.json'));
 
     const result = await runner.run('logger', 'greet', { type: 'manual' });
 
@@ -128,7 +138,7 @@ describe('FunctionRunnerService', () => {
       'boom': `module.exports = async function(ctx) { throw new Error('kaboom'); };`,
     });
 
-    agents.loadAgent(join(tmpDir, 'crasher'), join(tmpDir, 'crasher', 'manifest.json'));
+    await agents.loadAgent(join(tmpDir, 'crasher'), join(tmpDir, 'crasher', 'manifest.json'));
 
     const result = await runner.run('crasher', 'boom', { type: 'manual' });
 
@@ -147,7 +157,7 @@ describe('FunctionRunnerService', () => {
       'secret': `module.exports = async function() { return 'hacked'; };`,
     });
 
-    agents.loadAgent(join(tmpDir, 'strict'), join(tmpDir, 'strict', 'manifest.json'));
+    await agents.loadAgent(join(tmpDir, 'strict'), join(tmpDir, 'strict', 'manifest.json'));
 
     await expect(runner.run('strict', 'secret', { type: 'manual' }))
       .rejects.toThrow(/not declared/);
@@ -162,7 +172,7 @@ describe('FunctionRunnerService', () => {
     });
     // No function files created
 
-    agents.loadAgent(join(tmpDir, 'missing'), join(tmpDir, 'missing', 'manifest.json'));
+    await agents.loadAgent(join(tmpDir, 'missing'), join(tmpDir, 'missing', 'manifest.json'));
 
     await expect(runner.run('missing', 'ghost', { type: 'manual' }))
       .rejects.toThrow(/not found/i);
@@ -184,9 +194,12 @@ describe('FunctionRunnerService', () => {
       };`,
     });
 
-    agents.loadAgent(join(tmpDir, 'poster'), join(tmpDir, 'poster', 'manifest.json'));
+    await agents.loadAgent(join(tmpDir, 'poster'), join(tmpDir, 'poster', 'manifest.json'));
 
     await runner.run('poster', 'post', { type: 'manual' });
+
+    // feed.create is fire-and-forget async — wait a tick for the DB insert + emit
+    await new Promise((r) => setTimeout(r, 100));
 
     expect(feedEvents.length).toBe(1);
   });
@@ -204,7 +217,7 @@ describe('FunctionRunnerService', () => {
       };`,
     });
 
-    agents.loadAgent(join(tmpDir, 'llm-user'), join(tmpDir, 'llm-user', 'manifest.json'));
+    await agents.loadAgent(join(tmpDir, 'llm-user'), join(tmpDir, 'llm-user', 'manifest.json'));
 
     const result = await runner.run('llm-user', 'think', { type: 'manual' });
 
@@ -223,14 +236,14 @@ describe('FunctionRunnerService', () => {
       'readSecret': `module.exports = async function(ctx) { return ctx.secrets; };`,
     });
 
-    agents.loadAgent(join(tmpDir, 'secret-reader'), join(tmpDir, 'secret-reader', 'manifest.json'));
+    await agents.loadAgent(join(tmpDir, 'secret-reader'), join(tmpDir, 'secret-reader', 'manifest.json'));
 
     // Insert secrets into DB via Drizzle
     const now = new Date();
-    dbService.db.insert(agentSecrets).values({ agentId: 'secret-reader', key: 'API_KEY', value: 'sk-12345', updatedAt: now }).run();
-    dbService.db.insert(agentSecrets).values({ agentId: 'secret-reader', key: 'OTHER_KEY', value: 'other-val', updatedAt: now }).run();
+    await db.insert(agentSecrets).values({ agentId: 'secret-reader', key: 'API_KEY', value: 'sk-12345', updatedAt: now });
+    await db.insert(agentSecrets).values({ agentId: 'secret-reader', key: 'OTHER_KEY', value: 'other-val', updatedAt: now });
     // Also insert a secret NOT declared in manifest — should NOT be injected
-    dbService.db.insert(agentSecrets).values({ agentId: 'secret-reader', key: 'UNDECLARED', value: 'should-not-appear', updatedAt: now }).run();
+    await db.insert(agentSecrets).values({ agentId: 'secret-reader', key: 'UNDECLARED', value: 'should-not-appear', updatedAt: now });
 
     const result = await runner.run('secret-reader', 'readSecret', { type: 'manual' });
 

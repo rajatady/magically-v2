@@ -1,4 +1,4 @@
-import { AgentManifestSchema } from './types.js';
+import { AgentManifestSchema } from './types';
 
 describe('AgentManifestSchema', () => {
   const minimal = { id: 'my-agent', name: 'My Agent', version: '1.0.0' };

@@ -1,5 +1,5 @@
 import { execSync } from 'child_process';
-import { DockerProvider } from './docker-provider.js';
+import { DockerProvider } from './docker-provider';
 
 let dockerAvailable = false;
 try {

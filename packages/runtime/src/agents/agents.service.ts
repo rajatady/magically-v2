@@ -7,30 +7,26 @@ import {
 import { join, resolve } from 'path';
 import { readFileSync, readdirSync, existsSync } from 'fs';
 import { eq } from 'drizzle-orm';
-import { DatabaseService } from '../db/database.service.js';
-import { agents as agentsTable } from '../db/schema.js';
+import { InjectDB, type DrizzleDB } from '../db';
+import { agents as agentsTable } from '../db/schema';
 import {
   AgentInstance,
   AgentManifest,
   AgentManifestSchema,
-} from './types.js';
-import { randomUUID } from 'crypto';
+} from './types';
 
 @Injectable()
 export class AgentsService implements OnModuleInit {
   private readonly logger = new Logger(AgentsService.name);
   private instances = new Map<string, AgentInstance>();
 
-  constructor(private readonly db: DatabaseService) {}
+  constructor(@InjectDB() private readonly db: DrizzleDB) {}
 
-  onModuleInit() {
-    this.scanAgentsDir();
+  async onModuleInit() {
+    await this.scanAgentsDir();
   }
 
-  // ─── Discovery ─────────────────────────────────────────────────────────────
-
-  /** Scan the `agents/` directory at project root and load all manifests */
-  scanAgentsDir(agentsDir?: string) {
+  async scanAgentsDir(agentsDir?: string) {
     const dir = agentsDir ?? resolve(process.cwd(), '..', '..', 'agents');
     if (!existsSync(dir)) {
       this.logger.warn(`Agents directory not found: ${dir}`);
@@ -45,7 +41,7 @@ export class AgentsService implements OnModuleInit {
       if (!existsSync(manifestPath)) continue;
 
       try {
-        this.loadAgent(agentDir, manifestPath);
+        await this.loadAgent(agentDir, manifestPath);
       } catch (err) {
         this.logger.error(`Failed to load agent at ${agentDir}: ${err}`);
       }
@@ -54,7 +50,7 @@ export class AgentsService implements OnModuleInit {
     this.logger.log(`Loaded ${this.instances.size} agents`);
   }
 
-  loadAgent(agentDir: string, manifestPath: string): AgentInstance {
+  async loadAgent(agentDir: string, manifestPath: string): Promise<AgentInstance> {
     const raw = JSON.parse(readFileSync(manifestPath, 'utf-8'));
     const manifest = AgentManifestSchema.parse(raw);
 
@@ -69,20 +65,19 @@ export class AgentsService implements OnModuleInit {
     this.instances.set(manifest.id, instance);
 
     // Upsert into DB
-    const existing = this.db.db
+    const existing = await this.db
       .select()
       .from(agentsTable)
       .where(eq(agentsTable.id, manifest.id))
-      .get();
+      .limit(1);
 
-    if (existing) {
-      this.db.db
+    if (existing.length > 0) {
+      await this.db
         .update(agentsTable)
         .set({ name: manifest.name, version: manifest.version, updatedAt: now })
-        .where(eq(agentsTable.id, manifest.id))
-        .run();
+        .where(eq(agentsTable.id, manifest.id));
     } else {
-      this.db.db.insert(agentsTable).values({
+      await this.db.insert(agentsTable).values({
         id: manifest.id,
         name: manifest.name,
         version: manifest.version,
@@ -94,13 +89,11 @@ export class AgentsService implements OnModuleInit {
         enabled: true,
         installedAt: now,
         updatedAt: now,
-      }).run();
+      });
     }
 
     return instance;
   }
-
-  // ─── CRUD ──────────────────────────────────────────────────────────────────
 
   findAll(): AgentInstance[] {
     return Array.from(this.instances.values());
@@ -112,24 +105,22 @@ export class AgentsService implements OnModuleInit {
     return instance;
   }
 
-  enable(id: string) {
+  async enable(id: string) {
     const inst = this.findOne(id);
     inst.enabled = true;
-    this.db.db
+    await this.db
       .update(agentsTable)
       .set({ enabled: true, updatedAt: new Date() })
-      .where(eq(agentsTable.id, id))
-      .run();
+      .where(eq(agentsTable.id, id));
   }
 
-  disable(id: string) {
+  async disable(id: string) {
     const inst = this.findOne(id);
     inst.enabled = false;
-    this.db.db
+    await this.db
       .update(agentsTable)
       .set({ enabled: false, updatedAt: new Date() })
-      .where(eq(agentsTable.id, id))
-      .run();
+      .where(eq(agentsTable.id, id));
   }
 
   getManifest(id: string): AgentManifest {

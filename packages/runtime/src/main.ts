@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module.js';
+import { AppModule } from './app.module';
 import { ValidationPipe, Logger } from '@nestjs/common';
 
 const PORT = parseInt(process.env.PORT ?? '4321', 10);

@@ -1,5 +1,5 @@
 import { ConfigService } from '@nestjs/config';
-import { ComputeProvider, type ComputeRunInput, type ComputeRunOutput } from './compute-provider.js';
+import { ComputeProvider, type ComputeRunInput, type ComputeRunOutput } from './compute-provider';
 
 export class FlyProvider extends ComputeProvider {
   readonly name = 'fly';

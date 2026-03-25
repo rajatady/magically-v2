@@ -1,5 +1,5 @@
 import { ConfigService } from '@nestjs/config';
-import { FlyProvider } from './fly-provider.js';
+import { FlyProvider } from './fly-provider';
 
 function makeConfig(env: Record<string, string>): ConfigService {
   return { get: (key: string) => env[key] } as unknown as ConfigService;

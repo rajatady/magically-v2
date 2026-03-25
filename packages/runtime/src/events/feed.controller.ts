@@ -8,7 +8,7 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { FeedService, CreateFeedItemDto } from './feed.service.js';
+import { FeedService, CreateFeedItemDto } from './feed.service';
 
 @Controller('api/feed')
 export class FeedController {

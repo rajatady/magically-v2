@@ -2,15 +2,15 @@ import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { eq, desc } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
-import { DatabaseService } from '../db/database.service.js';
+import { InjectDB, type DrizzleDB } from '../db';
 import {
   zeusConversations,
   zeusMemory,
   zeusTasks,
-} from '../db/schema.js';
-import { LlmService, ChatMessage } from '../llm/llm.service.js';
-import { AgentsService } from '../agents/agents.service.js';
-import { EventsGateway } from '../events/events.gateway.js';
+} from '../db/schema';
+import { LlmService, ChatMessage } from '../llm/llm.service';
+import { AgentsService } from '../agents/agents.service';
+import { EventsGateway } from '../events/events.gateway';
 
 const ZEUS_SYSTEM_PROMPT = `You are Zeus, the trusted AI companion inside Magically — a personal Agent OS.
 
@@ -36,7 +36,7 @@ export class ZeusService {
   private readonly logger = new Logger(ZeusService.name);
 
   constructor(
-    private readonly db: DatabaseService,
+    @InjectDB() private readonly db: DrizzleDB,
     private readonly llm: LlmService,
     private readonly agents: AgentsService,
     private readonly events: EventsGateway,
@@ -45,26 +45,27 @@ export class ZeusService {
 
   // ─── Conversation Management ─────────────────────────────────────────────
 
-  createConversation(mode: 'chat' | 'build' | 'edit' | 'task' = 'chat', agentId?: string) {
+  async createConversation(mode: 'chat' | 'build' | 'edit' | 'task' = 'chat', agentId?: string) {
     const id = randomUUID();
     const now = new Date();
-    this.db.db.insert(zeusConversations).values({
+    await this.db.insert(zeusConversations).values({
       id,
       messages: [],
       mode,
       agentId,
       createdAt: now,
       updatedAt: now,
-    }).run();
+    });
     return { id, mode, messages: [] };
   }
 
-  getConversation(id: string) {
-    return this.db.db
+  async getConversation(id: string) {
+    const rows = await this.db
       .select()
       .from(zeusConversations)
       .where(eq(zeusConversations.id, id))
-      .get();
+      .limit(1);
+    return rows[0];
   }
 
   // ─── Chat (SSE streaming) ─────────────────────────────────────────────────
@@ -73,7 +74,7 @@ export class ZeusService {
     conversationId: string,
     userMessage: string,
   ): AsyncGenerator<string> {
-    const conv = this.getConversation(conversationId);
+    const conv = await this.getConversation(conversationId);
     if (!conv) throw new Error(`Conversation ${conversationId} not found`);
 
     const history = (conv.messages as ChatMessage[]) ?? [];
@@ -113,11 +114,10 @@ export class ZeusService {
       { role: 'assistant', content: fullResponse },
     ];
 
-    this.db.db
+    await this.db
       .update(zeusConversations)
       .set({ messages: updatedHistory, updatedAt: new Date() })
-      .where(eq(zeusConversations.id, conversationId))
-      .run();
+      .where(eq(zeusConversations.id, conversationId));
 
     this.events.emit({
       type: 'zeus:done',
@@ -128,26 +128,26 @@ export class ZeusService {
 
   // ─── Memory ───────────────────────────────────────────────────────────────
 
-  getMemory() {
-    return this.db.db.select().from(zeusMemory).all();
+  async getMemory() {
+    return await this.db.select().from(zeusMemory);
   }
 
-  setMemory(key: string, value: string, category: string, source: string) {
+  async setMemory(key: string, value: string, category: string, source: string) {
     const now = new Date();
-    const existing = this.db.db
+    const rows = await this.db
       .select()
       .from(zeusMemory)
       .where(eq(zeusMemory.key, key))
-      .get();
+      .limit(1);
+    const existing = rows[0];
 
     if (existing) {
-      this.db.db
+      await this.db
         .update(zeusMemory)
         .set({ value, category, source, updatedAt: now })
-        .where(eq(zeusMemory.key, key))
-        .run();
+        .where(eq(zeusMemory.key, key));
     } else {
-      this.db.db.insert(zeusMemory).values({
+      await this.db.insert(zeusMemory).values({
         id: randomUUID(),
         key,
         value,
@@ -155,20 +155,19 @@ export class ZeusService {
         source,
         createdAt: now,
         updatedAt: now,
-      }).run();
+      });
     }
   }
 
-  deleteMemory(key: string) {
-    this.db.db
+  async deleteMemory(key: string) {
+    await this.db
       .delete(zeusMemory)
-      .where(eq(zeusMemory.key, key))
-      .run();
+      .where(eq(zeusMemory.key, key));
   }
 
   // ─── Zeus Tasks ───────────────────────────────────────────────────────────
 
-  createTask(params: {
+  async createTask(params: {
     requesterId: string;
     goal: string;
     context?: unknown;
@@ -179,7 +178,7 @@ export class ZeusService {
   }) {
     const id = randomUUID();
     const now = new Date();
-    this.db.db.insert(zeusTasks).values({
+    await this.db.insert(zeusTasks).values({
       id,
       requesterId: params.requesterId,
       goal: params.goal,
@@ -190,15 +189,14 @@ export class ZeusService {
       status: params.requiresApproval ? 'awaiting_approval' : 'pending',
       createdAt: now,
       updatedAt: now,
-    }).run();
+    });
     return id;
   }
 
-  getTasks() {
-    return this.db.db
+  async getTasks() {
+    return await this.db
       .select()
       .from(zeusTasks)
-      .orderBy(desc(zeusTasks.createdAt))
-      .all();
+      .orderBy(desc(zeusTasks.createdAt));
   }
 }

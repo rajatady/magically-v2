@@ -1,7 +1,7 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
-import { DatabaseService } from '../db/database.service.js';
-import { userConfig } from '../db/schema.js';
+import { InjectDB, type DrizzleDB } from '../db';
+import { userConfig } from '../db/schema';
 
 export interface MagicallyConfig {
   openrouterApiKey?: string;
@@ -19,21 +19,21 @@ export class ConfigService implements OnModuleInit {
   private readonly logger = new Logger(ConfigService.name);
   private config: MagicallyConfig = {};
 
-  constructor(private readonly db: DatabaseService) {}
+  constructor(@InjectDB() private readonly db: DrizzleDB) {}
 
-  onModuleInit() {
-    this.load();
+  async onModuleInit() {
+    await this.load();
   }
 
-  private load() {
-    const row = this.db.db
+  private async load() {
+    const rows = await this.db
       .select()
       .from(userConfig)
       .where(eq(userConfig.key, CONFIG_KEY))
-      .get();
+      .limit(1);
 
-    if (row) {
-      this.config = row.value as MagicallyConfig;
+    if (rows.length > 0) {
+      this.config = rows[0].value as MagicallyConfig;
     }
     this.logger.log('Config loaded');
   }
@@ -50,23 +50,21 @@ export class ConfigService implements OnModuleInit {
     this.config = { ...this.config, ...partial };
     const now = new Date();
 
-    const existing = this.db.db
+    const existing = await this.db
       .select()
       .from(userConfig)
       .where(eq(userConfig.key, CONFIG_KEY))
-      .get();
+      .limit(1);
 
-    if (existing) {
-      this.db.db
+    if (existing.length > 0) {
+      await this.db
         .update(userConfig)
         .set({ value: this.config, updatedAt: now })
-        .where(eq(userConfig.key, CONFIG_KEY))
-        .run();
+        .where(eq(userConfig.key, CONFIG_KEY));
     } else {
-      this.db.db
+      await this.db
         .insert(userConfig)
-        .values({ key: CONFIG_KEY, value: this.config, updatedAt: now })
-        .run();
+        .values({ key: CONFIG_KEY, value: this.config, updatedAt: now });
     }
 
     return this.getAll();

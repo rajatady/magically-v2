@@ -11,10 +11,10 @@ import {
     NotFoundException,
 } from '@nestjs/common';
 import {Response} from 'express';
-import {AgentsService} from './agents.service.js';
-import {AgentUiService} from './agent-ui.service.js';
-import {FunctionRunnerService} from './function-runner.service.js';
-import {AgentActionDto} from './dto/agent-action.dto.js';
+import {AgentsService} from './agents.service';
+import {AgentUiService} from './agent-ui.service';
+import {FunctionRunnerService} from './function-runner.service';
+import {AgentActionDto} from './dto/agent-action.dto';
 import {readFileSync, existsSync} from 'fs';
 import {join} from 'path';
 

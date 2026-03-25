@@ -3,16 +3,16 @@ import { ConfigService as NestConfigService } from '@nestjs/config';
 import { existsSync } from 'fs';
 import { join } from 'path';
 import { eq } from 'drizzle-orm';
-import { AgentsService } from './agents.service.js';
-import { FeedService } from '../events/feed.service.js';
-import { DatabaseService } from '../db/database.service.js';
-import { agentSecrets } from '../db/schema.js';
-import { LlmService } from '../llm/llm.service.js';
-import { ComputeProvider } from './compute/compute-provider.js';
-import { DockerProvider } from './compute/docker-provider.js';
-import { FlyProvider } from './compute/fly-provider.js';
-import type { AgentContext, AgentFunctionHandler, AgentLog } from './agent-context.js';
-import type { AgentInstance } from './types.js';
+import { InjectDB, type DrizzleDB } from '../db';
+import { agentSecrets } from '../db/schema';
+import { AgentsService } from './agents.service';
+import { FeedService } from '../events/feed.service';
+import { LlmService } from '../llm/llm.service';
+import { ComputeProvider } from './compute/compute-provider';
+import { DockerProvider } from './compute/docker-provider';
+import { FlyProvider } from './compute/fly-provider';
+import type { AgentContext, AgentFunctionHandler, AgentLog } from './agent-context';
+import type { AgentInstance } from './types';
 
 export interface RunLog {
   level: 'info' | 'warn' | 'error';
@@ -40,7 +40,7 @@ export class FunctionRunnerService implements OnModuleInit {
   constructor(
     private readonly agents: AgentsService,
     private readonly feed: FeedService,
-    private readonly db: DatabaseService,
+    @InjectDB() private readonly db: DrizzleDB,
     private readonly llmService: LlmService,
     private readonly nestConfig: NestConfigService,
   ) {}
@@ -95,14 +95,13 @@ export class FunctionRunnerService implements OnModuleInit {
   }
 
   /** Load secrets for an agent from the DB, filtered to what the manifest declares. */
-  private loadSecrets(agentId: string, declaredSecrets: string[]): Record<string, string> {
+  private async loadSecrets(agentId: string, declaredSecrets: string[]): Promise<Record<string, string>> {
     if (declaredSecrets.length === 0) return {};
 
-    const rows = this.db.db
+    const rows = await this.db
       .select()
       .from(agentSecrets)
-      .where(eq(agentSecrets.agentId, agentId))
-      .all();
+      .where(eq(agentSecrets.agentId, agentId));
 
     const secrets: Record<string, string> = {};
     for (const row of rows) {
@@ -163,7 +162,7 @@ export class FunctionRunnerService implements OnModuleInit {
       );
     }
 
-    const { ctx, logs } = this.buildContext(inst, trigger);
+    const { ctx, logs } = await this.buildContext(inst, trigger);
 
     const startedAt = Date.now();
     try {
@@ -204,7 +203,7 @@ export class FunctionRunnerService implements OnModuleInit {
     const cmd = runCmd.split(' ');
 
     // Build env vars: secrets + trigger metadata
-    const secrets = this.loadSecrets(agentId, manifest.secrets ?? []);
+    const secrets = await this.loadSecrets(agentId, manifest.secrets ?? []);
     const triggerJson = JSON.stringify({
       type: trigger.type,
       source: trigger.source,
@@ -287,10 +286,10 @@ export class FunctionRunnerService implements OnModuleInit {
 
   // ─── Context builder (in-process agents only) ─────────────────────────────
 
-  private buildContext(
+  private async buildContext(
     inst: AgentInstance,
     trigger: AgentContext['trigger'],
-  ): { ctx: AgentContext; logs: RunLog[] } {
+  ): Promise<{ ctx: AgentContext; logs: RunLog[] }> {
     const agentId = inst.manifest.id;
     const logs: RunLog[] = [];
 
@@ -315,7 +314,8 @@ export class FunctionRunnerService implements OnModuleInit {
       emit: (event: string, data?: unknown) => {
         if (event === 'feed' && data && typeof data === 'object') {
           const feedData = data as Record<string, unknown>;
-          this.feed.create({
+          // Fire and forget — don't block the agent function
+          void this.feed.create({
             agentId,
             type: (feedData.type as any) ?? 'info',
             title: (feedData.title as string) ?? '',
@@ -323,7 +323,7 @@ export class FunctionRunnerService implements OnModuleInit {
           });
         }
       },
-      secrets: this.loadSecrets(agentId, inst.manifest.secrets ?? []),
+      secrets: await this.loadSecrets(agentId, inst.manifest.secrets ?? []),
       llm: {
         ask: (prompt: string) =>
           this.llmService.complete([{ role: 'user', content: prompt }]),

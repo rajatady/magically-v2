@@ -10,9 +10,9 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { ZeusService } from './zeus.service.js';
-import { ChatDto } from './dto/chat.dto.js';
-import { SetMemoryDto } from './dto/memory.dto.js';
+import { ZeusService } from './zeus.service';
+import { ChatDto } from './dto/chat.dto';
+import { SetMemoryDto } from './dto/memory.dto';
 
 @Controller('api/zeus')
 export class ZeusController {

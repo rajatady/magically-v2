@@ -1,27 +1,35 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConfigService } from './config.service.js';
-import { DatabaseService } from '../db/database.service.js';
+import { Pool } from 'pg';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import { ConfigService } from './config.service';
+import { DRIZZLE, type DrizzleDB } from '../db';
+import * as schema from '../db/schema';
+import { userConfig } from '../db/schema';
+import { eq } from 'drizzle-orm';
 
 describe('ConfigService', () => {
   let service: ConfigService;
-  let db: DatabaseService;
+  let db: DrizzleDB;
 
   beforeEach(async () => {
-    process.env.DB_PATH = ':memory:';
-
     const module: TestingModule = await Test.createTestingModule({
-      providers: [DatabaseService, ConfigService],
+      providers: [
+        {
+          provide: DRIZZLE,
+          useFactory: () => {
+            const pool = new Pool({ connectionString: process.env.DATABASE_URL ?? 'postgres://localhost:5432/magically_v2' });
+            return drizzle(pool, { schema });
+          },
+        },
+        ConfigService,
+      ],
     }).compile();
 
-    db = module.get<DatabaseService>(DatabaseService);
-    db.onModuleInit();
+    db = module.get<DrizzleDB>(DRIZZLE);
+    await db.delete(userConfig);
 
     service = module.get<ConfigService>(ConfigService);
-    service.onModuleInit();
-  });
-
-  afterEach(() => {
-    db.onModuleDestroy();
+    await service.onModuleInit();
   });
 
   it('returns undefined for unconfigured keys', () => {

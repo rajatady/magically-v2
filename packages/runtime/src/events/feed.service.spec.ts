@@ -1,29 +1,41 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { EventEmitter2, EventEmitterModule } from '@nestjs/event-emitter';
-import { FeedService } from './feed.service.js';
-import { DatabaseService } from '../db/database.service.js';
+import { Pool } from 'pg';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import { FeedService } from './feed.service';
+import { DRIZZLE, type DrizzleDB } from '../db';
+import * as schema from '../db/schema';
+import { feedEvents, agents } from '../db/schema';
 
 describe('FeedService', () => {
   let service: FeedService;
-  let db: DatabaseService;
+  let db: DrizzleDB;
   let emitter: EventEmitter2;
 
   beforeEach(async () => {
-    process.env.DB_PATH = ':memory:';
-
     const module: TestingModule = await Test.createTestingModule({
-      imports: [EventEmitterModule.forRoot()],
-      providers: [DatabaseService, FeedService],
+      imports: [
+        EventEmitterModule.forRoot(),
+      ],
+      providers: [
+        {
+          provide: DRIZZLE,
+          useFactory: () => {
+            const pool = new Pool({ connectionString: process.env.DATABASE_URL ?? 'postgres://localhost:5432/magically_v2' });
+            return drizzle(pool, { schema });
+          },
+        },
+        FeedService,
+      ],
     }).compile();
 
-    db = module.get<DatabaseService>(DatabaseService);
-    db.onModuleInit();
+    db = module.get<DrizzleDB>(DRIZZLE);
+    await db.delete(feedEvents);
+    await db.delete(agents);
 
     service = module.get<FeedService>(FeedService);
     emitter = module.get<EventEmitter2>(EventEmitter2);
   });
-
-  afterEach(() => db.onModuleDestroy());
 
   it('creates a feed item and persists to DB', async () => {
     const item = await service.create({
@@ -52,25 +64,25 @@ describe('FeedService', () => {
     await new Promise((r) => setTimeout(r, 5));
     await service.create({ type: 'info', title: 'Second' });
 
-    const items = service.findAll();
+    const items = await service.findAll();
     expect(items[0].title).toBe('Second');
     expect(items[1].title).toBe('First');
   });
 
   it('markRead updates the read flag', async () => {
     const item = await service.create({ type: 'info', title: 'Unread' });
-    service.markRead(item.id);
+    await service.markRead(item.id);
 
-    const items = service.findAll();
+    const items = await service.findAll();
     const found = items.find((i) => i.id === item.id);
     expect(found?.read).toBe(true);
   });
 
   it('dismiss removes the item from the DB', async () => {
     const item = await service.create({ type: 'info', title: 'Gone soon' });
-    service.dismiss(item.id);
+    await service.dismiss(item.id);
 
-    const items = service.findAll();
+    const items = await service.findAll();
     expect(items.find((i) => i.id === item.id)).toBeUndefined();
   });
 
@@ -79,7 +91,7 @@ describe('FeedService', () => {
       await service.create({ type: 'info', title: `Item ${i}` });
     }
 
-    const limited = service.findAll(3);
+    const limited = await service.findAll(3);
     expect(limited.length).toBe(3);
   });
 });

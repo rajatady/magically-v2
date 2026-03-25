@@ -1,7 +1,7 @@
 import { execSync } from 'child_process';
 import { writeFileSync, unlinkSync } from 'fs';
 import { join } from 'path';
-import { ComputeProvider, type ComputeRunInput, type ComputeRunOutput } from './compute-provider.js';
+import { ComputeProvider, type ComputeRunInput, type ComputeRunOutput } from './compute-provider';
 
 export class DockerProvider extends ComputeProvider {
   readonly name = 'docker';

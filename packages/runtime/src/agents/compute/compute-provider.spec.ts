@@ -1,4 +1,4 @@
-import { ComputeProvider, type ComputeRunInput, type ComputeRunOutput } from './compute-provider.js';
+import { ComputeProvider, type ComputeRunInput, type ComputeRunOutput } from './compute-provider';
 
 class MockProvider extends ComputeProvider {
   readonly name = 'mock';

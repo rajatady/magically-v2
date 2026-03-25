@@ -1,9 +1,9 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { CronJob } from 'cron';
-import { AgentsService } from './agents.service.js';
-import { FunctionRunnerService } from './function-runner.service.js';
-import type { CronTrigger } from './types.js';
+import { AgentsService } from './agents.service';
+import { FunctionRunnerService } from './function-runner.service';
+import type { CronTrigger } from './types';
 
 @Injectable()
 export class TriggerSchedulerService implements OnModuleInit {

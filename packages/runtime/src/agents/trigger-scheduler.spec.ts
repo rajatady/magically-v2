@@ -4,13 +4,16 @@ import { join } from 'path';
 import { tmpdir } from 'os';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { SchedulerRegistry } from '@nestjs/schedule';
-import { TriggerSchedulerService } from './trigger-scheduler.service.js';
-import { FunctionRunnerService } from './function-runner.service.js';
-import { AgentsService } from './agents.service.js';
-import { DatabaseService } from '../db/database.service.js';
-import { FeedService } from '../events/feed.service.js';
+import { Pool } from 'pg';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import { TriggerSchedulerService } from './trigger-scheduler.service';
+import { FunctionRunnerService } from './function-runner.service';
+import { AgentsService } from './agents.service';
+import { FeedService } from '../events/feed.service';
 import { ConfigService as NestConfigService } from '@nestjs/config';
-import { LlmService } from '../llm/llm.service.js';
+import { LlmService } from '../llm/llm.service';
+import { DRIZZLE } from '../db/drizzle.provider';
+import * as schema from '../db/schema';
 
 function makeTempAgent(
   dir: string,
@@ -32,18 +35,22 @@ function makeTempAgent(
 describe('TriggerSchedulerService', () => {
   let scheduler: TriggerSchedulerService;
   let agents: AgentsService;
-  let dbService: DatabaseService;
   let schedulerRegistry: SchedulerRegistry;
   let tmpDir: string;
 
   beforeEach(async () => {
-    process.env.DB_PATH = ':memory:';
     tmpDir = join(tmpdir(), `magically-sched-test-${Date.now()}`);
     mkdirSync(tmpDir, { recursive: true });
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        DatabaseService,
+        {
+          provide: DRIZZLE,
+          useFactory: () => {
+            const pool = new Pool({ connectionString: process.env.DATABASE_URL ?? 'postgres://localhost:5432/magically_v2' });
+            return drizzle(pool, { schema });
+          },
+        },
         AgentsService,
         FeedService,
         FunctionRunnerService,
@@ -55,12 +62,9 @@ describe('TriggerSchedulerService', () => {
       ],
     }).compile();
 
-    dbService = module.get(DatabaseService);
-    dbService.onModuleInit();
-
     agents = module.get(AgentsService);
     jest.spyOn(agents as any, 'scanAgentsDir').mockImplementationOnce(() => {});
-    agents.onModuleInit();
+    await agents.onModuleInit();
 
     schedulerRegistry = module.get(SchedulerRegistry);
     scheduler = module.get(TriggerSchedulerService);
@@ -70,7 +74,6 @@ describe('TriggerSchedulerService', () => {
     for (const name of schedulerRegistry.getCronJobs().keys()) {
       schedulerRegistry.deleteCronJob(name);
     }
-    dbService.onModuleDestroy();
     rmSync(tmpDir, { recursive: true, force: true });
   });
 
@@ -164,7 +167,7 @@ describe('TriggerSchedulerService', () => {
     expect(schedulerRegistry.getCronJobs().size).toBe(0);
   });
 
-  it('registerAll picks up all agents with cron triggers', () => {
+  it('registerAll picks up all agents with cron triggers', async () => {
     makeTempAgent(tmpDir, 'cron-agent', {
       id: 'cron-agent',
       name: 'Cron',
@@ -183,7 +186,7 @@ describe('TriggerSchedulerService', () => {
       functions: [],
     });
 
-    agents.scanAgentsDir(tmpDir);
+    await agents.scanAgentsDir(tmpDir);
     scheduler.registerAll();
 
     const jobs = schedulerRegistry.getCronJobs();
