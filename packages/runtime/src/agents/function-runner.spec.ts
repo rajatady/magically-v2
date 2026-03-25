@@ -13,7 +13,7 @@ import { ConfigService as NestConfigService } from '@nestjs/config';
 import { LlmService } from '../llm/llm.service';
 import { DRIZZLE, type DrizzleDB } from '../db';
 import * as schema from '../db/schema';
-import { agentSecrets } from '../db/schema';
+import { agentSecrets, agentRuns, agents as agentsTable } from '../db/schema';
 
 function makeTempAgent(
   dir: string,
@@ -75,6 +75,13 @@ describe('FunctionRunnerService', () => {
     }).compile();
 
     db = module.get<DrizzleDB>(DRIZZLE);
+
+    db = module.get(DRIZZLE);
+
+    // Clean up between runs
+    await db.delete(agentRuns);
+    await db.delete(agentSecrets);
+    await db.delete(agentsTable);
 
     agents = module.get(AgentsService);
     jest.spyOn(agents as any, 'scanAgentsDir').mockImplementationOnce(() => {});

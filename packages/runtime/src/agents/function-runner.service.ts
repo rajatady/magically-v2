@@ -3,8 +3,9 @@ import { ConfigService as NestConfigService } from '@nestjs/config';
 import { existsSync } from 'fs';
 import { join } from 'path';
 import { eq } from 'drizzle-orm';
+import { randomUUID } from 'crypto';
 import { InjectDB, type DrizzleDB } from '../db';
-import { agentSecrets } from '../db/schema';
+import { agentSecrets, agentRuns } from '../db/schema';
 import { AgentsService } from './agents.service';
 import { FeedService } from '../events/feed.service';
 import { LlmService } from '../llm/llm.service';
@@ -22,6 +23,7 @@ export interface RunLog {
 }
 
 export interface RunResult {
+  runId?: string;
   agentId: string;
   functionName: string;
   status: 'success' | 'error';
@@ -128,11 +130,41 @@ export class FunctionRunnerService implements OnModuleInit {
       );
     }
 
-    // Container agents → compute provider. Lightweight agents → in-process.
-    if (manifest.runtime) {
-      return this.runInContainer(inst, functionName, trigger);
-    }
-    return this.runInProcess(inst, functionName, trigger);
+    // Create run record
+    const runId = randomUUID();
+    const now = new Date();
+    await this.db.insert(agentRuns).values({
+      id: runId,
+      agentId,
+      functionName,
+      triggerType: trigger.type,
+      triggerSource: trigger.source,
+      status: 'running',
+      startedAt: now,
+      createdAt: now,
+    });
+
+    // Execute and track
+    const isContainer = !!manifest.runtime;
+    const result = isContainer
+      ? await this.runInContainer(inst, functionName, trigger)
+      : await this.runInProcess(inst, functionName, trigger);
+
+    // Update run record with result
+    await this.db
+      .update(agentRuns)
+      .set({
+        status: result.status,
+        computeProvider: isContainer ? (this.computeProvider?.name ?? 'unknown') : 'in-process',
+        result: result.result != null ? result.result : undefined,
+        error: result.error,
+        logs: result.logs,
+        durationMs: result.durationMs,
+        completedAt: new Date(),
+      })
+      .where(eq(agentRuns.id, runId));
+
+    return { ...result, runId };
   }
 
   // ─── Lightweight: run in-process (no runtime block) ───────────────────────

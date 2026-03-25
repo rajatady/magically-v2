@@ -1,4 +1,4 @@
-import { pgTable, text, boolean, timestamp, real, jsonb, primaryKey } from 'drizzle-orm/pg-core';
+import { pgTable, text, boolean, timestamp, real, jsonb, primaryKey, integer } from 'drizzle-orm/pg-core';
 
 // ─── Agents ────────────────────────────────────────────────────────────────
 
@@ -97,6 +97,29 @@ export const agentSecrets = pgTable('agent_secrets', {
 }, (table) => [
   primaryKey({ columns: [table.agentId, table.key] }),
 ]);
+
+// ─── Agent Runs ──────────────────────────────────────────────────────────────
+
+export const agentRuns = pgTable('agent_runs', {
+  id: text('id').primaryKey(),
+  agentId: text('agent_id').notNull().references(() => agents.id, { onDelete: 'cascade' }),
+  functionName: text('function_name').notNull(),
+  triggerType: text('trigger_type').notNull(),         // 'schedule' | 'event' | 'manual' | 'programmatic'
+  triggerSource: text('trigger_source'),                // cron expression, event name, etc.
+  status: text('status').notNull().default('queued'),   // 'queued' | 'running' | 'success' | 'error'
+  computeProvider: text('compute_provider'),             // 'in-process' | 'docker' | 'fly'
+  exitCode: integer('exit_code'),
+  result: jsonb('result'),
+  error: text('error'),
+  logs: jsonb('logs'),                                  // RunLog[]
+  durationMs: integer('duration_ms'),
+  startedAt: timestamp('started_at'),
+  completedAt: timestamp('completed_at'),
+  createdAt: timestamp('created_at').notNull(),
+});
+
+export type AgentRun = typeof agentRuns.$inferSelect;
+export type NewAgentRun = typeof agentRuns.$inferInsert;
 
 // ─── User Config ─────────────────────────────────────────────────────────────
 
