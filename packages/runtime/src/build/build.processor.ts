@@ -52,8 +52,8 @@ export class BuildProcessor extends WorkerHost {
     const tmpDir = mkdtempSync(join(tmpdir(), 'magically-build-'));
 
     try {
-      // Extract tar.gz
-      execSync(`tar xzf - -C ${tmpDir}`, { input: bundleBuffer, stdio: ['pipe', 'pipe', 'pipe'] });
+      // Extract tar.gz (strip the top-level directory name)
+      execSync(`tar xzf - -C ${tmpDir} --strip-components=1`, { input: bundleBuffer, stdio: ['pipe', 'pipe', 'pipe'] });
 
       // Build image — attach bundleUrl to manifest for remote builders (GitHub Actions)
       const result = await this.buildService.build({

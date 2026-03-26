@@ -263,10 +263,19 @@ export class FunctionRunnerService implements OnModuleInit {
     const provider = await this.getComputeProvider();
     this.logger.log(`Running ${agentId}/${functionName} via ${provider.name}`);
 
-    // Build image
-    const imageTag = `magically-agent-${agentId}:${manifest.version}`;
-    const dockerfile = this.generateDockerfile(runtime);
-    await provider.buildImage(agentId, inst.dir, dockerfile, imageTag);
+    // Resolve image: check registry for a pre-built image first
+    const localTag = `magically-agent-${agentId}:${manifest.version}`;
+    const registryImage = await this.getRegistryImageRef(agentId, manifest.version, provider.name);
+    let image: string;
+
+    if (registryImage) {
+      image = registryImage;
+    } else {
+      // No pre-built image — build on demand (legacy/dev path)
+      const dockerfile = this.generateDockerfile(runtime);
+      await provider.buildImage(agentId, inst.dir, dockerfile, localTag);
+      image = localTag;
+    }
 
     // Resolve the command to run
     const fn = manifest.functions.find((f) => f.name === functionName);
@@ -292,16 +301,6 @@ export class FunctionRunnerService implements OnModuleInit {
       MAGICALLY_FUNCTION: functionName,
       MAGICALLY_TRIGGER: triggerJson,
     };
-
-    // Resolve image: check registry for provider-specific image first,
-    // then fall back to local image tag or base image
-    let image = imageTag;
-    const registryImage = await this.getRegistryImageRef(agentId, manifest.version, provider.name);
-    if (registryImage) {
-      image = registryImage;
-    } else if (provider.name === 'fly') {
-      image = runtime.base;
-    }
 
     // Run
     const output = await provider.run({
