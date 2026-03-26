@@ -55,8 +55,8 @@ export class FlyProvider extends ComputeProvider {
       config: {
         image,
         env,
-        cmd,
-        auto_destroy: false,
+        init: { cmd },
+        auto_destroy: true,
         restart: { policy: 'no' },
         guest: { cpu_kind: 'shared', cpus: 1, memory_mb: 512 },
       },
@@ -64,41 +64,34 @@ export class FlyProvider extends ComputeProvider {
 
     logs.push(`Machine ${machine.id} created for ${agentId}/${functionName}`);
 
-    try {
-      // 2. Wait for stop (skip waiting for started — short-lived commands
-      //    may finish before the started poll completes)
-      const attempts = Math.ceil(Math.min(timeoutSeconds, 300) / 60);
-      let stopped = false;
+    // 2. Poll machine status until stopped or destroyed (auto_destroy: true)
+    const deadline = Date.now() + timeoutSeconds * 1000;
 
-      for (let i = 0; i < attempts && !stopped; i++) {
-        try {
-          await this.api('GET', `/machines/${machine.id}/wait?state=stopped&timeout=60`);
-          stopped = true;
-        } catch {
-          logs.push(`Still running... (${(i + 1) * 60}s)`);
-        }
-      }
-
-      if (!stopped) {
-        logs.push('Timeout — forcing stop');
-        try { await this.api('POST', `/machines/${machine.id}/stop`); } catch {}
-        await new Promise(r => setTimeout(r, 5000));
-      }
-
-      // 4. Get exit info
-      const info = await this.api<any>('GET', `/machines/${machine.id}`);
-      const exitEvent = info.events?.find((e: any) => e.type === 'exit');
-      const exitCode = exitEvent?.status?.exit_code ?? (stopped ? 0 : 1);
-
-      logs.push(`Machine stopped (exit_code=${exitCode})`);
-
-      return { exitCode, logs, durationMs: Date.now() - startedAt };
-    } finally {
-      // 5. Always destroy
+    while (Date.now() < deadline) {
       try {
-        await this.api('DELETE', `/machines/${machine.id}?force=true`);
-        logs.push(`Machine ${machine.id} destroyed`);
-      } catch {}
+        const info = await this.api<{ id: string; state: string; events?: { type: string; status?: { exit_code?: number } }[] }>(
+          'GET', `/machines/${machine.id}`,
+        );
+
+        if (info.state === 'stopped' || info.state === 'destroyed') {
+          const exitEvent = info.events?.find((e) => e.type === 'exit');
+          const exitCode = exitEvent?.status?.exit_code ?? 0;
+          logs.push(`Machine completed (exit_code=${exitCode})`);
+          return { exitCode, logs, durationMs: Date.now() - startedAt };
+        }
+
+        // Still running — wait before next poll
+        await new Promise(r => setTimeout(r, 2000));
+      } catch {
+        // Machine no longer exists — auto_destroy cleaned it up. Assume success.
+        logs.push('Machine auto-destroyed (assuming exit_code=0)');
+        return { exitCode: 0, logs, durationMs: Date.now() - startedAt };
+      }
     }
+
+    // Timeout — force stop
+    logs.push('Timeout — forcing stop');
+    try { await this.api('POST', `/machines/${machine.id}/stop`); } catch {}
+    return { exitCode: 1, logs, durationMs: Date.now() - startedAt };
   }
 }
