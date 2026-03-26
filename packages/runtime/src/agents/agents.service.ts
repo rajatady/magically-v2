@@ -2,130 +2,112 @@ import {
   Injectable,
   Logger,
   NotFoundException,
-  OnModuleInit,
 } from '@nestjs/common';
-import { join, resolve } from 'path';
-import { readFileSync, readdirSync, existsSync } from 'fs';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { InjectDB, type DrizzleDB } from '../db';
-import { agents as agentsTable } from '../db/schema';
-import {
-  AgentInstance,
-  AgentManifest,
-  AgentManifestSchema,
-} from './types';
+import { agents, agentVersions } from '../db/schema';
+
+export interface AgentWithManifest {
+  id: string;
+  name: string;
+  latestVersion: string;
+  description: string | null;
+  icon: string | null;
+  color: string | null;
+  category: string | null;
+  status: string;
+  enabled: boolean;
+  manifest: Record<string, unknown>;
+}
 
 @Injectable()
-export class AgentsService implements OnModuleInit {
+export class AgentsService {
   private readonly logger = new Logger(AgentsService.name);
-  private instances = new Map<string, AgentInstance>();
 
   constructor(@InjectDB() private readonly db: DrizzleDB) {}
 
-  async onModuleInit() {
-    await this.scanAgentsDir();
-  }
-
-  async scanAgentsDir(agentsDir?: string) {
-    const dir = agentsDir
-      ?? process.env.AGENTS_DIR
-      ?? resolve(process.cwd(), '..', '..', 'agents');
-    if (!existsSync(dir)) {
-      this.logger.warn(`Agents directory not found: ${dir}`);
-      return;
-    }
-
-    const entries = readdirSync(dir, { withFileTypes: true });
-    for (const entry of entries) {
-      if (!entry.isDirectory()) continue;
-      const agentDir = join(dir, entry.name);
-      const manifestPath = join(agentDir, 'manifest.json');
-      if (!existsSync(manifestPath)) continue;
-
-      try {
-        await this.loadAgent(agentDir, manifestPath);
-      } catch (err) {
-        this.logger.error(`Failed to load agent at ${agentDir}: ${err}`);
-      }
-    }
-
-    this.logger.log(`Loaded ${this.instances.size} agents`);
-  }
-
-  async loadAgent(agentDir: string, manifestPath: string): Promise<AgentInstance> {
-    const raw = JSON.parse(readFileSync(manifestPath, 'utf-8'));
-    const manifest = AgentManifestSchema.parse(raw);
-
-    const now = new Date();
-    const instance: AgentInstance = {
-      manifest,
-      dir: agentDir,
-      enabled: true,
-      installedAt: now,
-    };
-
-    this.instances.set(manifest.id, instance);
-
-    // Upsert into DB
-    const existing = await this.db
+  async findAll(): Promise<AgentWithManifest[]> {
+    const rows = await this.db
       .select()
-      .from(agentsTable)
-      .where(eq(agentsTable.id, manifest.id))
-      .limit(1);
+      .from(agents)
+      .where(eq(agents.status, 'live'));
 
-    if (existing.length > 0) {
-      await this.db
-        .update(agentsTable)
-        .set({ name: manifest.name, version: manifest.version, updatedAt: now })
-        .where(eq(agentsTable.id, manifest.id));
-    } else {
-      await this.db.insert(agentsTable).values({
-        id: manifest.id,
-        name: manifest.name,
-        version: manifest.version,
-        description: manifest.description,
-        icon: manifest.icon,
-        color: manifest.color,
-        author: manifest.author,
-        manifestPath,
-        enabled: true,
-        installedAt: now,
-        updatedAt: now,
+    const result: AgentWithManifest[] = [];
+    for (const agent of rows) {
+      const version = await this.getLatestVersion(agent.id);
+      if (!version) continue;
+      result.push({
+        id: agent.id,
+        name: agent.name,
+        latestVersion: agent.latestVersion,
+        description: agent.description,
+        icon: agent.icon,
+        color: agent.color,
+        category: agent.category,
+        status: agent.status,
+        enabled: agent.enabled,
+        manifest: version.manifest as Record<string, unknown>,
       });
     }
-
-    return instance;
+    return result;
   }
 
-  findAll(): AgentInstance[] {
-    return Array.from(this.instances.values());
+  async findOne(id: string): Promise<AgentWithManifest> {
+    const rows = await this.db
+      .select()
+      .from(agents)
+      .where(eq(agents.id, id))
+      .limit(1);
+
+    if (rows.length === 0) throw new NotFoundException(`Agent '${id}' not found`);
+
+    const agent = rows[0];
+    const version = await this.getLatestVersion(id);
+    if (!version) throw new NotFoundException(`Agent '${id}' has no published version`);
+
+    return {
+      id: agent.id,
+      name: agent.name,
+      latestVersion: agent.latestVersion,
+      description: agent.description,
+      icon: agent.icon,
+      color: agent.color,
+      category: agent.category,
+      status: agent.status,
+      enabled: agent.enabled,
+      manifest: version.manifest as Record<string, unknown>,
+    };
   }
 
-  findOne(id: string): AgentInstance {
-    const instance = this.instances.get(id);
-    if (!instance) throw new NotFoundException(`Agent '${id}' not found`);
-    return instance;
+  async getManifest(id: string): Promise<Record<string, unknown>> {
+    const agent = await this.findOne(id);
+    return agent.manifest;
   }
 
   async enable(id: string) {
-    const inst = this.findOne(id);
-    inst.enabled = true;
     await this.db
-      .update(agentsTable)
+      .update(agents)
       .set({ enabled: true, updatedAt: new Date() })
-      .where(eq(agentsTable.id, id));
+      .where(eq(agents.id, id));
   }
 
   async disable(id: string) {
-    const inst = this.findOne(id);
-    inst.enabled = false;
     await this.db
-      .update(agentsTable)
+      .update(agents)
       .set({ enabled: false, updatedAt: new Date() })
-      .where(eq(agentsTable.id, id));
+      .where(eq(agents.id, id));
   }
 
-  getManifest(id: string): AgentManifest {
-    return this.findOne(id).manifest;
+  private async getLatestVersion(agentId: string) {
+    const rows = await this.db
+      .select()
+      .from(agentVersions)
+      .where(and(
+        eq(agentVersions.agentId, agentId),
+        eq(agentVersions.status, 'live'),
+      ))
+      .limit(1);
+
+    return rows[0] ?? null;
   }
 }

@@ -1,18 +1,22 @@
 import { pgTable, text, boolean, timestamp, real, jsonb, primaryKey, integer } from 'drizzle-orm/pg-core';
 
 // ─── Agents ────────────────────────────────────────────────────────────────
+// Single source of truth for all agents — published via registry, not filesystem.
 
 export const agents = pgTable('agents', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
-  version: text('version').notNull(),
   description: text('description'),
   icon: text('icon'),
   color: text('color'),
-  author: text('author'),
-  manifestPath: text('manifest_path').notNull(),
+  authorId: text('author_id').references(() => users.id),
+  category: text('category'),
+  tags: jsonb('tags').$type<string[]>().default([]),
+  latestVersion: text('latest_version').notNull(),
+  status: text('status').notNull().default('live'),
+  installs: integer('installs').notNull().default(0),
   enabled: boolean('enabled').default(true).notNull(),
-  installedAt: timestamp('installed_at').notNull(),
+  createdAt: timestamp('created_at').notNull(),
   updatedAt: timestamp('updated_at').notNull(),
 });
 
@@ -153,32 +157,11 @@ export const apiKeys = pgTable('api_keys', {
 export type ApiKey = typeof apiKeys.$inferSelect;
 export type NewApiKey = typeof apiKeys.$inferInsert;
 
-// ─── Registry: Agents ────────────────────────────────────────────────────────
+// ─── Agent Versions ─────────────────────────────────────────────────────────
 
-export const registryAgents = pgTable('registry_agents', {
-  id: text('id').primaryKey(),                            // e.g. 'instagram-auto-poster'
-  name: text('name').notNull(),
-  description: text('description'),
-  icon: text('icon'),
-  color: text('color'),
-  authorId: text('author_id').notNull().references(() => users.id),
-  category: text('category'),
-  tags: jsonb('tags').$type<string[]>().default([]),
-  latestVersion: text('latest_version').notNull(),
-  status: text('status').notNull().default('draft'),       // 'draft' | 'live' | 'deprecated' | 'yanked'
-  installs: integer('installs').notNull().default(0),
-  createdAt: timestamp('created_at').notNull(),
-  updatedAt: timestamp('updated_at').notNull(),
-});
-
-export type RegistryAgentRow = typeof registryAgents.$inferSelect;
-export type NewRegistryAgent = typeof registryAgents.$inferInsert;
-
-// ─── Registry: Versions ─────────────────────────────────────────────────────
-
-export const registryVersions = pgTable('registry_versions', {
+export const agentVersions = pgTable('agent_versions', {
   id: text('id').primaryKey(),
-  agentId: text('agent_id').notNull().references(() => registryAgents.id, { onDelete: 'cascade' }),
+  agentId: text('agent_id').notNull().references(() => agents.id, { onDelete: 'cascade' }),
   version: text('version').notNull(),
   manifest: jsonb('manifest').notNull(),
   bundleUrl: text('bundle_url'),                           // S3/Tigris URL to tarball
@@ -190,15 +173,18 @@ export const registryVersions = pgTable('registry_versions', {
   publishedAt: timestamp('published_at').notNull(),
 });
 
-export type RegistryVersionRow = typeof registryVersions.$inferSelect;
-export type NewRegistryVersion = typeof registryVersions.$inferInsert;
+export type AgentVersion = typeof agentVersions.$inferSelect;
+export type NewAgentVersion = typeof agentVersions.$inferInsert;
+
+// Keep aliases for backward compat during migration
+export const registryVersions = agentVersions;
 
 // ─── User Agent Installs ────────────────────────────────────────────────────
 
 export const userAgentInstalls = pgTable('user_agent_installs', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  agentId: text('agent_id').notNull().references(() => registryAgents.id),
+  agentId: text('agent_id').notNull().references(() => agents.id),
   version: text('version').notNull(),
   config: jsonb('config').$type<Record<string, unknown>>().default({}),
   enabled: boolean('enabled').notNull().default(true),

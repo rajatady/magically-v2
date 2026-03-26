@@ -1,11 +1,9 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService as NestConfigService } from '@nestjs/config';
-import { existsSync } from 'fs';
-import { join } from 'path';
 import { eq, and } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { InjectDB, type DrizzleDB } from '../db';
-import { agentSecrets, agentRuns, registryVersions } from '../db/schema';
+import { agentSecrets, agentRuns, agentVersions } from '../db/schema';
 import { AgentsService } from './agents.service';
 import { FeedService } from '../events/feed.service';
 import { LlmService } from '../llm/llm.service';
@@ -13,8 +11,7 @@ import { ComputeProvider } from './compute/compute-provider';
 import { DockerProvider } from './compute/docker-provider';
 import { FlyProvider } from './compute/fly-provider';
 import { DaytonaProvider } from './compute/daytona-provider';
-import type { AgentContext, AgentFunctionHandler, AgentLog } from './agent-context';
-import type { AgentInstance } from './types';
+import type { AgentContext } from './agent-context';
 
 export interface RunLog {
   level: 'info' | 'warn' | 'error';
@@ -118,14 +115,14 @@ export class FunctionRunnerService implements OnModuleInit {
   private async getRegistryImageRef(agentId: string, version: string, providerName: string): Promise<string | null> {
     const rows = await this.db
       .select({
-        imageRef: registryVersions.imageRef,
-        flyImageRef: registryVersions.flyImageRef,
+        imageRef: agentVersions.imageRef,
+        flyImageRef: agentVersions.flyImageRef,
       })
-      .from(registryVersions)
+      .from(agentVersions)
       .where(and(
-        eq(registryVersions.agentId, agentId),
-        eq(registryVersions.version, version),
-        eq(registryVersions.status, 'live'),
+        eq(agentVersions.agentId, agentId),
+        eq(agentVersions.version, version),
+        eq(agentVersions.status, 'live'),
       ))
       .limit(1);
 
@@ -158,11 +155,11 @@ export class FunctionRunnerService implements OnModuleInit {
     functionName: string,
     trigger: AgentContext['trigger'],
   ): Promise<RunResult> {
-    const inst = this.agents.findOne(agentId);
-    const manifest = inst.manifest;
+    const agent = await this.agents.findOne(agentId);
+    const manifest = agent.manifest as any;
 
     // Verify function is declared in manifest
-    const declared = manifest.functions.find((f) => f.name === functionName);
+    const declared = manifest.functions?.find((f: any) => f.name === functionName);
     if (!declared) {
       throw new Error(
         `Function '${functionName}' is not declared in ${agentId} manifest`,
@@ -183,11 +180,11 @@ export class FunctionRunnerService implements OnModuleInit {
       createdAt: now,
     });
 
-    // Execute and track
+    // Execute — container agents have a runtime block, lightweight don't
     const isContainer = !!manifest.runtime;
     const result = isContainer
-      ? await this.runInContainer(inst, functionName, trigger)
-      : await this.runInProcess(inst, functionName, trigger);
+      ? await this.runInContainer(agentId, manifest, functionName, trigger)
+      : await this.runLightweight(agentId, manifest, functionName, trigger);
 
     // Update run record with result
     await this.db
@@ -206,79 +203,46 @@ export class FunctionRunnerService implements OnModuleInit {
     return { ...result, runId };
   }
 
-  // ─── Lightweight: run in-process (no runtime block) ───────────────────────
+  // ─── Lightweight: agents without a runtime block ────────────────────────
+  // TODO: Lightweight agents need a different execution model since there's no
+  // filesystem path. Options: (a) download bundle from Tigris and run in-process,
+  // (b) always require a runtime block (all agents are containers).
 
-  private async runInProcess(
-    inst: AgentInstance,
+  private async runLightweight(
+    agentId: string,
+    manifest: any,
     functionName: string,
     trigger: AgentContext['trigger'],
   ): Promise<RunResult> {
-    const { manifest } = inst;
-    const agentId = manifest.id;
-
-    const fnPath = join(inst.dir, 'functions', `${functionName}.js`);
-    if (!existsSync(fnPath)) {
-      throw new Error(
-        `Function file not found: functions/${functionName}.js for agent ${agentId}`,
-      );
-    }
-
-    const mod = require(fnPath);
-    const handler: AgentFunctionHandler =
-      typeof mod === 'function' ? mod : mod.default ?? mod;
-
-    if (typeof handler !== 'function') {
-      throw new Error(
-        `functions/${functionName}.js does not export a function`,
-      );
-    }
-
-    const { ctx, logs } = await this.buildContext(inst, trigger);
-
-    const startedAt = Date.now();
-    try {
-      const result = await handler(ctx, trigger.payload);
-      const durationMs = Date.now() - startedAt;
-      this.logger.log(`${agentId}/${functionName} completed in ${durationMs}ms`);
-      return { agentId, functionName, status: 'success', result, logs, durationMs, startedAt };
-    } catch (err: any) {
-      const durationMs = Date.now() - startedAt;
-      this.logger.error(`${agentId}/${functionName} failed: ${err.message}`);
-      return { agentId, functionName, status: 'error', error: err.message, logs, durationMs, startedAt };
-    }
+    throw new Error(
+      `Agent ${agentId} has no runtime block. Lightweight (in-process) agents are not yet supported in registry mode. Add a runtime block to the manifest.`,
+    );
   }
 
   // ─── Container: run via compute provider (runtime block present) ──────────
 
   private async runInContainer(
-    inst: AgentInstance,
+    agentId: string,
+    manifest: any,
     functionName: string,
     trigger: AgentContext['trigger'],
   ): Promise<RunResult> {
-    const { manifest } = inst;
-    const agentId = manifest.id;
-    const runtime = manifest.runtime!;
+    const runtime = manifest.runtime;
+    const version = manifest.version;
     const startedAt = Date.now();
 
     const provider = await this.getComputeProvider();
     this.logger.log(`Running ${agentId}/${functionName} via ${provider.name}`);
 
-    // Resolve image: check registry for a pre-built image first
-    const localTag = `magically-agent-${agentId}:${manifest.version}`;
-    const registryImage = await this.getRegistryImageRef(agentId, manifest.version, provider.name);
-    let image: string;
-
-    if (registryImage) {
-      image = registryImage;
-    } else {
-      // No pre-built image — build on demand (legacy/dev path)
-      const dockerfile = this.generateDockerfile(runtime);
-      await provider.buildImage(agentId, inst.dir, dockerfile, localTag);
-      image = localTag;
+    // Resolve image from agent_versions
+    const registryImage = await this.getRegistryImageRef(agentId, version, provider.name);
+    if (!registryImage) {
+      throw new Error(`No built image found for ${agentId}@${version}. Has it been published?`);
     }
+    const image = registryImage;
 
     // Resolve the command to run
-    const fn = manifest.functions.find((f) => f.name === functionName);
+    const fn = manifest.functions?.find((f: any) => f.name === functionName);
     const runCmd = fn?.run ?? `node functions/${functionName}.js`;
 
     // For JS functions, use the harness which handles module.exports calling
@@ -338,78 +302,4 @@ export class FunctionRunnerService implements OnModuleInit {
 
   // ─── Dockerfile generator ─────────────────────────────────────────────────
 
-  private generateDockerfile(
-    runtime: { base: string; system?: string[]; install?: string },
-  ): string {
-    const lines = [
-      `FROM ${runtime.base}`,
-      `WORKDIR /agent`,
-      `COPY . /agent/`,
-    ];
-
-    if (runtime.system && runtime.system.length > 0) {
-      lines.push(`RUN apt-get update && apt-get install -y ${runtime.system.join(' ')} && rm -rf /var/lib/apt/lists/*`);
-    }
-
-    if (runtime.install) {
-      lines.push(`RUN ${runtime.install}`);
-    }
-
-    return lines.join('\n');
-  }
-
-  // ─── Context builder (in-process agents only) ─────────────────────────────
-
-  private async buildContext(
-    inst: AgentInstance,
-    trigger: AgentContext['trigger'],
-  ): Promise<{ ctx: AgentContext; logs: RunLog[] }> {
-    const agentId = inst.manifest.id;
-    const logs: RunLog[] = [];
-
-    const makeLog = (level: RunLog['level']) => {
-      return (message: string, data?: Record<string, unknown>) => {
-        logs.push({ level, message, data, timestamp: Date.now() });
-      };
-    };
-
-    const log: AgentLog = {
-      info: makeLog('info'),
-      warn: makeLog('warn'),
-      error: makeLog('error'),
-    };
-
-    const ctx: AgentContext = {
-      agentId,
-      agentDir: inst.dir,
-      trigger,
-      config: {},
-      log,
-      emit: (event: string, data?: unknown) => {
-        if (event === 'feed' && data && typeof data === 'object') {
-          const feedData = data as Record<string, unknown>;
-          // Fire and forget — don't block the agent function
-          void this.feed.create({
-            agentId,
-            type: (feedData.type as any) ?? 'info',
-            title: (feedData.title as string) ?? '',
-            body: feedData.body as string | undefined,
-          });
-        }
-      },
-      secrets: await this.loadSecrets(agentId, inst.manifest.secrets ?? []),
-      llm: {
-        ask: (prompt: string) =>
-          this.llmService.complete([{ role: 'user', content: prompt }]),
-        askWithSystem: (systemPrompt: string, userPrompt: string) =>
-          this.llmService.complete(
-            [{ role: 'user', content: userPrompt }],
-            undefined,
-            systemPrompt,
-          ),
-      },
-    };
-
-    return { ctx, logs };
-  }
 }

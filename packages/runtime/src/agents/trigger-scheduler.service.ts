@@ -3,7 +3,6 @@ import { SchedulerRegistry } from '@nestjs/schedule';
 import { CronJob } from 'cron';
 import { AgentsService } from './agents.service';
 import { FunctionRunnerService } from './function-runner.service';
-import type { CronTrigger } from './types';
 
 @Injectable()
 export class TriggerSchedulerService implements OnModuleInit {
@@ -15,37 +14,34 @@ export class TriggerSchedulerService implements OnModuleInit {
     private readonly schedulerRegistry: SchedulerRegistry,
   ) {}
 
-  onModuleInit() {
-    this.registerAll();
+  async onModuleInit() {
+    await this.registerAll();
   }
 
-  /** Register cron jobs for all loaded agents. */
-  registerAll() {
-    for (const inst of this.agents.findAll()) {
-      this.registerAgent(inst.manifest.id);
+  async registerAll() {
+    const allAgents = await this.agents.findAll();
+    for (const agent of allAgents) {
+      this.registerAgent(agent.id, agent.manifest);
     }
   }
 
-  /** Register all cron triggers for a single agent. */
-  registerAgent(agentId: string) {
-    const inst = this.agents.findOne(agentId);
-    const triggers = inst.manifest.triggers ?? [];
+  registerAgent(agentId: string, manifest: Record<string, unknown>) {
+    const triggers = (manifest.triggers ?? []) as Array<{
+      type: string;
+      name: string;
+      entrypoint: string;
+      schedule?: string;
+    }>;
 
-    const cronTriggers = triggers.filter((t): t is CronTrigger => t.type === 'cron');
+    const cronTriggers = triggers.filter((t) => t.type === 'cron' && t.schedule);
     if (cronTriggers.length === 0) return;
 
     for (const trigger of cronTriggers) {
       const jobName = `agent:${agentId}:${trigger.entrypoint}`;
 
-      // Don't double-register
       if (this.schedulerRegistry.getCronJobs().has(jobName)) continue;
 
-      const job = new CronJob(trigger.schedule, async () => {
-        if (!inst.enabled) {
-          this.logger.log(`Skipping ${agentId}/${trigger.entrypoint} — agent disabled`);
-          return;
-        }
-
+      const job = new CronJob(trigger.schedule!, async () => {
         this.logger.log(`Cron firing: ${agentId}/${trigger.entrypoint} (${trigger.name})`);
 
         try {
@@ -53,8 +49,9 @@ export class TriggerSchedulerService implements OnModuleInit {
             type: 'schedule',
             source: trigger.schedule,
           });
-        } catch (err: any) {
-          this.logger.error(`Cron ${agentId}/${trigger.entrypoint} failed: ${err.message}`);
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : String(err);
+          this.logger.error(`Cron ${agentId}/${trigger.entrypoint} failed: ${message}`);
         }
       });
 
@@ -67,7 +64,6 @@ export class TriggerSchedulerService implements OnModuleInit {
     }
   }
 
-  /** Remove all cron jobs for an agent. */
   unregisterAgent(agentId: string) {
     const jobs = this.schedulerRegistry.getCronJobs();
     const prefix = `agent:${agentId}:`;

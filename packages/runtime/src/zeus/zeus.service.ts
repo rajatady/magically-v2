@@ -84,9 +84,9 @@ export class ZeusService {
     ];
 
     // Inject agent context into system prompt
-    const agentList = this.agents
-      .findAll()
-      .map((a) => `- ${a.manifest.id}: ${a.manifest.name} — ${a.manifest.description ?? ''}`)
+    const allAgents = await this.agents.findAll();
+    const agentList = allAgents
+      .map((a) => `- ${a.id}: ${a.name} — ${a.description ?? ''}`)
       .join('\n');
 
     const systemPrompt = `${ZEUS_SYSTEM_PROMPT}\n\nInstalled agents:\n${agentList || 'None yet.'}`;

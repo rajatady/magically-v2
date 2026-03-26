@@ -1,7 +1,7 @@
 {
   "id": "instagram-auto-poster",
   "name": "Instagram Auto Poster",
-  "version": "1.0.0",
+  "version": "1.0.4",
   "description": "Autonomous Instagram content engine — generates, renders, publishes, and tracks carousels and reels on a schedule",
   "icon": "📸",
   "color": "#E1306C",

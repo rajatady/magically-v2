@@ -5,7 +5,7 @@ import { eq, and, ilike, sql } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { InjectDB, type DrizzleDB } from '../db';
 import {
-  registryAgents,
+  agents,
   registryVersions,
   userAgentInstalls,
 } from '../db/schema';
@@ -46,8 +46,8 @@ export class RegistryService {
     // Check if agent already exists
     const existing = await this.db
       .select()
-      .from(registryAgents)
-      .where(eq(registryAgents.id, agentId))
+      .from(agents)
+      .where(eq(agents.id, agentId))
       .limit(1);
 
     if (existing.length > 0) {
@@ -58,7 +58,7 @@ export class RegistryService {
 
       // Update agent metadata + latest version
       await this.db
-        .update(registryAgents)
+        .update(agents)
         .set({
           name: manifest.name,
           description: manifest.description,
@@ -69,10 +69,10 @@ export class RegistryService {
           latestVersion: version,
           updatedAt: now,
         })
-        .where(eq(registryAgents.id, agentId));
+        .where(eq(agents.id, agentId));
     } else {
       // Create new agent
-      await this.db.insert(registryAgents).values({
+      await this.db.insert(agents).values({
         id: agentId,
         name: manifest.name,
         description: manifest.description,
@@ -141,16 +141,16 @@ export class RegistryService {
 
     let query = this.db
       .select()
-      .from(registryAgents)
-      .where(eq(registryAgents.status, 'live'))
+      .from(agents)
+      .where(eq(agents.status, 'live'))
       .limit(limit)
       .offset(offset);
 
     if (category) {
       query = this.db
         .select()
-        .from(registryAgents)
-        .where(and(eq(registryAgents.status, 'live'), eq(registryAgents.category, category)))
+        .from(agents)
+        .where(and(eq(agents.status, 'live'), eq(agents.category, category)))
         .limit(limit)
         .offset(offset);
     }
@@ -158,10 +158,10 @@ export class RegistryService {
     if (search) {
       query = this.db
         .select()
-        .from(registryAgents)
+        .from(agents)
         .where(and(
-          eq(registryAgents.status, 'live'),
-          ilike(registryAgents.name, `%${search}%`),
+          eq(agents.status, 'live'),
+          ilike(agents.name, `%${search}%`),
         ))
         .limit(limit)
         .offset(offset);
@@ -173,8 +173,8 @@ export class RegistryService {
   async getAgent(agentId: string) {
     const rows = await this.db
       .select()
-      .from(registryAgents)
-      .where(eq(registryAgents.id, agentId))
+      .from(agents)
+      .where(eq(agents.id, agentId))
       .limit(1);
 
     return rows[0] ?? null;
@@ -231,9 +231,9 @@ export class RegistryService {
 
     // Increment install count
     await this.db
-      .update(registryAgents)
-      .set({ installs: sql`${registryAgents.installs} + 1` })
-      .where(eq(registryAgents.id, agentId));
+      .update(agents)
+      .set({ installs: sql`${agents.installs} + 1` })
+      .where(eq(agents.id, agentId));
 
     this.logger.log(`User ${userId} installed ${agentId}@${agent.latestVersion}`);
 

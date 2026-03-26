@@ -5,43 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1774430041518,
-      "tag": "0000_overrated_roulette",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1774431923481,
-      "tag": "0001_typical_blink",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1774441541950,
-      "tag": "0002_green_hemingway",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1774449287201,
-      "tag": "0003_good_fallen_one",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1774474378865,
-      "tag": "0004_powerful_medusa",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1774483448687,
-      "tag": "0005_steep_johnny_storm",
+      "when": 1774530124296,
+      "tag": "0000_square_machine_man",
       "breakpoints": true
     }
   ]

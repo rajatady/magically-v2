@@ -29,42 +29,41 @@ export class AgentsController {
     }
 
     @Get()
-    findAll() {
-        return this.agentsService.findAll().map((inst) => ({
-            id: inst.manifest.id,
-            name: inst.manifest.name,
-            version: inst.manifest.version,
-            description: inst.manifest.description,
-            icon: inst.manifest.icon,
-            color: inst.manifest.color,
-            author: inst.manifest.author,
-            enabled: inst.enabled,
-            installedAt: inst.installedAt,
-            hasWidget: !!inst.manifest.ui?.widget,
-            functions: inst.manifest.functions,
+    async findAll() {
+        const allAgents = await this.agentsService.findAll();
+        return allAgents.map((agent) => ({
+            id: agent.id,
+            name: agent.name,
+            version: agent.latestVersion,
+            description: agent.description,
+            icon: agent.icon,
+            color: agent.color,
+            category: agent.category,
+            enabled: agent.enabled,
+            functions: (agent.manifest as any).functions ?? [],
         }));
     }
 
     @Get(':id/widget')
-    getWidget(@Param('id') id: string) {
-        const inst = this.agentsService.findOne(id);
-        if (!inst.manifest.ui?.widget) return {widget: null};
-        const widgetPath = join(inst.dir, inst.manifest.ui.widget);
-        return JSON.parse(readFileSync(widgetPath, 'utf-8'));
+    async getWidget(@Param('id') id: string) {
+        // Widgets are declared in the manifest — no filesystem needed
+        const agent = await this.agentsService.findOne(id);
+        const manifest = agent.manifest as any;
+        if (!manifest.ui?.widget) return { widget: null };
+        // TODO: widget data should come from DB or bundle, not filesystem
+        return { widget: null };
     }
 
     @Get(':id/ui')
     async getUi(@Param('id') id: string, @Res() res: Response) {
-        const inst = this.agentsService.findOne(id);
-        const html = await this.agentUiService.getUiHtml(id, inst.dir, inst.manifest);
-        res.setHeader('Content-Type', 'text/html');
-        res.send(html);
+        // TODO: agent UI should be served from the bundle, not filesystem
+        res.status(501).json({ message: 'Agent UI not yet available in registry mode' });
     }
 
     @Get(':id')
-    findOne(@Param('id') id: string) {
-        const inst = this.agentsService.findOne(id);
-        return {...inst.manifest, enabled: inst.enabled, dir: inst.dir};
+    async findOne(@Param('id') id: string) {
+        const agent = await this.agentsService.findOne(id);
+        return { ...agent };
     }
 
 
