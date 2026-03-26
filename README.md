@@ -54,30 +54,28 @@ The 95% who can't code don't need to. They browse the gallery, install what they
 
 **Agents are composable.** Your Recipe Book agent can talk to your Grocery List agent through Zeus. One agent finds the recipe, another builds the shopping list. You didn't wire them together — Zeus figures it out.
 
-## Status
+## Security Model
 
-This is early. The runtime is live, agents can be published and run, but the consumer experience (the beautiful home screen, the gallery, the one-click install) is being built.
-
-What works today:
-- Runtime deployed on Fly.io, database on Neon, storage on Tigris
-- Agents publish to a registry, users install them
-- Agents run on schedules via cron triggers
-- Container agents (Python, Playwright, FFmpeg — anything) run on Fly Machines
-- Lightweight agents (JavaScript) run in-process
-- Every run is tracked with full logs
-- Web app deployed on Vercel
-- CLI for developers (`magically push`, `magically run`)
-- Authentication (Google OAuth, API keys, JWT)
-
-
-// To add:
-
-You're right. Zeus sees everything but agents are sandboxed — they only get what they declared in the manifest. Let me add that.
-
-But one correction: Zeus CAN execute — it's the one that triggers agent functions. It just doesn't run the agent code itself. The compute layer (Fly Machines, Docker) handles that. So:
+Zeus sees everything — all memory, all agent state, all user context. But agents are sandboxed:
 
 - **Zeus** = knows everything, decides what to run, passes only declared secrets/config/tools to the agent
 - **Compute layer** = isolated execution environment (container), separate from your device
 - **Agent** = only sees what the manifest declared (secrets, config, tools). Can't access other agents' data, can't access Zeus's memory directly
-- **Local mode** = same security model, just runs on your machine instead of cloud
+- Same security model locally and in the cloud
+
+## Status
+
+This is early. The runtime works end-to-end, but the consumer experience (the home screen, the gallery, one-click install) is being built.
+
+What works today:
+- `magically publish` — validate, bundle, build Docker image remotely (GitHub Actions), push to GHCR + Fly registry
+- `magically run` — execute agent functions on Fly Machines or Docker locally
+- `magically status` — check build status of a published agent
+- Async build pipeline — BullMQ + Redis, with structured error surfacing
+- Validation pipeline — RxJS Observable checks at publish time (manifest, schema, functions, secrets)
+- Container harness — JS functions using `module.exports` pattern are called correctly via injected `_harness.js`
+- Authentication — Google OAuth, email/password, API keys, JWT
+- Runtime on Fly.io, database on Neon, storage on Tigris, builds on GitHub Actions
+- Web app on Vercel (basic shell)
+- Multiple compute providers: Fly Machines (production), Docker (local dev), Daytona (future)
 

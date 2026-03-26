@@ -5,8 +5,14 @@
 | Done | Task | Description |
 |------|------|-------------|
 | [x] | Authentication | Google OAuth + email/password, JWT, API keys, global guard, CLI login flow. |
-| [ ] | Agent install/uninstall at runtime | Currently filesystem-scan only. Can't add/remove agents without restart. Need registry-backed install. |
-| [ ] | Agent registry | No way to publish, discover, or pull agents. Need DB-backed registry with versioning. |
+| [x] | Agent registry | Publish, discover, install agents. Single `agents` table + `agent_versions`. |
+| [x] | Async publish pipeline | CLI bundles → Tigris → BullMQ → GitHub Actions builds → GHCR + Fly registry. |
+| [x] | Container execution | Fly Machines + Docker locally. Daytona provider ready for future use. |
+| [x] | Container harness | `_harness.js` injected at publish time. Calls `module.exports` functions with ctx. |
+| [x] | Validation pipeline | RxJS Observable pipeline. Checks: manifest, schema, functions, secrets. |
+| [x] | Error hierarchy | `MagicallyError` base + domain subclasses. No vendor leaks in user messages. |
+| [x] | Test isolation | Separate test DB (`magically_v2_test`), auto-created via Jest globalSetup. |
+| [ ] | Fix failing tests | 5 test suites need updating after schema unification (agents, function-runner, trigger-scheduler, zeus, docker-build-provider). |
 | [ ] | Secrets management API | Table exists, no endpoints. Need CRUD API for per-agent secrets. |
 
 ## High Priority
@@ -14,23 +20,25 @@
 | Done | Task | Description |
 |------|------|-------------|
 | [ ] | Run tracking API | `agent_runs` table populated but no endpoints. Need `GET /agents/:id/runs` and `GET /runs/:runId`. |
-| [ ] | Persistent storage for container agents | Stateless containers lose data between runs. Need volume or S3/R2 per agent. |
+| [ ] | Fly image cache invalidation | Same version tag = stale image. Need build hash in tag or cache bust. |
+| [ ] | Auto-bump version on re-publish | Server should bump patch if same version exists. |
 | [ ] | Event triggers | Schema exists, not wired. Agents can't react to other agents' events. |
 | [ ] | Webhook triggers | Schema exists, not wired. No HTTP endpoint per agent for external callers. |
 | [ ] | Composability | Agents can't call other agents' functions. Zeus should discover and invoke them. |
-| [ ] | Container harness | Typed function interface inside containers. Currently raw commands only. |
 
 ## Developer Experience
 
 | Done | Task | Description |
 |------|------|-------------|
+| [x] | CLI: `magically publish` | Bundle agent, upload to registry, build image async. |
+| [x] | CLI: `magically status` | Check build status of a published agent. |
+| [x] | CLI: `magically run` | Run an agent function via runtime API. |
+| [x] | CLI: `magically login` | Browser-based OAuth login. |
 | [ ] | CLI: `magically init` | Scaffold new agent from template. |
 | [ ] | CLI: `magically install` | Install agent from registry. |
-| [ ] | CLI: `magically publish` | Publish agent to registry. |
 | [ ] | CLI: `magically logs` | View run logs for an agent. |
 | [ ] | CLI: `magically secrets` | Set/get/delete secrets per agent. |
 | [ ] | CLI: `magically dev` | Run runtime locally with file watching. |
-| [ ] | Per-agent database | Isolated storage per agent. Currently shared platform DB. |
 | [ ] | Widget DSL React renderer | Types + template + validation exist. No renderer. |
 | [ ] | Agent SDK React hooks | `useAgentData`, `useTool`, `useMemory`, `useTask` for iframe UIs. |
 
@@ -46,21 +54,22 @@
 | [ ] | Settings page | API keys, agent config, secrets management. |
 | [ ] | Agent install UI | Browse registry, one-click install, permission grants. |
 | [ ] | Notifications | Agent feed posts trigger notifications. |
-| [ ] | Mobile responsive | OS should work on phone screens. |
-| [ ] | Frontend optimization | Each view makes its own API calls. Centralize data fetching, remove duplicate calls, use shared ApiClient properly. |
 
 ## Infrastructure
 
 | Done | Task | Description |
 |------|------|-------------|
+| [x] | BullMQ + Redis | Background job queue for async builds. |
+| [x] | GitHub Actions builder | Remote Docker builds without local Docker. Pushes to GHCR + Fly. |
+| [x] | Daytona compute provider | Ready for use when Tier 3+ (network restrictions on lower tiers). |
+| [x] | BUILD_PROVIDER config | Explicit build provider selection: `github-actions`, `docker`, `fly`, `auto`. |
+| [x] | COMPUTE_PROVIDER config | Explicit compute provider selection: `daytona`, `fly`, `docker`, `auto`. |
 | [ ] | Runtime API auth | JWT or API key middleware on all endpoints. |
 | [ ] | Rate limiting | Per-agent quotas for API credits and compute. |
 | [ ] | Encrypt secrets at rest | `agent_secrets.value` is plaintext. |
 | [ ] | Health check endpoint | `GET /health` for Fly monitoring. |
-| [ ] | Daytona compute provider | Third provider subclass alongside Docker and Fly. |
-| [ ] | Agent image caching | Don't rebuild Docker images every run. Cache by manifest hash. |
-| [ ] | Structured logging | JSON logs, log aggregation (Axiom, Grafana). |
-| [ ] | DB connection pooling | Tune pg Pool for production. |
+| [ ] | Structured logging | JSON logs, log aggregation. |
+| [ ] | Deploy updated runtime to Fly | Current production is outdated. Needs schema migration + env vars. |
 
 ## Future
 
@@ -76,3 +85,5 @@
 | [ ] | macOS native shell | Swift + WKWebView, system tray, hotkeys. |
 | [ ] | iOS app | WKWebView + push + share extension + widgets. |
 | [ ] | Cross-platform | Windows/Linux (Tauri), Android (Kotlin WebView). |
+| [ ] | Per-agent database | Isolated storage per agent. Currently shared platform DB. |
+| [ ] | Mobile responsive | OS should work on phone screens. |
