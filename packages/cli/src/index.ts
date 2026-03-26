@@ -8,6 +8,7 @@ import { runCommand } from './commands/run';
 import { authCommand } from './commands/auth';
 import { publishCommand } from './commands/publish';
 import { statusCommand } from './commands/status';
+import { initCommand } from './commands/init';
 
 const program = new Command();
 
@@ -125,6 +126,26 @@ program
   .option('--version <version>', 'Specific version to check')
   .action((agentId: string, opts: { base: string; version?: string }) => {
     statusCommand.exec(agentId, opts);
+  });
+
+program
+  .command('init [dir]')
+  .description('Scaffold a new Magically agent with AI-ready project structure')
+  .option('--name <name>', 'Agent display name')
+  .option('--id <id>', 'Agent ID (derived from name if not provided)')
+  .option('--description <desc>', 'Short description')
+  .option('--container', 'Include runtime block for container agent')
+  .option('--base <image>', 'Base Docker image (requires --container)', 'node:20-slim')
+  .action(async (dir: string | undefined, opts: { name?: string; id?: string; description?: string; container?: boolean; base?: string }) => {
+    try {
+      // dir defaults to agent ID (derived from name or explicit). Resolved after exec determines the ID.
+      const targetDir = dir ? resolve(dir) : undefined;
+      await initCommand.exec(targetDir, opts);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(`Error: ${message}`);
+      process.exit(1);
+    }
   });
 
 program.parse();

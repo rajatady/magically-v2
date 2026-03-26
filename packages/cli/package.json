@@ -11,7 +11,8 @@
   },
   "dependencies": {
     "@magically/shared": "workspace:*",
-    "commander": "^13.1.0"
+    "commander": "^13.1.0",
+    "enquirer": "^2.4.1"
   },
   "devDependencies": {
     "@types/jest": "^29.5.14",

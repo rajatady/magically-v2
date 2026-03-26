@@ -12,7 +12,7 @@
 | [x] | Validation pipeline | RxJS Observable pipeline. Checks: manifest, schema, functions, secrets. |
 | [x] | Error hierarchy | `MagicallyError` base + domain subclasses. No vendor leaks in user messages. |
 | [x] | Test isolation | Separate test DB (`magically_v2_test`), auto-created via Jest globalSetup. |
-| [ ] | Fix failing tests | 5 test suites need updating after schema unification (agents, function-runner, trigger-scheduler, zeus, docker-build-provider). |
+| [x] | Fix failing tests | All test suites updated after schema unification. 247 tests, 0 failures. |
 | [ ] | Secrets management API | Table exists, no endpoints. Need CRUD API for per-agent secrets. |
 
 ## High Priority
@@ -34,7 +34,7 @@
 | [x] | CLI: `magically status` | Check build status of a published agent. |
 | [x] | CLI: `magically run` | Run an agent function via runtime API. |
 | [x] | CLI: `magically login` | Browser-based OAuth login. |
-| [ ] | CLI: `magically init` | Scaffold new agent from template. |
+| [x] | CLI: `magically init` | AI-native scaffolding: AGENTS.md, CLAUDE.md, .claude/skills/, docs/, functions/. Interactive prompts via enquirer. |
 | [ ] | CLI: `magically install` | Install agent from registry. |
 | [ ] | CLI: `magically logs` | View run logs for an agent. |
 | [ ] | CLI: `magically secrets` | Set/get/delete secrets per agent. |
