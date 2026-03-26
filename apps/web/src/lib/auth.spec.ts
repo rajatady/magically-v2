@@ -1,7 +1,10 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+// Skip under bun test — this file uses vitest + jsdom (run via `vitest run` in web package)
+const hasDom = typeof globalThis.localStorage !== 'undefined';
+const maybeDescribe = hasDom ? describe : describe.skip;
+
 import { useAuthStore } from './auth';
 
-describe('auth store', () => {
+maybeDescribe('auth store', () => {
   beforeEach(() => {
     localStorage.clear();
     useAuthStore.setState({ token: null, user: null });

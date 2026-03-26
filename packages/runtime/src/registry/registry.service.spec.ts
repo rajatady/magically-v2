@@ -6,7 +6,7 @@ import { DRIZZLE, DrizzleDB } from '../db';
 import { RegistryService } from './registry.service';
 import { StorageService } from './storage.service';
 import * as schema from '../db/schema';
-import { users, agents, registryVersions, userAgentInstalls, agentSecrets } from '../db/schema';
+import { users, agents, registryVersions, userAgentInstalls, agentSecrets, agentRuns, feedEvents } from '../db/schema';
 
 describe('RegistryService', () => {
   let service: RegistryService;
@@ -42,6 +42,9 @@ describe('RegistryService', () => {
 
     // Seed a test user
     await db.delete(userAgentInstalls);
+    await db.delete(agentRuns);
+    await db.delete(agentSecrets);
+    await db.delete(feedEvents);
     await db.delete(registryVersions);
     await db.delete(agents);
     await db.insert(users).values({
@@ -56,6 +59,9 @@ describe('RegistryService', () => {
 
   beforeEach(async () => {
     await db.delete(userAgentInstalls);
+    await db.delete(agentRuns);
+    await db.delete(agentSecrets);
+    await db.delete(feedEvents);
     await db.delete(registryVersions);
     await db.delete(agents);
     mockQueue.add.mockClear();

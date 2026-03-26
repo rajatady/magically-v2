@@ -1,37 +1,24 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
-import { writeFileSync, mkdirSync, rmSync } from 'fs';
-import { join } from 'path';
-import { tmpdir } from 'os';
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { AgentsService } from './agents.service';
 import { DRIZZLE, type DrizzleDB } from '../db';
 import * as schema from '../db/schema';
-import { agents } from '../db/schema';
-
-function makeTempAgent(dir: string, id: string, manifest: object) {
-  const agentDir = join(dir, id);
-  mkdirSync(agentDir, { recursive: true });
-  writeFileSync(join(agentDir, 'manifest.json'), JSON.stringify(manifest));
-  return agentDir;
-}
+import { agents, agentVersions, agentRuns, agentSecrets, feedEvents, userAgentInstalls } from '../db/schema';
 
 describe('AgentsService', () => {
   let service: AgentsService;
   let db: DrizzleDB;
-  let tmpDir: string;
+  let module: TestingModule;
 
-  beforeEach(async () => {
-    tmpDir = join(tmpdir(), `magically-test-${Date.now()}`);
-    mkdirSync(tmpDir, { recursive: true });
-
-    const module: TestingModule = await Test.createTestingModule({
+  beforeAll(async () => {
+    module = await Test.createTestingModule({
       providers: [
         {
           provide: DRIZZLE,
           useFactory: () => {
-            const pool = new Pool({ connectionString: process.env.DATABASE_URL ?? 'postgres://localhost:5432/magically_v2' });
+            const pool = new Pool({ connectionString: process.env.DATABASE_URL ?? 'postgres://localhost:5432/magically_v2_test' });
             return drizzle(pool, { schema });
           },
         },
@@ -40,128 +27,123 @@ describe('AgentsService', () => {
     }).compile();
 
     db = module.get<DrizzleDB>(DRIZZLE);
-
     service = module.get<AgentsService>(AgentsService);
-    // Prevent auto-scan by pointing to a non-existent path
-    jest.spyOn(service as any, 'scanAgentsDir').mockImplementationOnce(() => {});
-    await service.onModuleInit();
+  });
 
-    // Clean up agents table before each test
+  beforeEach(async () => {
+    await db.delete(userAgentInstalls);
+    await db.delete(agentRuns);
+    await db.delete(agentSecrets);
+    await db.delete(feedEvents);
+    await db.delete(agentVersions);
     await db.delete(agents);
   });
 
-  afterEach(() => {
-    rmSync(tmpDir, { recursive: true, force: true });
+  afterAll(async () => {
+    await module.close();
   });
 
-  describe('loadAgent', () => {
-    it('loads a valid manifest and stores in memory + DB', async () => {
-      makeTempAgent(tmpDir, 'test-agent', {
-        id: 'test-agent',
-        name: 'Test Agent',
-        version: '1.0.0',
-        description: 'A test agent',
-      });
+  async function seedAgent(id: string, name: string, manifest: Record<string, unknown>, opts?: { enabled?: boolean; status?: string }) {
+    const now = new Date();
+    await db.insert(agents).values({
+      id,
+      name,
+      description: (manifest.description as string) ?? null,
+      latestVersion: manifest.version as string,
+      status: opts?.status ?? 'live',
+      enabled: opts?.enabled ?? true,
+      createdAt: now,
+      updatedAt: now,
+    });
+    await db.insert(agentVersions).values({
+      id: `${id}-v-${manifest.version}`,
+      agentId: id,
+      version: manifest.version as string,
+      manifest,
+      status: 'live',
+      publishedAt: now,
+    });
+  }
 
-      const agentDir = join(tmpDir, 'test-agent');
-      const inst = await service.loadAgent(agentDir, join(agentDir, 'manifest.json'));
+  describe('findAll', () => {
+    it('returns all live agents with manifests', async () => {
+      await seedAgent('agent-a', 'Agent A', { id: 'agent-a', name: 'Agent A', version: '1.0.0' });
+      await seedAgent('agent-b', 'Agent B', { id: 'agent-b', name: 'Agent B', version: '2.0.0' });
 
-      expect(inst.manifest.id).toBe('test-agent');
-      expect(inst.manifest.name).toBe('Test Agent');
-      expect(inst.enabled).toBe(true);
+      const all = await service.findAll();
+      expect(all.length).toBe(2);
+      const ids = all.map((a) => a.id);
+      expect(ids).toContain('agent-a');
+      expect(ids).toContain('agent-b');
     });
 
-    it('rejects an invalid manifest (missing required fields)', async () => {
-      makeTempAgent(tmpDir, 'bad-agent', { name: 'No ID' });
-      const agentDir = join(tmpDir, 'bad-agent');
+    it('excludes non-live agents', async () => {
+      await seedAgent('live-agent', 'Live', { id: 'live-agent', name: 'Live', version: '1.0.0' });
+      await seedAgent('draft-agent', 'Draft', { id: 'draft-agent', name: 'Draft', version: '1.0.0' }, { status: 'draft' });
 
-      await expect(
-        service.loadAgent(agentDir, join(agentDir, 'manifest.json')),
-      ).rejects.toThrow();
-    });
-
-    it('rejects agent ids with uppercase or spaces', async () => {
-      makeTempAgent(tmpDir, 'Bad Agent', {
-        id: 'Bad Agent',
-        name: 'Bad',
-        version: '1.0.0',
-      });
-      const agentDir = join(tmpDir, 'Bad Agent');
-
-      await expect(
-        service.loadAgent(agentDir, join(agentDir, 'manifest.json')),
-      ).rejects.toThrow();
-    });
-  });
-
-  describe('findAll / findOne', () => {
-    beforeEach(async () => {
-      makeTempAgent(tmpDir, 'agent-a', {
-        id: 'agent-a',
-        name: 'Agent A',
-        version: '1.0.0',
-      });
-      await service.loadAgent(
-        join(tmpDir, 'agent-a'),
-        join(tmpDir, 'agent-a', 'manifest.json'),
-      );
-    });
-
-    it('findAll returns loaded agents', () => {
-      const all = service.findAll();
+      const all = await service.findAll();
       expect(all.length).toBe(1);
-      expect(all[0].manifest.id).toBe('agent-a');
+      expect(all[0].id).toBe('live-agent');
     });
 
-    it('findOne returns the agent by id', () => {
-      const inst = service.findOne('agent-a');
-      expect(inst.manifest.name).toBe('Agent A');
+    it('returns manifest from the latest live version', async () => {
+      await seedAgent('versioned', 'Versioned', {
+        id: 'versioned', name: 'Versioned', version: '1.0.0',
+        functions: [{ name: 'greet', description: 'Greet' }],
+      });
+
+      const all = await service.findAll();
+      const agent = all.find((a) => a.id === 'versioned');
+      expect(agent?.manifest.functions).toEqual([{ name: 'greet', description: 'Greet' }]);
+    });
+  });
+
+  describe('findOne', () => {
+    it('returns the agent by id', async () => {
+      await seedAgent('test-agent', 'Test Agent', { id: 'test-agent', name: 'Test Agent', version: '1.0.0' });
+
+      const agent = await service.findOne('test-agent');
+      expect(agent.id).toBe('test-agent');
+      expect(agent.name).toBe('Test Agent');
+      expect(agent.manifest.version).toBe('1.0.0');
     });
 
-    it('findOne throws NotFoundException for unknown id', () => {
-      expect(() => service.findOne('ghost')).toThrow(NotFoundException);
+    it('throws NotFoundException for unknown id', async () => {
+      await expect(service.findOne('ghost')).rejects.toThrow(NotFoundException);
+    });
+
+    it('throws NotFoundException for agent with no live version', async () => {
+      const now = new Date();
+      await db.insert(agents).values({
+        id: 'no-version', name: 'No Version', latestVersion: '1.0.0',
+        status: 'live', createdAt: now, updatedAt: now,
+      });
+
+      await expect(service.findOne('no-version')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('getManifest', () => {
+    it('returns the manifest for an agent', async () => {
+      const manifest = { id: 'manifest-agent', name: 'Manifest', version: '1.0.0', secrets: ['API_KEY'] };
+      await seedAgent('manifest-agent', 'Manifest', manifest);
+
+      const result = await service.getManifest('manifest-agent');
+      expect(result.secrets).toEqual(['API_KEY']);
     });
   });
 
   describe('enable / disable', () => {
-    beforeEach(async () => {
-      makeTempAgent(tmpDir, 'toggle-agent', {
-        id: 'toggle-agent',
-        name: 'Toggle',
-        version: '1.0.0',
-      });
-      await service.loadAgent(
-        join(tmpDir, 'toggle-agent'),
-        join(tmpDir, 'toggle-agent', 'manifest.json'),
-      );
-    });
-
     it('disables and re-enables an agent', async () => {
+      await seedAgent('toggle-agent', 'Toggle', { id: 'toggle-agent', name: 'Toggle', version: '1.0.0' });
+
       await service.disable('toggle-agent');
-      expect(service.findOne('toggle-agent').enabled).toBe(false);
+      const disabled = await service.findOne('toggle-agent');
+      expect(disabled.enabled).toBe(false);
 
       await service.enable('toggle-agent');
-      expect(service.findOne('toggle-agent').enabled).toBe(true);
-    });
-  });
-
-  describe('scanAgentsDir', () => {
-    it('skips non-existent directories gracefully', async () => {
-      await expect(
-        service.scanAgentsDir('/nonexistent/path/abc123'),
-      ).resolves.not.toThrow();
-    });
-
-    it('loads multiple agents from a directory', async () => {
-      makeTempAgent(tmpDir, 'scan-a', { id: 'scan-a', name: 'A', version: '1.0.0' });
-      makeTempAgent(tmpDir, 'scan-b', { id: 'scan-b', name: 'B', version: '1.0.0' });
-
-      await service.scanAgentsDir(tmpDir);
-
-      const all = service.findAll();
-      const ids = all.map((a) => a.manifest.id);
-      expect(ids).toContain('scan-a');
-      expect(ids).toContain('scan-b');
+      const enabled = await service.findOne('toggle-agent');
+      expect(enabled.enabled).toBe(true);
     });
   });
 });

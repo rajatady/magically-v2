@@ -1,7 +1,12 @@
 /**
  * BridgeClient tests — runs in jsdom environment.
  * We simulate the parent window ↔ iframe message exchange manually.
+ * Skipped under bun test (no DOM) — run via jest in agent-sdk package.
  */
+
+// Skip when no DOM (bun test runs in node-like env)
+const hasDom = typeof globalThis.window !== 'undefined';
+
 import { BridgeClient } from './bridge.js';
 
 // Helper: create a mock "parent window" that echoes back responses
@@ -40,7 +45,9 @@ function setupMockParent(respondWith: { data?: unknown; error?: string }) {
   return posted;
 }
 
-describe('BridgeClient', () => {
+const maybeDescribe = hasDom ? describe : describe.skip;
+
+maybeDescribe('BridgeClient', () => {
   let client: BridgeClient;
 
   beforeEach(() => {

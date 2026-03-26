@@ -2,16 +2,8 @@ import { BuildProcessor, type AgentBuildJobData } from './build.processor';
 import { BuildService } from './build.service';
 import { StorageService } from '../registry/storage.service';
 import type { DrizzleDB } from '../db';
-
-// Mock tar extraction
-jest.mock('child_process', () => ({
-  execSync: jest.fn(),
-}));
-
-jest.mock('fs', () => ({
-  mkdtempSync: jest.fn().mockReturnValue('/tmp/magically-build-abc'),
-  rmSync: jest.fn(),
-}));
+import * as childProcess from 'child_process';
+import * as fs from 'fs';
 
 describe('BuildProcessor', () => {
   let processor: BuildProcessor;
@@ -29,6 +21,16 @@ describe('BuildProcessor', () => {
       runtime: { base: 'python:3.12-slim' },
     },
   };
+
+  beforeAll(() => {
+    jest.spyOn(childProcess, 'execSync').mockReturnValue(Buffer.from('') as any);
+    jest.spyOn(fs, 'mkdtempSync').mockReturnValue('/tmp/magically-build-abc');
+    jest.spyOn(fs, 'rmSync').mockImplementation(() => {});
+  });
+
+  afterAll(() => {
+    jest.restoreAllMocks();
+  });
 
   beforeEach(() => {
     const updateSet = jest.fn().mockReturnValue({ where: jest.fn().mockResolvedValue(undefined) });

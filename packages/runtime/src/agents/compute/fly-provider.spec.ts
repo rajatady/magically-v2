@@ -5,7 +5,8 @@ function makeConfig(env: Record<string, string>): ConfigService {
   return { get: (key: string) => env[key] } as unknown as ConfigService;
 }
 
-const flyAvailable = !!process.env.FLY_API_TOKEN && !!process.env.FLY_AGENTS_APP;
+// Only run integration tests when explicitly opted in (not just because .env has the tokens)
+const flyAvailable = process.env.TEST_FLY_INTEGRATION === 'true' && !!process.env.FLY_API_TOKEN && !!process.env.FLY_AGENTS_APP;
 const describeFly = flyAvailable ? describe : describe.skip;
 
 describeFly('FlyProvider', () => {

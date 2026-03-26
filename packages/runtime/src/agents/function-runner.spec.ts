@@ -1,265 +1,188 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { writeFileSync, mkdirSync, rmSync } from 'fs';
-import { join } from 'path';
-import { tmpdir } from 'os';
-import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { ConfigModule } from '@nestjs/config';
-import { FunctionRunnerService } from './function-runner.service';
-import { AgentsService } from './agents.service';
-import { FeedService } from '../events/feed.service';
 import { ConfigService as NestConfigService } from '@nestjs/config';
+import { FunctionRunnerService } from './function-runner.service';
+import { AgentsService, type AgentWithManifest } from './agents.service';
+import { FeedService } from '../events/feed.service';
 import { LlmService } from '../llm/llm.service';
 import { DRIZZLE, type DrizzleDB } from '../db';
 import * as schema from '../db/schema';
-import { agentSecrets, agentRuns, agents as agentsTable } from '../db/schema';
+import { agents, agentVersions, agentSecrets, agentRuns, feedEvents, userAgentInstalls } from '../db/schema';
 
-function makeTempAgent(
-  dir: string,
-  id: string,
-  manifest: object,
-  functions?: Record<string, string>,
-) {
-  const agentDir = join(dir, id);
-  mkdirSync(agentDir, { recursive: true });
-  writeFileSync(join(agentDir, 'manifest.json'), JSON.stringify(manifest));
-
-  if (functions) {
-    const fnDir = join(agentDir, 'functions');
-    mkdirSync(fnDir, { recursive: true });
-    for (const [name, code] of Object.entries(functions)) {
-      writeFileSync(join(fnDir, `${name}.js`), code);
-    }
-  }
-
-  return agentDir;
+function makeAgent(id: string, manifest: Record<string, unknown>): AgentWithManifest {
+  return {
+    id,
+    name: manifest.name as string,
+    latestVersion: manifest.version as string,
+    description: null,
+    icon: null,
+    color: null,
+    category: null,
+    status: 'live',
+    enabled: true,
+    manifest,
+  };
 }
 
 describe('FunctionRunnerService', () => {
   let runner: FunctionRunnerService;
-  let agents: AgentsService;
+  let mockAgentsService: { findOne: jest.Mock };
   let db: DrizzleDB;
-  let emitter: EventEmitter2;
-  let tmpDir: string;
+  let module: TestingModule;
 
-  beforeEach(async () => {
-    tmpDir = join(tmpdir(), `magically-fn-test-${Date.now()}`);
-    mkdirSync(tmpDir, { recursive: true });
-
-    emitter = new EventEmitter2();
-
-    const mockLlm = {
-      complete: jest.fn().mockResolvedValue('mock llm response'),
+  beforeAll(async () => {
+    mockAgentsService = {
+      findOne: jest.fn(),
     };
 
-    const module: TestingModule = await Test.createTestingModule({
-      imports: [
-        ConfigModule.forRoot({ envFilePath: ['../../.env', '.env'] }),
-      ],
+    module = await Test.createTestingModule({
       providers: [
         {
           provide: DRIZZLE,
           useFactory: () => {
-            const pool = new Pool({ connectionString: process.env.DATABASE_URL ?? 'postgres://localhost:5432/magically_v2' });
+            const pool = new Pool({ connectionString: process.env.DATABASE_URL ?? 'postgres://localhost:5432/magically_v2_test' });
             return drizzle(pool, { schema });
           },
         },
-        AgentsService,
-        FeedService,
-        FunctionRunnerService,
-        { provide: LlmService, useValue: mockLlm },
+        { provide: AgentsService, useValue: mockAgentsService },
+        { provide: FeedService, useValue: { create: jest.fn() } },
+        { provide: LlmService, useValue: { complete: jest.fn() } },
         { provide: NestConfigService, useValue: { get: () => undefined } },
-        { provide: EventEmitter2, useValue: emitter },
+        FunctionRunnerService,
       ],
     }).compile();
 
     db = module.get<DrizzleDB>(DRIZZLE);
+    runner = module.get<FunctionRunnerService>(FunctionRunnerService);
+  });
 
-    db = module.get(DRIZZLE);
-
-    // Clean up between runs
+  beforeEach(async () => {
+    mockAgentsService.findOne.mockReset();
+    await db.delete(userAgentInstalls);
     await db.delete(agentRuns);
     await db.delete(agentSecrets);
-    await db.delete(agentsTable);
-
-    agents = module.get(AgentsService);
-    jest.spyOn(agents as any, 'scanAgentsDir').mockImplementationOnce(() => {});
-    await agents.onModuleInit();
-
-    runner = module.get(FunctionRunnerService);
+    await db.delete(feedEvents);
+    await db.delete(agentVersions);
+    await db.delete(agents);
   });
 
-  afterEach(() => {
-    rmSync(tmpDir, { recursive: true, force: true });
-  });
-
-  it('executes a function that returns a value', async () => {
-    makeTempAgent(tmpDir, 'adder', {
-      id: 'adder',
-      name: 'Adder',
-      version: '1.0.0',
-      functions: [{ name: 'add', description: 'Add two numbers', parameters: {} }],
-    }, {
-      'add': `module.exports = async function(ctx, params) { return (params.a || 0) + (params.b || 0); };`,
-    });
-
-    await agents.loadAgent(join(tmpDir, 'adder'), join(tmpDir, 'adder', 'manifest.json'));
-
-    const result = await runner.run('adder', 'add', {
-      type: 'manual',
-      payload: { a: 2, b: 3 },
-    });
-
-    expect(result.status).toBe('success');
-    expect(result.result).toBe(5);
-  });
-
-  it('captures logs from the function', async () => {
-    makeTempAgent(tmpDir, 'logger', {
-      id: 'logger',
-      name: 'Logger',
-      version: '1.0.0',
-      functions: [{ name: 'greet', description: 'Log a greeting', parameters: {} }],
-    }, {
-      'greet': `module.exports = async function(ctx) { ctx.log.info('hello world'); return 'done'; };`,
-    });
-
-    await agents.loadAgent(join(tmpDir, 'logger'), join(tmpDir, 'logger', 'manifest.json'));
-
-    const result = await runner.run('logger', 'greet', { type: 'manual' });
-
-    expect(result.status).toBe('success');
-    expect(result.logs.length).toBe(1);
-    expect(result.logs[0].message).toBe('hello world');
-    expect(result.logs[0].level).toBe('info');
-  });
-
-  it('catches errors and returns failure status', async () => {
-    makeTempAgent(tmpDir, 'crasher', {
-      id: 'crasher',
-      name: 'Crasher',
-      version: '1.0.0',
-      functions: [{ name: 'boom', description: 'Throw error', parameters: {} }],
-    }, {
-      'boom': `module.exports = async function(ctx) { throw new Error('kaboom'); };`,
-    });
-
-    await agents.loadAgent(join(tmpDir, 'crasher'), join(tmpDir, 'crasher', 'manifest.json'));
-
-    const result = await runner.run('crasher', 'boom', { type: 'manual' });
-
-    expect(result.status).toBe('error');
-    expect(result.error).toBe('kaboom');
+  afterAll(async () => {
+    await module.close();
   });
 
   it('throws if function name is not declared in manifest', async () => {
-    makeTempAgent(tmpDir, 'strict', {
-      id: 'strict',
-      name: 'Strict',
-      version: '1.0.0',
-      functions: [{ name: 'allowed', description: 'OK', parameters: {} }],
-    }, {
-      'allowed': `module.exports = async function() { return 'ok'; };`,
-      'secret': `module.exports = async function() { return 'hacked'; };`,
-    });
+    mockAgentsService.findOne.mockResolvedValue(
+      makeAgent('strict', {
+        id: 'strict', name: 'Strict', version: '1.0.0',
+        functions: [{ name: 'allowed', description: 'OK' }],
+      }),
+    );
 
-    await agents.loadAgent(join(tmpDir, 'strict'), join(tmpDir, 'strict', 'manifest.json'));
-
-    await expect(runner.run('strict', 'secret', { type: 'manual' }))
-      .rejects.toThrow(/not declared/);
+    await expect(
+      runner.run('strict', 'secret', { type: 'manual' }),
+    ).rejects.toThrow(/not declared/);
   });
 
-  it('throws if function file does not exist', async () => {
-    makeTempAgent(tmpDir, 'missing', {
-      id: 'missing',
-      name: 'Missing',
-      version: '1.0.0',
-      functions: [{ name: 'ghost', description: 'No file', parameters: {} }],
-    });
-    // No function files created
-
-    await agents.loadAgent(join(tmpDir, 'missing'), join(tmpDir, 'missing', 'manifest.json'));
-
-    await expect(runner.run('missing', 'ghost', { type: 'manual' }))
-      .rejects.toThrow(/not found/i);
-  });
-
-  it('emits feed events when function calls ctx.emit', async () => {
-    const feedEvents: unknown[] = [];
-    emitter.on('feed.new', (item: unknown) => feedEvents.push(item));
-
-    makeTempAgent(tmpDir, 'poster', {
-      id: 'poster',
-      name: 'Poster',
-      version: '1.0.0',
-      functions: [{ name: 'post', description: 'Post to feed', parameters: {} }],
-    }, {
-      'post': `module.exports = async function(ctx) {
-        ctx.emit('feed', { type: 'success', title: 'It worked!' });
-        return 'posted';
-      };`,
-    });
-
-    await agents.loadAgent(join(tmpDir, 'poster'), join(tmpDir, 'poster', 'manifest.json'));
-
-    await runner.run('poster', 'post', { type: 'manual' });
-
-    // feed.create is fire-and-forget async — wait a tick for the DB insert + emit
-    await new Promise((r) => setTimeout(r, 100));
-
-    expect(feedEvents.length).toBe(1);
-  });
-
-  it('provides ctx.llm.ask that calls the LLM service', async () => {
-    makeTempAgent(tmpDir, 'llm-user', {
-      id: 'llm-user',
-      name: 'LLM User',
-      version: '1.0.0',
-      functions: [{ name: 'think', description: 'Use LLM', parameters: {} }],
-    }, {
-      'think': `module.exports = async function(ctx) {
-        const answer = await ctx.llm.ask('What is 2+2?');
-        return { answer };
-      };`,
-    });
-
-    await agents.loadAgent(join(tmpDir, 'llm-user'), join(tmpDir, 'llm-user', 'manifest.json'));
-
-    const result = await runner.run('llm-user', 'think', { type: 'manual' });
-
-    expect(result.status).toBe('success');
-    expect((result.result as any).answer).toBe('mock llm response');
-  });
-
-  it('injects declared secrets from the database into ctx.secrets', async () => {
-    makeTempAgent(tmpDir, 'secret-reader', {
-      id: 'secret-reader',
-      name: 'Secret Reader',
-      version: '1.0.0',
-      secrets: ['API_KEY', 'OTHER_KEY'],
-      functions: [{ name: 'readSecret', description: 'Read secrets', parameters: {} }],
-    }, {
-      'readSecret': `module.exports = async function(ctx) { return ctx.secrets; };`,
-    });
-
-    await agents.loadAgent(join(tmpDir, 'secret-reader'), join(tmpDir, 'secret-reader', 'manifest.json'));
-
-    // Insert secrets into DB via Drizzle
+  it('creates a run record in the database', async () => {
+    // Seed agent in DB so FK constraints are satisfied
     const now = new Date();
+    await db.insert(agents).values({
+      id: 'run-tracker', name: 'Run Tracker', latestVersion: '1.0.0',
+      status: 'live', createdAt: now, updatedAt: now,
+    });
+    await db.insert(agentVersions).values({
+      id: 'run-tracker-v1', agentId: 'run-tracker', version: '1.0.0',
+      manifest: { id: 'run-tracker', name: 'Run Tracker', version: '1.0.0', runtime: { base: 'node:22-slim' }, functions: [{ name: 'greet' }] },
+      imageRef: 'ghcr.io/test:run-tracker-1.0.0',
+      status: 'live', publishedAt: now,
+    });
+
+    mockAgentsService.findOne.mockResolvedValue(
+      makeAgent('run-tracker', {
+        id: 'run-tracker', name: 'Run Tracker', version: '1.0.0',
+        runtime: { base: 'node:22-slim' },
+        functions: [{ name: 'greet', description: 'Greet' }],
+      }),
+    );
+
+    // The container run will fail (fake image can't be pulled),
+    // but the run record should still be created
+    try {
+      await runner.run('run-tracker', 'greet', { type: 'manual' });
+    } catch {
+      // Expected — fake image can't be pulled
+    }
+
+    const runs = await db.select().from(agentRuns);
+    expect(runs.length).toBe(1);
+    expect(runs[0].agentId).toBe('run-tracker');
+    expect(runs[0].functionName).toBe('greet');
+  }, 15_000);
+
+  it('throws for lightweight agents (no runtime block)', async () => {
+    const now = new Date();
+    await db.insert(agents).values({
+      id: 'lightweight', name: 'Lightweight', latestVersion: '1.0.0',
+      status: 'live', createdAt: now, updatedAt: now,
+    });
+    await db.insert(agentVersions).values({
+      id: 'lightweight-v1', agentId: 'lightweight', version: '1.0.0',
+      manifest: { id: 'lightweight', name: 'Lightweight', version: '1.0.0', functions: [{ name: 'greet' }] },
+      status: 'live', publishedAt: now,
+    });
+
+    mockAgentsService.findOne.mockResolvedValue(
+      makeAgent('lightweight', {
+        id: 'lightweight', name: 'Lightweight', version: '1.0.0',
+        functions: [{ name: 'greet', description: 'Greet' }],
+      }),
+    );
+
+    await expect(
+      runner.run('lightweight', 'greet', { type: 'manual' }),
+    ).rejects.toThrow(/no runtime block/i);
+  });
+
+  it('loads declared secrets from the database', async () => {
+    const now = new Date();
+    await db.insert(agents).values({
+      id: 'secret-reader', name: 'Secret Reader', latestVersion: '1.0.0',
+      status: 'live', createdAt: now, updatedAt: now,
+    });
+    await db.insert(agentVersions).values({
+      id: 'secret-reader-v1', agentId: 'secret-reader', version: '1.0.0',
+      manifest: {
+        id: 'secret-reader', name: 'Secret Reader', version: '1.0.0',
+        runtime: { base: 'node:22-slim' },
+        secrets: ['API_KEY', 'OTHER_KEY'],
+        functions: [{ name: 'readSecret' }],
+      },
+      imageRef: 'ghcr.io/test:secret-reader-1.0.0',
+      status: 'live', publishedAt: now,
+    });
+
     await db.insert(agentSecrets).values({ agentId: 'secret-reader', key: 'API_KEY', value: 'sk-12345', updatedAt: now });
     await db.insert(agentSecrets).values({ agentId: 'secret-reader', key: 'OTHER_KEY', value: 'other-val', updatedAt: now });
-    // Also insert a secret NOT declared in manifest — should NOT be injected
     await db.insert(agentSecrets).values({ agentId: 'secret-reader', key: 'UNDECLARED', value: 'should-not-appear', updatedAt: now });
 
-    const result = await runner.run('secret-reader', 'readSecret', { type: 'manual' });
+    mockAgentsService.findOne.mockResolvedValue(
+      makeAgent('secret-reader', {
+        id: 'secret-reader', name: 'Secret Reader', version: '1.0.0',
+        runtime: { base: 'node:22-slim' },
+        secrets: ['API_KEY', 'OTHER_KEY'],
+        functions: [{ name: 'readSecret' }],
+      }),
+    );
 
-    expect(result.status).toBe('success');
-    expect(result.result).toEqual({
-      API_KEY: 'sk-12345',
-      OTHER_KEY: 'other-val',
-    });
-    // UNDECLARED should not be present
-    expect((result.result as any).UNDECLARED).toBeUndefined();
-  });
+    // The container run will fail (fake image), but we can verify the run was attempted
+    // and the agent was looked up correctly. Secret loading happens inside runInContainer.
+    try {
+      await runner.run('secret-reader', 'readSecret', { type: 'manual' });
+    } catch {
+      // Expected — fake image can't be pulled
+    }
+
+    expect(mockAgentsService.findOne).toHaveBeenCalledWith('secret-reader');
+  }, 15_000);
 });

@@ -1,3 +1,7 @@
+// Skip under bun test — needs jsdom + React (run via `vitest run` in web package)
+const hasDom = typeof globalThis.document !== 'undefined';
+const maybeDescribe = hasDom ? describe : describe.skip;
+
 import { render, screen, fireEvent } from '@testing-library/react';
 import { HomeView } from './HomeView.js';
 import { useStore } from '../../lib/store.js';
@@ -12,7 +16,7 @@ beforeEach(() => {
   useStore.setState({ agents: [], view: 'home', zeusOpen: false });
 });
 
-describe('HomeView', () => {
+maybeDescribe('HomeView', () => {
   it('shows empty state when no agents have widgets', () => {
     render(<HomeView />);
     expect(screen.getByText(/Your home screen is empty/i)).toBeInTheDocument();

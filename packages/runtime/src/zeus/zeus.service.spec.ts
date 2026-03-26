@@ -40,7 +40,7 @@ describe('ZeusService', () => {
         {
           provide: AgentsService,
           useValue: {
-            findAll: jest.fn().mockReturnValue([]),
+            findAll: jest.fn().mockResolvedValue([]),
           },
         },
         {

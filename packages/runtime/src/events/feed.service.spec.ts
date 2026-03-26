@@ -5,7 +5,7 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import { FeedService } from './feed.service';
 import { DRIZZLE, type DrizzleDB } from '../db';
 import * as schema from '../db/schema';
-import { feedEvents, agents } from '../db/schema';
+import { feedEvents, agents, agentVersions, agentRuns, agentSecrets, userAgentInstalls } from '../db/schema';
 
 describe('FeedService', () => {
   let service: FeedService;
@@ -30,7 +30,11 @@ describe('FeedService', () => {
     }).compile();
 
     db = module.get<DrizzleDB>(DRIZZLE);
+    await db.delete(userAgentInstalls);
+    await db.delete(agentRuns);
+    await db.delete(agentSecrets);
     await db.delete(feedEvents);
+    await db.delete(agentVersions);
     await db.delete(agents);
 
     service = module.get<FeedService>(FeedService);

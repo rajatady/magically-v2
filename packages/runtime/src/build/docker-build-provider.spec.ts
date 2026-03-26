@@ -1,20 +1,11 @@
 import { ConfigService } from '@nestjs/config';
 import { DockerBuildProvider } from './docker-build-provider';
-
-jest.mock('child_process', () => ({
-  execSync: jest.fn(),
-}));
-
-jest.mock('fs', () => ({
-  writeFileSync: jest.fn(),
-  unlinkSync: jest.fn(),
-}));
-
-import { execSync } from 'child_process';
-const mockExecSync = execSync as jest.MockedFunction<typeof execSync>;
+import * as childProcess from 'child_process';
+import * as fs from 'fs';
 
 describe('DockerBuildProvider', () => {
   let provider: DockerBuildProvider;
+  let mockExecSync: jest.SpyInstance;
 
   const mockConfig: Partial<ConfigService> = {
     get: jest.fn((key: string) => {
@@ -23,9 +14,19 @@ describe('DockerBuildProvider', () => {
     }),
   };
 
+  beforeAll(() => {
+    mockExecSync = jest.spyOn(childProcess, 'execSync').mockReturnValue(Buffer.from('') as any);
+    jest.spyOn(fs, 'writeFileSync').mockImplementation(() => {});
+    jest.spyOn(fs, 'unlinkSync').mockImplementation(() => {});
+  });
+
+  afterAll(() => {
+    jest.restoreAllMocks();
+  });
+
   beforeEach(() => {
     provider = new DockerBuildProvider(mockConfig as ConfigService);
-    mockExecSync.mockReset();
+    mockExecSync.mockReset().mockReturnValue(Buffer.from('') as any);
   });
 
   it('has name "docker"', () => {
@@ -45,7 +46,7 @@ describe('DockerBuildProvider', () => {
   });
 
   describe('build', () => {
-    it('builds and pushes a Docker image to GHCR', async () => {
+    it('builds a Docker image locally (no push)', async () => {
       mockExecSync.mockReturnValue(Buffer.from(''));
 
       const result = await provider.build({
@@ -68,12 +69,11 @@ describe('DockerBuildProvider', () => {
       expect(buildCall).toBeDefined();
       expect(buildCall![0]).toContain('-t ghcr.io/rajatady/magically-agents:hello-world-1.0.0');
 
-      // Verify docker push was called
+      // Docker push should NOT be called — local builds stay local
       const pushCall = mockExecSync.mock.calls.find(
         (c) => (c[0] as string).includes('docker push'),
       );
-      expect(pushCall).toBeDefined();
-      expect(pushCall![0]).toContain('ghcr.io/rajatady/magically-agents:hello-world-1.0.0');
+      expect(pushCall).toBeUndefined();
     });
 
     it('generates a Dockerfile from the manifest runtime block', async () => {

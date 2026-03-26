@@ -1,20 +1,22 @@
 import { publishCommand } from './publish';
+import * as childProcess from 'child_process';
+import * as fs from 'fs';
 
-jest.mock('child_process', () => ({
-  execSync: jest.fn().mockReturnValue(Buffer.from('')),
-}));
-
-jest.mock('fs', () => ({
-  ...jest.requireActual('fs'),
-  readFileSync: jest.fn().mockReturnValue(Buffer.from('fake-bundle')),
-  existsSync: jest.fn().mockReturnValue(true),
-}));
-
-// Mock fetch globally
 const mockFetch = jest.fn();
-global.fetch = mockFetch as any;
+let mockExecSync: jest.SpyInstance;
 
 describe('publishCommand', () => {
+  beforeAll(() => {
+    mockExecSync = jest.spyOn(childProcess, 'execSync').mockReturnValue(Buffer.from('') as any);
+    jest.spyOn(fs, 'readFileSync').mockReturnValue(Buffer.from('fake-bundle') as any);
+    jest.spyOn(fs, 'existsSync').mockReturnValue(true as any);
+    global.fetch = mockFetch as any;
+  });
+
+  afterAll(() => {
+    jest.restoreAllMocks();
+  });
+
   beforeEach(() => {
     mockFetch.mockReset();
   });
@@ -23,8 +25,7 @@ describe('publishCommand', () => {
     it('creates a tar.gz buffer from an agent directory', () => {
       const buffer = publishCommand.createBundle('/tmp/fake-agent');
       // execSync should have been called with tar
-      const { execSync } = require('child_process');
-      expect(execSync).toHaveBeenCalledWith(
+      expect(mockExecSync).toHaveBeenCalledWith(
         expect.stringContaining('tar czf'),
         expect.any(Object),
       );
