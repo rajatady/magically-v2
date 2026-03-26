@@ -15,9 +15,12 @@ Write tests first, implement second. No exceptions. Non-tautological tests — t
 
 All platform services that can have multiple implementations MUST use abstract class + provider subclasses:
 - `ComputeProvider` → `DockerProvider`, `FlyProvider`, `DaytonaProvider`
+- `BuildProvider` → `DockerBuildProvider`, `FlyBuildProvider`, `GitHubActionsBuildProvider`
 - Same pattern for: storage, LLM, notifications, and any future service
 
-Only agents with a `runtime` block in their manifest use compute providers. Lightweight agents run in-process.
+Provider selection is explicit via env vars (`COMPUTE_PROVIDER`, `BUILD_PROVIDER`) or `auto` for priority-based fallback.
+
+Only agents with a `runtime` block in their manifest use compute/build providers.
 
 ## Imports
 
@@ -38,11 +41,13 @@ Only agents with a `runtime` block in their manifest use compute providers. Ligh
 ## Database
 
 - PostgreSQL via Drizzle ORM. Local Postgres for dev, Neon for production.
+- Separate test DB: `magically_v2_test`, auto-created + migrated via Jest `globalSetup`.
 - Schema defined in `packages/runtime/src/db/schema.ts` using `pgTable`.
-- Migrations via `drizzle-kit`: `bun run db:generate`, `bun run db:migrate`.
+- Migrations via `drizzle-kit`: `bun run db:generate`, `bun run db:migrate`. Use `db:push` for destructive resets.
 - Schema WILL change frequently. Use migrations, not manual SQL.
 - Custom `@InjectDB()` decorator for injecting the Drizzle client.
 - `DRIZZLE` symbol token for NestJS DI.
+- **Single `agents` table** — no separate registry table. `agent_versions` stores per-version data (manifest, imageRef, bundleUrl, buildError).
 
 ## Authentication
 
@@ -62,17 +67,25 @@ Only agents with a `runtime` block in their manifest use compute providers. Ligh
 
 ## Compute Execution
 
-- Lightweight agents (no `runtime`): run in-process via `require()` + `ctx`.
-- Container agents (has `runtime`): run via compute provider (Docker locally, Fly Machines in prod).
+- Container agents (has `runtime`): run via compute provider (Docker locally, Fly Machines in prod, Daytona in future).
+- JS functions using `module.exports` are called via injected `_harness.js` which constructs `ctx` from env vars.
+- Python/other scripts run directly as commands.
 - The runtime is the scheduler and orchestrator. It triggers, injects context, captures results.
 - Every invocation is logged in `agent_runs` table with status, duration, logs, result.
 
+## Publish Pipeline
+
+- `magically publish` validates (RxJS pipeline), bundles (tar.gz), uploads to Tigris, enqueues BullMQ job.
+- Build worker downloads bundle, builds Docker image via `BuildProvider`, stores imageRef in `agent_versions`.
+- GitHub Actions builds remotely (no local Docker needed). Pushes to GHCR + Fly registry.
+- Status: `processing → building → live | failed`. Developer polls via `magically status`.
+
 ## Agent HTTP API Contract
 
-- Container agents communicate with the runtime via HTTP, not `ctx`.
-- Runtime injects `MAGICALLY_API` env var pointing to a scoped endpoint.
-- Agent code in any language hits that URL for config, secrets, feed, memory, tools.
-- No SDK required — just HTTP. Works in Python, Rust, Go, Node, anything.
+- Container agents receive env vars: `MAGICALLY_AGENT_ID`, `MAGICALLY_FUNCTION`, `MAGICALLY_TRIGGER`, plus declared secrets.
+- JS agents get a full `ctx` object via `_harness.js` with `log`, `emit`, `secrets`, `agentDir`.
+- Python/other agents read env vars directly and print JSON to stdout.
+- No SDK required — just env vars + stdout. Works in Python, Rust, Go, Node, anything.
 
 ## Frontend
 
@@ -88,6 +101,9 @@ Only agents with a `runtime` block in their manifest use compute providers. Ligh
 - Credentials stored in `~/.magically/credentials.json`.
 - `magically login` opens browser for OAuth, local server catches callback.
 - `magically login --token <key>` for direct API key login.
+- `magically publish [dir]` — validate, bundle, upload, build image async. `--validate-only` flag.
+- `magically status <agentId>` — check build status.
+- `magically run <agentId> <fn>` — execute a function via the runtime API.
 - All commands read auth token and send with requests.
 - CLI is used by both humans and AI agents — structured output, JSON payloads, predictable exit codes.
 
@@ -96,7 +112,23 @@ Only agents with a `runtime` block in their manifest use compute providers. Ligh
 - No AI attribution in commits. Ever.
 - GitHub Actions: CI runs tests with Postgres service container. Deploy Runtime and Deploy Web trigger only after CI passes.
 - Runtime deploys to Fly.io (`magically-runtime`). Web deploys to Vercel.
-- Agent container images pushed to Fly registry via `magically push`.
+- Agent images built via `rajatady/magically-builders` GitHub Actions workflow → GHCR + Fly registry.
+- Builder repo is a git submodule at `./builders`.
+
+## Error Handling
+
+- All errors extend `MagicallyError` from `packages/shared/src/errors/`.
+- Domain-specific subclasses: publish, build, compute, registry, auth.
+- Never leak implementation details (no vendor names, no internal URLs) in user-facing messages.
+- `toJSON()` for API responses. `toLog()` for server-side logging with full details.
+
+## Validation
+
+- Validation pipeline in `packages/shared/src/validation/` — framework-agnostic, works in CLI + runtime.
+- Checks are RxJS Observables: `(context) → Observable<CheckResult>`.
+- Pipeline supports short-circuit on fatal errors, streaming for real-time progress, phase filtering.
+- Each check declares: `id`, `name`, `severity` (error/warning/info), `phase` (pre-upload/pre-build/post-build), `category`.
+- Add new checks by implementing `ValidationCheck` interface. No registration needed — add to the pipeline factory.
 
 ## Naming
 
