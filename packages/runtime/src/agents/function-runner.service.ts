@@ -114,11 +114,13 @@ export class FunctionRunnerService implements OnModuleInit {
     );
   }
 
-  /** Load secrets for an agent from the DB, filtered to what the manifest declares. */
-  /** Look up a pre-built image ref from the registry (GHCR). */
-  private async getRegistryImageRef(agentId: string, version: string): Promise<string | null> {
+  /** Look up a pre-built image ref from the registry, using provider-specific ref when available. */
+  private async getRegistryImageRef(agentId: string, version: string, providerName: string): Promise<string | null> {
     const rows = await this.db
-      .select({ imageRef: registryVersions.imageRef })
+      .select({
+        imageRef: registryVersions.imageRef,
+        flyImageRef: registryVersions.flyImageRef,
+      })
       .from(registryVersions)
       .where(and(
         eq(registryVersions.agentId, agentId),
@@ -127,7 +129,11 @@ export class FunctionRunnerService implements OnModuleInit {
       ))
       .limit(1);
 
-    return rows[0]?.imageRef ?? null;
+    if (rows.length === 0) return null;
+
+    const row = rows[0];
+    if (providerName === 'fly' && row.flyImageRef) return row.flyImageRef;
+    return row.imageRef ?? null;
   }
 
   private async loadSecrets(agentId: string, declaredSecrets: string[]): Promise<Record<string, string>> {
@@ -282,10 +288,10 @@ export class FunctionRunnerService implements OnModuleInit {
       MAGICALLY_TRIGGER: triggerJson,
     };
 
-    // Resolve image: check registry for a pre-built GHCR image first,
+    // Resolve image: check registry for provider-specific image first,
     // then fall back to local image tag or base image
     let image = imageTag;
-    const registryImage = await this.getRegistryImageRef(agentId, manifest.version);
+    const registryImage = await this.getRegistryImageRef(agentId, manifest.version, provider.name);
     if (registryImage) {
       image = registryImage;
     } else if (provider.name === 'fly') {

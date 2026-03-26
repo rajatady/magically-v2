@@ -142,6 +142,7 @@ export interface RegistryVersion {
   manifest: Record<string, unknown>;
   bundleUrl?: string;
   imageRef?: string;
+  flyImageRef?: string;
   changelog?: string;
   status: RegistryVersionStatus;
   buildError?: string;

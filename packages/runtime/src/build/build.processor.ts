@@ -63,11 +63,15 @@ export class BuildProcessor extends WorkerHost {
         manifest: { ...manifest, _bundleUrl: bundleUrl },
       });
 
-      // Update DB with imageRef and mark live
-      await this.updateVersion(versionId, {
+      // Update DB with image refs and mark live
+      const update: Record<string, string> = {
         status: 'live',
         imageRef: result.imageRef,
-      });
+      };
+      if (result.flyImageRef) {
+        update.flyImageRef = result.flyImageRef;
+      }
+      await this.updateVersion(versionId, update);
 
       this.logger.log(`Built ${agentId}@${version} → ${result.imageRef} (${result.durationMs}ms)`);
     } catch (err: any) {

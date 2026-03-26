@@ -36,6 +36,10 @@ export class GitHubActionsBuildProvider extends BuildProvider {
     return this.config.get('GHCR_REGISTRY') ?? 'ghcr.io/rajatady/magically-agents';
   }
 
+  private get flyApp(): string {
+    return this.config.get('FLY_AGENTS_APP') ?? 'magically-runtime';
+  }
+
   async isAvailable(): Promise<boolean> {
     return !!this.config.get('GITHUB_BUILDER_REPO') && !!this.config.get('GITHUB_BUILDER_TOKEN');
   }
@@ -44,6 +48,7 @@ export class GitHubActionsBuildProvider extends BuildProvider {
     const { agentId, version, manifest } = input;
     const startedAt = Date.now();
     const imageRef = `${this.registry}:${agentId}-${version}`;
+    const flyImageRef = `registry.fly.io/${this.flyApp}:${agentId}-${version}`;
 
     // Generate Dockerfile and base64 encode it
     const dockerfile = generateDockerfile(manifest.runtime);
@@ -94,7 +99,7 @@ export class GitHubActionsBuildProvider extends BuildProvider {
     }
 
     this.logger.log(`Built ${agentId}@${version} via GitHub Actions → ${imageRef}`);
-    return { imageRef, durationMs: Date.now() - startedAt };
+    return { imageRef, flyImageRef, durationMs: Date.now() - startedAt };
   }
 
   private async findWorkflowRun(agentId: string, version: string, maxAttempts = 10): Promise<number> {

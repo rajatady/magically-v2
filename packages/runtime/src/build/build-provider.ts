@@ -16,7 +16,8 @@ export interface BuildInput {
 }
 
 export interface BuildOutput {
-  imageRef: string;              // e.g. ghcr.io/rajatady/magically-agents:agent-id-1.0.0
+  imageRef: string;              // Primary image ref (GHCR)
+  flyImageRef?: string;          // Fly registry copy (if pushed)
   durationMs: number;
 }
 

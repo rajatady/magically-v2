@@ -13,6 +13,7 @@ describe('GitHubActionsBuildProvider', () => {
         GITHUB_BUILDER_REPO: 'rajatady/magically-builders',
         GITHUB_BUILDER_TOKEN: 'ghp_test_token',
         GHCR_REGISTRY: 'ghcr.io/rajatady/magically-agents',
+        FLY_AGENTS_APP: 'magically-runtime',
       };
       return map[key];
     }),
@@ -71,6 +72,7 @@ describe('GitHubActionsBuildProvider', () => {
       });
 
       expect(result.imageRef).toBe('ghcr.io/rajatady/magically-agents:hello-world-1.0.0');
+      expect(result.flyImageRef).toBe('registry.fly.io/magically-runtime:hello-world-1.0.0');
 
       // Verify dispatch was called
       expect(mockFetch.mock.calls[0][0]).toContain('/actions/workflows/build-agent.yml/dispatches');

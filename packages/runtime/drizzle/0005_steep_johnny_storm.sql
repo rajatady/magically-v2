@@ -1,0 +1,1 @@
+ALTER TABLE "registry_versions" ADD COLUMN "fly_image_ref" text;

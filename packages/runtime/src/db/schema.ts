@@ -182,7 +182,8 @@ export const registryVersions = pgTable('registry_versions', {
   version: text('version').notNull(),
   manifest: jsonb('manifest').notNull(),
   bundleUrl: text('bundle_url'),                           // S3/Tigris URL to tarball
-  imageRef: text('image_ref'),                             // Docker/GHCR image reference
+  imageRef: text('image_ref'),                             // Primary image ref (GHCR)
+  flyImageRef: text('fly_image_ref'),                      // Fly registry copy
   changelog: text('changelog'),
   status: text('status').notNull().default('processing'),  // processing | building | live | failed
   buildError: text('build_error'),                         // failure message when status = failed
