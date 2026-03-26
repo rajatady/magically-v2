@@ -65,10 +65,8 @@ export class FlyProvider extends ComputeProvider {
     logs.push(`Machine ${machine.id} created for ${agentId}/${functionName}`);
 
     try {
-      // 2. Wait for start
-      await this.api('GET', `/machines/${machine.id}/wait?state=started&timeout=60`);
-
-      // 3. Wait for stop
+      // 2. Wait for stop (skip waiting for started — short-lived commands
+      //    may finish before the started poll completes)
       const attempts = Math.ceil(Math.min(timeoutSeconds, 300) / 60);
       let stopped = false;
 
