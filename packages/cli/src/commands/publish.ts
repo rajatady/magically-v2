@@ -1,8 +1,9 @@
-import { readFileSync, existsSync } from 'fs';
+import { readFileSync, existsSync, readdirSync, writeFileSync, unlinkSync } from 'fs';
 import { join, basename } from 'path';
 import { execSync } from 'child_process';
 import { tmpdir } from 'os';
 import { authCommand } from './auth';
+import { createPublishPipeline, HARNESS_SCRIPT, type ValidationContext } from '@magically/shared';
 
 interface PublishResult {
   agentId: string;
@@ -90,20 +91,59 @@ export const publishCommand = {
     return { status: 'failed', buildError: 'Timed out waiting for build' };
   },
 
-  async exec(agentDir: string, opts: { base: string; wait?: boolean }): Promise<void> {
+  async exec(agentDir: string, opts: { base: string; wait?: boolean; validateOnly?: boolean }): Promise<void> {
+    // Validate before publishing
+    console.log('Validating agent...');
+    const pipeline = createPublishPipeline();
+    const ctx: ValidationContext = {
+      agentDir,
+      manifest: null,
+      files: [],
+      data: new Map(),
+    };
+
+    const validation = await pipeline.run(ctx, 'pre-upload', { shortCircuit: true });
+
+    for (const r of validation.all) {
+      const icon = r.passed ? '  ✓' : r.check.severity === 'error' ? '  ✗' : '  ⚠';
+      console.log(`${icon} ${r.check.name}${r.passed ? '' : ': ' + r.message}`);
+    }
+
+    if (!validation.passed) {
+      console.error('\nValidation failed. Fix the errors above before publishing.');
+      process.exit(1);
+    }
+
+    if (validation.warnings.length > 0) {
+      console.log(`\n${validation.warnings.length} warning(s).`);
+    }
+
+    console.log(`\nValidation completed in ${validation.duration}ms.`);
+
+    if (opts.validateOnly) return;
+
     const token = authCommand.loadToken();
     if (!token) {
       console.error('Not logged in. Run: magically login');
       process.exit(1);
     }
 
-    const manifest = publishCommand.parseManifest(agentDir);
+    const manifest = ctx.manifest as Record<string, string>;
     console.log(`Publishing ${manifest.id}@${manifest.version}...`);
+
+    // Inject harness script for container agents with JS functions
+    const harnessPath = join(agentDir, '_harness.js');
+    if (manifest.runtime) {
+      writeFileSync(harnessPath, HARNESS_SCRIPT);
+    }
 
     // Bundle the agent directory
     console.log('Bundling agent...');
     const bundle = publishCommand.createBundle(agentDir);
     console.log(`Bundle: ${(bundle.length / 1024).toFixed(1)} KB`);
+
+    // Clean up injected harness
+    try { unlinkSync(harnessPath); } catch {}
 
     // Send to runtime
     const result = await publishCommand.sendPublish(opts.base, token, manifest, bundle);

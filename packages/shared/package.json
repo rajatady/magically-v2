@@ -6,9 +6,16 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "test": "echo 'no tests yet'"
+    "test": "jest"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "jest": "^30.3.0",
+    "ts-jest": "^29.4.6",
     "typescript": "^5.8.2"
+  },
+  "dependencies": {
+    "rxjs": "^7.8.2",
+    "zod": "^3.24.1"
   }
 }

@@ -113,7 +113,8 @@ program
   .command('publish [dir]')
   .description('Publish an agent to the registry')
   .option('--base <url>', 'Runtime base URL', 'http://localhost:4321')
-  .action((dir: string | undefined, opts: { base: string }) => {
+  .option('--validate-only', 'Only run validation checks, do not publish')
+  .action((dir: string | undefined, opts: { base: string; validateOnly?: boolean }) => {
     publishCommand.exec(resolve(dir ?? '.'), opts);
   });
 

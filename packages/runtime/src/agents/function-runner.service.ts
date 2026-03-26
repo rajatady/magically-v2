@@ -271,7 +271,12 @@ export class FunctionRunnerService implements OnModuleInit {
     // Resolve the command to run
     const fn = manifest.functions.find((f) => f.name === functionName);
     const runCmd = fn?.run ?? `node functions/${functionName}.js`;
-    const cmd = runCmd.split(' ');
+
+    // For JS functions, use the harness which handles module.exports calling
+    const isJsFunction = runCmd.startsWith('node ');
+    const cmd = isJsFunction
+      ? ['node', '_harness.js']
+      : runCmd.split(' ');
 
     // Build env vars: secrets + trigger metadata
     const secrets = await this.loadSecrets(agentId, manifest.secrets ?? []);

@@ -75,12 +75,16 @@ export class BuildProcessor extends WorkerHost {
 
       this.logger.log(`Built ${agentId}@${version} → ${result.imageRef} (${result.durationMs}ms)`);
     } catch (err: any) {
-      this.logger.error(`Build failed for ${agentId}@${version}: ${err.message}`);
+      // Store user-facing message, log full details internally
+      const userMessage = err.message ?? 'Unknown build error';
+      const logDetails = typeof err.toLog === 'function' ? err.toLog() : { message: err.message, stack: err.stack };
+
+      this.logger.error(`Build failed for ${agentId}@${version}`, logDetails);
       await this.updateVersion(versionId, {
         status: 'failed',
-        buildError: err.message,
+        buildError: userMessage,
       });
-      throw err; // Re-throw so BullMQ can retry
+      throw err; // Re-throw so the queue can retry
     } finally {
       try { rmSync(tmpDir, { recursive: true, force: true }); } catch {}
     }
