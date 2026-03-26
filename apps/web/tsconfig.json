@@ -12,6 +12,7 @@
     "types": ["vite/client"],
     "esModuleInterop": true,
     "paths": {
+      "~/*": ["./src/*"],
       "@magically/agent-sdk": ["../../packages/agent-sdk/src/index.ts"],
       "@magically/widget-dsl": ["../../packages/widget-dsl/src/index.ts"]
     }

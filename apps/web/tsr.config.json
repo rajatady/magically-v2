@@ -1,0 +1,7 @@
+{
+  "autoRoutes": {
+    "entrypoint": "./src/main.tsx",
+    "routeFilePrefix": "",
+    "generatedRouteTree": "./src/routeTree.gen.ts"
+  }
+}
