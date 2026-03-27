@@ -51,7 +51,7 @@ describe('DockerBuildProvider', () => {
         agentId: 'hello-world',
         version: '1.0.0',
         bundlePath: '/tmp/agent-bundle',
-        manifest: { id: 'hello-world' },
+        manifest: { id: 'hello-world', runtime: { base: 'python:3.12-slim', system: [], install: '' } },
       });
 
       expect(result.imageRef).toContain('hello-world');
