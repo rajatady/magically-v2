@@ -1,24 +1,17 @@
 import { ConfigService } from '@nestjs/config';
 import { DockerBuildProvider } from './docker-build-provider';
 
-// jest.mock + jest.requireActual only work under Jest, not bun's test runner
-// @ts-expect-error — Bun global
-const isBun = typeof Bun !== 'undefined';
-
-if (!isBun) {
-  jest.mock('child_process', () => ({
-    execSync: jest.fn().mockReturnValue(Buffer.from('')),
-  }));
-  jest.mock('fs', () => ({
-    ...jest.requireActual('fs'),
-    writeFileSync: jest.fn(),
-    unlinkSync: jest.fn(),
-  }));
-}
+// Jest hoists jest.mock calls — they must be top-level, not inside conditionals
+jest.mock('child_process', () => ({
+  execSync: jest.fn().mockReturnValue(Buffer.from('')),
+}));
+jest.mock('fs', () => ({
+  ...jest.requireActual('fs'),
+  writeFileSync: jest.fn(),
+  unlinkSync: jest.fn(),
+}));
 
 import { execSync } from 'child_process';
-
-const maybeDescribe = isBun ? describe.skip : describe;
 
 maybeDescribe('DockerBuildProvider', () => {
   let provider: DockerBuildProvider;

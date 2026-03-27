@@ -4,23 +4,16 @@ import { BuildService } from './build.service';
 import { StorageService } from '../registry/storage.service';
 import type { DrizzleDB } from '../db';
 
-// @ts-expect-error — Bun global
-const isBun = typeof Bun !== 'undefined';
+jest.mock('child_process', () => ({
+  execSync: jest.fn().mockReturnValue(Buffer.from('')),
+}));
+jest.mock('fs', () => ({
+  ...jest.requireActual('fs'),
+  mkdtempSync: jest.fn().mockReturnValue('/tmp/magically-build-abc'),
+  rmSync: jest.fn(),
+}));
 
-if (!isBun) {
-  jest.mock('child_process', () => ({
-    execSync: jest.fn().mockReturnValue(Buffer.from('')),
-  }));
-  jest.mock('fs', () => ({
-    ...jest.requireActual('fs'),
-    mkdtempSync: jest.fn().mockReturnValue('/tmp/magically-build-abc'),
-    rmSync: jest.fn(),
-  }));
-}
-
-const maybeDescribe = isBun ? describe.skip : describe;
-
-maybeDescribe('BuildProcessor', () => {
+describe('BuildProcessor', () => {
   let processor: BuildProcessor;
   let mockDb: Partial<DrizzleDB>;
   let mockStorage: Partial<StorageService>;
