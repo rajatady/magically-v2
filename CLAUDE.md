@@ -1,3 +1,38 @@
+- Package manager: bun
+
+## Project Snapshot
+
+Magically is an operating system for AI agents. Not a chatbot. Not a developer tool. An OS — like iOS for your AI life.
+
+This repository is a VERY EARLY WIP. Proposing sweeping changes that improve long-term maintainability is encouraged.
+
+## Core Priorities
+
+1. Performance first.
+2. Reliability first.
+3. Keep behavior predictable under load and during failures (session restarts, reconnects, partial streams).
+
+If a tradeoff is required, choose correctness and robustness over short-term convenience.
+
+## Maintainability
+
+Long term maintainability is a core priority. If you add new functionality, first check if there is shared logic that
+can be extracted to a separate module. Duplicate logic across multiple files is a code smell and should be avoided.
+Don't be afraid to change existing code. Don't take shortcuts by just adding local logic to solve a problem.
+
+## Process Rules
+
+**These exist because we burned 12+ hours debugging cascading breakages. Follow them exactly.**
+
+1. **Think before changing.** Read the code. Understand why it's written that way. If something looks wrong, check git blame before "fixing" it — it may be intentional.
+2. **Never rewrite a file from scratch.** Edit the minimum lines needed. When you rewrite, you lose context (test fixtures, edge cases, specific values) that existed for a reason.
+3. **One concern per commit.** Don't mix a feature change with a type cleanup with a test fix. When something breaks, you can't tell which change caused it.
+4. **Verify the full blast radius.** A change to `packages/shared` affects runtime, CLI, and web. A change to a `.spec.ts` affects jest AND bun test. A tsconfig change affects tsc, jest (via ts-jest), and the Docker build. Check all consumers, not just the one you're working in.
+5. **Never push to main to "see if CI catches it."** CI is the last safety net, not the first. Run the verification checklist locally.
+6. **When a test fails, read the test first.** Understand what it asserts and why. Don't change the test to make it pass — fix the code. If the test is genuinely wrong, explain why before changing it.
+7. **Don't chase type purity at the cost of stability.** Replacing `as any` with `as unknown as Record<string, unknown>` is not safer — it's the same bypass with more characters. Either fix the type properly (module augmentation, Zod inference, interface extension) or leave the `any` and move on.
+8. **Infrastructure is not the product.** Monorepo config, CI, module resolution — these are solved problems. Copy from a working reference (vndevteam/nestjs-turbo, t3code). Don't invent.
+
 ## Verification Checklist — MANDATORY before every commit
 
 **You MUST run ALL of these and see zero failures before committing. No exceptions.**
@@ -74,12 +109,6 @@ Tests that need module mocking (`jest.mock`/`vi.mock`) must skip under bun: `con
 - **Production DB** is Neon Postgres. Drizzle migrations track state in `__drizzle_migrations` table. If migration fails with "already exists", the journal is out of sync — wipe DB or manually insert journal entries.
 - **`docker info` timeout**: `DockerProvider.isAvailable()` has a 5s timeout on `execSync('docker info')`. Without this, CI hangs.
 
-## Project Snapshot
-
-Magically is an operating system for AI agents. Not a chatbot. Not a developer tool. An OS — like iOS for your AI life.
-
-This repository is a VERY EARLY WIP. Proposing sweeping changes that improve long-term maintainability is encouraged.
-
 ## Architecture Overview
 
 ```
@@ -106,20 +135,6 @@ builders/      — Git submodule (rajatady/magically-builders). GitHub Actions w
 - **Test DB**: `magically_v2_test`, separate from dev DB. Jest `globalSetup` reads `DATABASE_URL` env var, falls back to local default.
 - **Express Request augmentation**: `src/auth/authenticated-request.d.ts` adds `user` property to Express `Request`. No `as any` casts needed in controllers.
 - **AgentManifest type**: Exported from `@magically/shared/validation`. Use instead of `as any` for manifest JSONB fields. Uses `.passthrough()` so extra fields exist at runtime.
-
-## Core Priorities
-
-1. Performance first.
-2. Reliability first.
-3. Keep behavior predictable under load and during failures (session restarts, reconnects, partial streams).
-
-If a tradeoff is required, choose correctness and robustness over short-term convenience.
-
-## Maintainability
-
-Long term maintainability is a core priority. If you add new functionality, first check if there is shared logic that
-can be extracted to a separate module. Duplicate logic across multiple files is a code smell and should be avoided.
-Don't be afraid to change existing code. Don't take shortcuts by just adding local logic to solve a problem.
 
 ## Key Docs
 
