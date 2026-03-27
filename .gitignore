@@ -141,6 +141,7 @@ plans
 *.db
 magically.db*
 .DS_Store
+.playwright-mcp/
 dreamer-os.html
 demo/
 
