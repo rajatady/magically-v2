@@ -2,12 +2,12 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { TriggerSchedulerService } from './trigger-scheduler.service';
-import { FunctionRunnerService } from './function-runner.service';
-import { AgentsService, type AgentWithManifest } from './agents.service';
-import { DRIZZLE, type DrizzleDB } from '../db';
-import * as schema from '../db/schema';
-import { agents, agentVersions, agentRuns, agentSecrets, feedEvents, userAgentInstalls } from '../db/schema';
+import { TriggerSchedulerService } from '../src/agents/trigger-scheduler.service';
+import { FunctionRunnerService } from '../src/agents/function-runner.service';
+import { AgentsService, type AgentWithManifest } from '../src/agents/agents.service';
+import { DRIZZLE, type DrizzleDB } from '../src/db';
+import * as schema from '../src/db/schema';
+import { agents, agentVersions, agentRuns, agentSecrets, feedEvents, userAgentInstalls } from '../src/db/schema';
 
 function makeAgent(id: string, manifest: Record<string, unknown>): AgentWithManifest {
   return {

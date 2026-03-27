@@ -1,0 +1,17 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": ".",
+  "testRegex": ".*\\.spec\\.ts$",
+  "transform": {
+    "^.+\\.(t|j)s$": ["ts-jest", {
+      "tsconfig": {
+        "module": "commonjs"
+      }
+    }]
+  },
+  "moduleNameMapper": {
+    "^(\\.\\./)+src/(.*)$": "<rootDir>/../src/$2"
+  },
+  "globalSetup": "<rootDir>/../src/test-global-setup.ts",
+  "testEnvironment": "node"
+}

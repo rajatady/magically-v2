@@ -45,9 +45,13 @@ jobs:
         working-directory: packages/runtime
         run: bun run db:migrate
 
-      - name: Test runtime
+      - name: Test runtime (unit)
         working-directory: packages/runtime
         run: bun run test
+
+      - name: Test runtime (e2e)
+        working-directory: packages/runtime
+        run: bun run test:e2e
 
       - name: Test CLI
         working-directory: packages/cli

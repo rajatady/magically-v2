@@ -5,13 +5,13 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import { sql } from 'drizzle-orm';
 import type { LanguageModelV3StreamResult } from '@ai-sdk/provider';
 import { MockLanguageModelV3, convertArrayToReadableStream } from 'ai/test';
-import { ZeusService } from './zeus.service';
-import { LlmService } from '../llm/llm.service';
-import { AgentsService } from '../agents/agents.service';
-import { EventsGateway } from '../events/events.gateway';
-import { DRIZZLE, type DrizzleDB } from '../db';
-import * as schema from '../db/schema';
-import { zeusConversations, zeusMemory, zeusTasks } from '../db/schema';
+import { ZeusService } from '../src/zeus/zeus.service';
+import { LlmService } from '../src/llm/llm.service';
+import { AgentsService } from '../src/agents/agents.service';
+import { EventsGateway } from '../src/events/events.gateway';
+import { DRIZZLE, type DrizzleDB } from '../src/db';
+import * as schema from '../src/db/schema';
+import { zeusConversations, zeusMemory, zeusTasks } from '../src/db/schema';
 
 describe('ZeusService', () => {
   let service: ZeusService;

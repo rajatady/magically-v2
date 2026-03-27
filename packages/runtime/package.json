@@ -7,6 +7,8 @@
     "dev": "nest start --watch",
     "start": "node dist/main",
     "test": "jest",
+    "test:e2e": "jest --config test/jest-e2e.json --runInBand --forceExit",
+    "test:all": "jest && jest --config test/jest-e2e.json --runInBand --forceExit",
     "test:setup-db": "ts-node src/test-global-setup.ts",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",

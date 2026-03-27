@@ -3,9 +3,9 @@ import { Injectable } from '@nestjs/common';
 import { sql } from 'drizzle-orm';
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { DRIZZLE, type DrizzleDB } from './drizzle.provider';
-import { InjectDB } from './inject-db.decorator';
-import * as schema from './schema';
+import { DRIZZLE, type DrizzleDB } from '../src/db/drizzle.provider';
+import { InjectDB } from '../src/db/inject-db.decorator';
+import * as schema from '../src/db/schema';
 
 @Injectable()
 class TestService {

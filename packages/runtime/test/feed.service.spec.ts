@@ -2,10 +2,10 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { EventEmitter2, EventEmitterModule } from '@nestjs/event-emitter';
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { FeedService } from './feed.service';
-import { DRIZZLE, type DrizzleDB } from '../db';
-import * as schema from '../db/schema';
-import { feedEvents, agents, agentVersions, agentRuns, agentSecrets, userAgentInstalls } from '../db/schema';
+import { FeedService } from '../src/events/feed.service';
+import { DRIZZLE, type DrizzleDB } from '../src/db';
+import * as schema from '../src/db/schema';
+import { feedEvents, agents, agentVersions, agentRuns, agentSecrets, userAgentInstalls } from '../src/db/schema';
 
 describe('FeedService', () => {
   let service: FeedService;

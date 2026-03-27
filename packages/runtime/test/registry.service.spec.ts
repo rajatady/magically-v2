@@ -2,11 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getQueueToken } from '@nestjs/bullmq';
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { DRIZZLE, DrizzleDB } from '../db';
-import { RegistryService } from './registry.service';
-import { StorageService } from './storage.service';
-import * as schema from '../db/schema';
-import { users, agents, registryVersions, userAgentInstalls, agentSecrets, agentRuns, feedEvents } from '../db/schema';
+import { DRIZZLE, DrizzleDB } from '../src/db';
+import { RegistryService } from '../src/registry/registry.service';
+import { StorageService } from '../src/registry/storage.service';
+import * as schema from '../src/db/schema';
+import { users, agents, registryVersions, userAgentInstalls, agentSecrets, agentRuns, feedEvents } from '../src/db/schema';
 
 describe('RegistryService', () => {
   let service: RegistryService;

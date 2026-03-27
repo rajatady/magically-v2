@@ -2,10 +2,10 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { AgentsService } from './agents.service';
-import { DRIZZLE, type DrizzleDB } from '../db';
-import * as schema from '../db/schema';
-import { agents, agentVersions, agentRuns, agentSecrets, feedEvents, userAgentInstalls } from '../db/schema';
+import { AgentsService } from '../src/agents/agents.service';
+import { DRIZZLE, type DrizzleDB } from '../src/db';
+import * as schema from '../src/db/schema';
+import { agents, agentVersions, agentRuns, agentSecrets, feedEvents, userAgentInstalls } from '../src/db/schema';
 
 describe('AgentsService', () => {
   let service: AgentsService;

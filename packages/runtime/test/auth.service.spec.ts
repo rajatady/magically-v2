@@ -3,10 +3,10 @@ import { ConfigService } from '@nestjs/config';
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { eq, inArray } from 'drizzle-orm';
-import { AuthService } from './auth.service';
-import { DRIZZLE, type DrizzleDB } from '../db';
-import * as schema from '../db/schema';
-import { users, apiKeys } from '../db/schema';
+import { AuthService } from '../src/auth/auth.service';
+import { DRIZZLE, type DrizzleDB } from '../src/db';
+import * as schema from '../src/db/schema';
+import { users, apiKeys } from '../src/db/schema';
 
 const TEST_EMAILS = ['test@example.com', 'google@example.com'];
 

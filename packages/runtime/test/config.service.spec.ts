@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { ConfigService } from './config.service';
-import { DRIZZLE, type DrizzleDB } from '../db';
-import * as schema from '../db/schema';
-import { userConfig } from '../db/schema';
+import { ConfigService } from '../src/config/config.service';
+import { DRIZZLE, type DrizzleDB } from '../src/db';
+import * as schema from '../src/db/schema';
+import { userConfig } from '../src/db/schema';
 import { eq } from 'drizzle-orm';
 
 describe('ConfigService', () => {
