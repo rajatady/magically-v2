@@ -37,7 +37,7 @@ export class AuthGuard implements CanActivate {
     // Try JWT first
     try {
       const payload = this.auth.verifyToken(token);
-      (request as Record<string, unknown>).user = payload;
+      request.user = payload;
       return true;
     } catch {}
 
@@ -45,7 +45,7 @@ export class AuthGuard implements CanActivate {
     if (token.startsWith('mg_')) {
       const user = await this.auth.validateApiKey(token);
       if (user) {
-        (request as Record<string, unknown>).user = { sub: user.id, email: user.email, name: user.name };
+        request.user = { sub: user.id, email: user.email, name: user.name ?? undefined };
         return true;
       }
     }

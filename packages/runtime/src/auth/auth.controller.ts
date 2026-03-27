@@ -14,10 +14,6 @@ import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { Public } from './auth.guard';
 
-interface AuthenticatedRequest extends Request {
-  user: { sub: string; email: string; name?: string };
-}
-
 interface GoogleTokenResponse {
   access_token?: string;
   error?: string;
@@ -132,14 +128,14 @@ export class AuthController {
   // ─── API Keys ─────────────────────────────────────────────────────────────
 
   @Post('api-keys')
-  async createApiKey(@Req() req: AuthenticatedRequest, @Body() body: { name: string }) {
-    return this.auth.createApiKey(req.user.sub, body.name);
+  async createApiKey(@Req() req: Request, @Body() body: { name: string }) {
+    return this.auth.createApiKey(req.user!.sub, body.name);
   }
 
   // ─── Current user ─────────────────────────────────────────────────────────
 
   @Get('me')
-  me(@Req() req: AuthenticatedRequest) {
+  me(@Req() req: Request) {
     return req.user;
   }
 

@@ -49,8 +49,9 @@ export class AgentsController {
     async getWidget(@Param('id') id: string) {
         // Widgets are declared in the manifest — no filesystem needed
         const agent = await this.agentsService.findOne(id);
-        const manifest = agent.manifest as AgentManifest;
-        if (!manifest.ui?.widget) return { widget: null };
+        const manifest = agent.manifest as Record<string, unknown>;
+        const ui = manifest.ui as Record<string, unknown> | undefined;
+        if (!ui?.widget) return { widget: null };
         // TODO: widget data should come from DB or bundle, not filesystem
         return { widget: null };
     }

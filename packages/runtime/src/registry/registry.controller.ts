@@ -18,10 +18,6 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { Request } from 'express';
 import { RegistryService } from './registry.service';
 
-interface AuthenticatedRequest extends Request {
-  user: { sub: string; id?: string; email: string; name?: string };
-}
-
 @Controller('api/registry')
 export class RegistryController {
   constructor(private readonly registry: RegistryService) {}
@@ -29,11 +25,11 @@ export class RegistryController {
   @Post('publish')
   @UseInterceptors(FileInterceptor('bundle'))
   async publish(
-    @Req() req: AuthenticatedRequest,
+    @Req() req: Request,
     @Body('manifest') manifestField: string | Record<string, unknown>,
     @UploadedFile() bundle?: Express.Multer.File,
   ) {
-    const userId = req.user?.id ?? req.user?.sub;
+    const userId = req.user!.sub;
     // Support both JSON string (multipart) and object (JSON body)
     const manifest = typeof manifestField === 'string'
       ? JSON.parse(manifestField)
@@ -74,27 +70,27 @@ export class RegistryController {
   }
 
   @Post('agents/:id/install')
-  async install(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
-    const userId = req.user?.id ?? req.user?.sub;
+  async install(@Req() req: Request, @Param('id') id: string) {
+    const userId = req.user!.sub;
     return this.registry.install(userId, id);
   }
 
   @Delete('agents/:id/uninstall')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async uninstall(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
-    const userId = req.user?.id ?? req.user?.sub;
+  async uninstall(@Req() req: Request, @Param('id') id: string) {
+    const userId = req.user!.sub;
     await this.registry.uninstall(userId, id);
   }
 
   @Get('installs')
   async listInstalls(@Req() req: any) {
-    const userId = req.user?.id ?? req.user?.sub;
+    const userId = req.user!.sub;
     return this.registry.listInstalls(userId);
   }
 
   @Get('installs/:agentId')
   async getInstall(@Req() req: any, @Param('agentId') agentId: string) {
-    const userId = req.user?.id ?? req.user?.sub;
+    const userId = req.user!.sub;
     return this.registry.getInstall(userId, agentId);
   }
 
@@ -104,7 +100,7 @@ export class RegistryController {
     @Param('agentId') agentId: string,
     @Body() config: Record<string, unknown>,
   ) {
-    const userId = req.user?.id ?? req.user?.sub;
+    const userId = req.user!.sub;
     await this.registry.updateConfig(userId, agentId, config);
     return { ok: true };
   }
