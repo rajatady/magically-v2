@@ -1,4 +1,6 @@
-import { useStore, type View } from '../../lib/store.js';
+import { useStore, type View } from '../../lib/store';
+import { cn } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
 
 interface NavItem {
   id: View;
@@ -20,30 +22,15 @@ export function Sidebar() {
   return (
     <nav
       data-testid="sidebar"
-      style={{
-        width: 64,
-        background: 'var(--bg-panel)',
-        borderRight: '1px solid var(--border)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        padding: '16px 0',
-        gap: 4,
-        flexShrink: 0,
-      }}
+      className="flex w-16 shrink-0 flex-col items-center gap-1 border-r border-border bg-bg-panel py-4"
     >
       {/* Logo */}
-      <div style={{ fontSize: 22, marginBottom: 12 }}>✨</div>
+      <div className="mb-3 text-[22px]">✨</div>
 
       {/* Zeus button */}
-      <SidebarButton
-        icon="◈"
-        label="Zeus"
-        active={zeusOpen}
-        onClick={toggleZeus}
-      />
+      <SidebarButton icon="◈" label="Zeus" active={zeusOpen} onClick={toggleZeus} />
 
-      <div style={{ height: 1, width: 32, background: 'var(--border)', margin: '8px 0' }} />
+      <Separator className="my-2 w-8" />
 
       {/* Main nav */}
       {NAV_ITEMS.map((item) => (
@@ -56,7 +43,7 @@ export function Sidebar() {
         />
       ))}
 
-      <div style={{ height: 1, width: 32, background: 'var(--border)', margin: '8px 0' }} />
+      <Separator className="my-2 w-8" />
 
       {/* Installed agents */}
       {agents.slice(0, 8).map((agent) => (
@@ -87,19 +74,12 @@ function SidebarButton({
     <button
       title={label}
       onClick={onClick}
-      style={{
-        width: 40,
-        height: 40,
-        borderRadius: 'var(--radius-sm)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: 16,
-        background: active ? 'var(--accent-dim)' : 'transparent',
-        color: active ? 'var(--accent)' : 'var(--text-2)',
-        transition: 'all 0.15s',
-        cursor: 'pointer',
-      }}
+      className={cn(
+        'flex size-10 items-center justify-center rounded-md text-base transition-all cursor-pointer',
+        active
+          ? 'bg-accent-dim text-accent'
+          : 'bg-transparent text-text-2 hover:bg-bg-hover',
+      )}
     >
       {icon}
     </button>

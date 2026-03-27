@@ -1,21 +1,8 @@
-import { useStore } from '../../lib/store.js';
-import { feed as feedApi } from '../../lib/api.js';
-
-const TYPE_COLORS: Record<string, string> = {
-  info:    'var(--text-3)',
-  success: '#22c55e',
-  warning: '#f59e0b',
-  error:   '#ef4444',
-  audio:   'var(--accent)',
-};
-
-const TYPE_ICONS: Record<string, string> = {
-  info:    '◎',
-  success: '✓',
-  warning: '⚠',
-  error:   '✕',
-  audio:   '♪',
-};
+import { useStore } from '../../lib/store';
+import { feed as feedApi } from '../../lib/api';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { getFeedItemColor, getFeedItemIcon } from './FeedView.logic';
 
 export function FeedView() {
   const { feed, markFeedRead, dismissFeedItem } = useStore();
@@ -31,32 +18,17 @@ export function FeedView() {
   };
 
   return (
-    <div
-      data-testid="feed-view"
-      style={{
-        flex: 1,
-        padding: 24,
-        overflowY: 'auto',
-        background: 'var(--bg-shell)',
-      }}
-    >
-      <h1 style={{
-        fontFamily: 'var(--font-serif)',
-        fontStyle: 'italic',
-        fontSize: 24,
-        fontWeight: 400,
-        marginBottom: 20,
-        color: 'var(--text-1)',
-      }}>
+    <div data-testid="feed-view" className="flex-1 overflow-y-auto bg-bg-shell p-6">
+      <h1 className="mb-5 font-serif text-2xl font-normal italic text-text-1">
         Feed
       </h1>
 
       {feed.length === 0 ? (
-        <div style={{ color: 'var(--text-3)', textAlign: 'center', paddingTop: 60 }}>
+        <div className="pt-16 text-center text-text-3">
           No activity yet. Agents will post here when they do things for you.
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div className="flex flex-col gap-2">
           {feed.map((item) => (
             <FeedItem
               key={item.id}
@@ -80,50 +52,43 @@ function FeedItem({
   onRead: () => void;
   onDismiss: () => void;
 }) {
-  const color = TYPE_COLORS[item.type] ?? 'var(--text-3)';
-  const icon = TYPE_ICONS[item.type] ?? '◎';
+  const color = getFeedItemColor(item.type);
+  const icon = getFeedItemIcon(item.type);
 
   return (
     <div
       data-testid={`feed-item-${item.id}`}
       onClick={!item.read ? onRead : undefined}
-      style={{
-        background: item.read ? 'var(--bg-panel)' : 'var(--bg-card)',
-        border: `1px solid ${item.read ? 'var(--border)' : 'rgba(249,115,22,0.15)'}`,
-        borderRadius: 'var(--radius-md)',
-        padding: '12px 16px',
-        display: 'flex',
-        gap: 12,
-        cursor: item.read ? 'default' : 'pointer',
-        opacity: item.read ? 0.6 : 1,
-        transition: 'opacity 0.2s',
-      }}
+      className={cn(
+        'flex gap-3 rounded-lg border px-4 py-3 transition-opacity',
+        item.read
+          ? 'cursor-default border-border bg-bg-panel opacity-60'
+          : 'cursor-pointer border-accent-dim bg-bg-card',
+      )}
     >
-      <span style={{ color, fontSize: 16, flexShrink: 0, paddingTop: 1 }}>{icon}</span>
+      <span className="shrink-0 pt-px text-base" style={{ color }}>{icon}</span>
 
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontWeight: 500, marginBottom: item.body ? 4 : 0 }}>
+      <div className="min-w-0 flex-1">
+        <div className={cn('font-medium', item.body && 'mb-1')}>
           {item.title}
         </div>
         {item.body && (
-          <div style={{ color: 'var(--text-2)', fontSize: 13 }}>{item.body}</div>
+          <div className="text-[13px] text-text-2">{item.body}</div>
         )}
         {item.audioUrl && (
-          <audio
-            controls
-            src={item.audioUrl}
-            style={{ marginTop: 8, width: '100%', height: 32 }}
-          />
+          <audio controls src={item.audioUrl} className="mt-2 h-8 w-full" />
         )}
       </div>
 
-      <button
+      <Button
+        variant="ghost"
+        size="icon-xs"
         onClick={(e) => { e.stopPropagation(); onDismiss(); }}
-        style={{ color: 'var(--text-3)', fontSize: 16, padding: '0 4px', flexShrink: 0 }}
         title="Dismiss"
+        className="shrink-0 text-text-3"
       >
         ×
-      </button>
+      </Button>
     </div>
   );
 }

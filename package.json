@@ -36,6 +36,9 @@
   "trustedDependencies": [
     "@nestjs/core"
   ],
+  "overrides": {
+    "yallist": "4.0.0"
+  },
   "dependencies": {
     "@nestjs/passport": "^11.0.5",
     "bcrypt": "^6.0.0",

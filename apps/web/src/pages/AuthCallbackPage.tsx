@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../lib/auth';
 import { auth } from '../lib/api';
+import { Spinner } from '@/components/ui/spinner';
 
 export function AuthCallbackPage() {
   const [params] = useSearchParams();
@@ -17,7 +18,6 @@ export function AuthCallbackPage() {
       return;
     }
 
-    // Store token temporarily to make the /me call
     useAuthStore.getState().setAuth(token, { id: '', email: '', name: null });
 
     auth.me()
@@ -25,7 +25,6 @@ export function AuthCallbackPage() {
         setAuth(token, { id: user.sub, email: user.email, name: user.name ?? null });
 
         if (cliRedirect) {
-          // Send token back to CLI's local server
           window.location.href = `${cliRedirect}?token=${encodeURIComponent(token)}`;
         } else {
           navigate('/');
@@ -37,15 +36,8 @@ export function AuthCallbackPage() {
   }, [params, navigate, setAuth]);
 
   return (
-    <div style={{
-      height: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'var(--shell-bg, #0a0a0b)',
-      color: 'var(--shell-text, #e8e8ed)',
-      fontFamily: '"DM Sans", system-ui, sans-serif',
-    }}>
+    <div className="flex h-screen items-center justify-center bg-bg-shell font-body text-text-1">
+      <Spinner className="mr-2 size-5" />
       Signing in...
     </div>
   );

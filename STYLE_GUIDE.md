@@ -89,7 +89,11 @@ Only agents with a `runtime` block in their manifest use compute/build providers
 
 ## Frontend
 
-- Vite + React 19. No Tailwind — CSS variables for theming.
+- Vite + React 19. Tailwind v4 + shadcn/ui for styling. CSS variables for theming tokens (defined in `@theme` block of `global.css`).
+- Use `cn()` from `@/lib/utils` for conditional class merging.
+- Extract component logic to `.logic.ts` files with corresponding `.logic.test.ts` tests.
+- Use shadcn UI primitives (`Button`, `Input`, `Badge`, `Skeleton`, `Spinner`, etc.) instead of custom elements.
+- `ErrorBoundary` wraps the entire app. `TooltipProvider` at root for shadcn tooltips.
 - Zustand for state management.
 - React Router for routing. Protected routes via `ProtectedRoute` component.
 - Auth state persisted to localStorage via `useAuthStore`.

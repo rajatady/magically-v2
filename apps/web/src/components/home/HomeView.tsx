@@ -1,40 +1,21 @@
-import { useStore } from '../../lib/store.js';
-import { WIDGET_GRID_SPANS } from '@magically/widget-dsl';
+import { useStore } from '../../lib/store';
+import { Button } from '@/components/ui/button';
+import { filterWidgetAgents, getGreeting } from './HomeView.logic';
 
 export function HomeView() {
   const { agents, setView } = useStore();
-  const widgetAgents = agents.filter((a) => a.hasWidget && a.enabled);
+  const widgetAgents = filterWidgetAgents(agents);
 
   return (
-    <div
-      data-testid="home-view"
-      style={{
-        flex: 1,
-        padding: 24,
-        overflowY: 'auto',
-        background: 'var(--bg-shell)',
-      }}
-    >
-      <h1 style={{
-        fontFamily: 'var(--font-serif)',
-        fontStyle: 'italic',
-        fontSize: 28,
-        fontWeight: 400,
-        color: 'var(--text-1)',
-        marginBottom: 24,
-      }}>
-        Good morning ✨
+    <div data-testid="home-view" className="flex-1 overflow-y-auto bg-bg-shell p-6">
+      <h1 className="mb-6 font-serif text-[28px] font-normal italic text-text-1">
+        {getGreeting()} ✨
       </h1>
 
       {widgetAgents.length === 0 ? (
         <EmptyState />
       ) : (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
-          gap: 12,
-          alignItems: 'start',
-        }}>
+        <div className="grid grid-cols-4 items-start gap-3">
           {widgetAgents.map((agent) => (
             <WidgetCard
               key={agent.id}
@@ -59,33 +40,13 @@ function WidgetCard({
     <div
       data-testid={`widget-${agent.id}`}
       onClick={onClick}
-      style={{
-        background: 'var(--bg-card)',
-        borderRadius: 'var(--radius-lg)',
-        border: '1px solid var(--border)',
-        padding: 16,
-        cursor: 'pointer',
-        transition: 'transform 0.15s, box-shadow 0.15s',
-        minHeight: 120,
-      }}
-      onMouseEnter={(e) => {
-        (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-2px)';
-        (e.currentTarget as HTMLDivElement).style.boxShadow = '0 8px 24px rgba(0,0,0,0.4)';
-      }}
-      onMouseLeave={(e) => {
-        (e.currentTarget as HTMLDivElement).style.transform = '';
-        (e.currentTarget as HTMLDivElement).style.boxShadow = '';
-      }}
+      className="min-h-[120px] cursor-pointer rounded-xl border border-border bg-bg-card p-4 transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,0,0,0.4)]"
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-        <span style={{ fontSize: 18 }}>{agent.icon ?? '◇'}</span>
-        <span style={{ fontSize: 13, color: 'var(--text-2)', fontWeight: 500 }}>
-          {agent.name}
-        </span>
+      <div className="mb-2 flex items-center gap-2">
+        <span className="text-lg">{agent.icon ?? '◇'}</span>
+        <span className="text-[13px] font-medium text-text-2">{agent.name}</span>
       </div>
-      <div style={{ color: 'var(--text-3)', fontSize: 12 }}>
-        Click to open
-      </div>
+      <div className="text-xs text-text-3">Click to open</div>
     </div>
   );
 }
@@ -93,38 +54,15 @@ function WidgetCard({
 function EmptyState() {
   const { toggleZeus } = useStore();
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingTop: 80,
-      gap: 16,
-      color: 'var(--text-3)',
-      textAlign: 'center',
-    }}>
-      <div style={{ fontSize: 48 }}>✨</div>
-      <h2 style={{ fontSize: 20, color: 'var(--text-2)', fontWeight: 500 }}>
-        Your home screen is empty
-      </h2>
-      <p style={{ fontSize: 14, maxWidth: 320 }}>
+    <div className="flex flex-col items-center justify-center gap-4 pt-20 text-center text-text-3">
+      <div className="text-5xl">✨</div>
+      <h2 className="text-xl font-medium text-text-2">Your home screen is empty</h2>
+      <p className="max-w-xs text-sm">
         Ask Zeus to build your first agent, or browse the Gallery to find one.
       </p>
-      <button
-        onClick={toggleZeus}
-        style={{
-          background: 'var(--accent)',
-          color: 'white',
-          padding: '10px 20px',
-          borderRadius: 'var(--radius-md)',
-          fontSize: 14,
-          fontWeight: 500,
-          cursor: 'pointer',
-          marginTop: 8,
-        }}
-      >
+      <Button onClick={toggleZeus} className="mt-2">
         Ask Zeus
-      </button>
+      </Button>
     </div>
   );
 }

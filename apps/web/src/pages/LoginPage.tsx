@@ -2,6 +2,9 @@ import { useState, type FormEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { auth } from '../lib/api';
 import { useAuthStore } from '../lib/auth';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
 
 export function LoginPage() {
   const [mode, setMode] = useState<'login' | 'signup'>('login');
@@ -14,14 +17,11 @@ export function LoginPage() {
   const [params] = useSearchParams();
   const setAuth = useAuthStore((s) => s.setAuth);
 
-  // If CLI started the login, redirect the token back to CLI instead of navigating to /
   const cliRedirect = params.get('cli_redirect');
 
   const onLoginSuccess = (token: string, user: { id: string; email: string; name: string | null }) => {
     setAuth(token, user);
-
     if (cliRedirect) {
-      // Send token to CLI's local server and show success message
       window.location.href = `${cliRedirect}?token=${encodeURIComponent(token)}`;
     } else {
       navigate('/');
@@ -43,55 +43,26 @@ export function LoginPage() {
         email: result.user.email,
         name: result.user.name,
       });
-    } catch (err: any) {
-      setError(err.message || 'Something went wrong');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Something went wrong');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{
-      height: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'var(--shell-bg, #0a0a0b)',
-      color: 'var(--shell-text, #e8e8ed)',
-      fontFamily: '"DM Sans", system-ui, sans-serif',
-    }}>
-      <div style={{
-        width: 380,
-        padding: 32,
-        background: 'var(--shell-surface, #141416)',
-        borderRadius: 16,
-        border: '1px solid var(--shell-border, #2a2a2f)',
-      }}>
-        <h1 style={{ fontSize: 24, fontWeight: 600, marginBottom: 8 }}>
+    <div className="flex h-screen items-center justify-center bg-bg-shell font-body text-text-1">
+      <div className="w-[380px] rounded-2xl border border-border bg-bg-panel p-8">
+        <h1 className="mb-2 text-2xl font-semibold">
           {mode === 'login' ? 'Welcome back' : 'Create account'}
         </h1>
-        <p style={{ color: 'var(--shell-muted, #6b6b76)', fontSize: 14, marginBottom: 24 }}>
+        <p className="mb-6 text-sm text-text-3">
           {mode === 'login' ? 'Sign in to Magically' : 'Get started with Magically'}
         </p>
 
         <a
           href={auth.googleUrl() + (cliRedirect ? `?cli_redirect=${encodeURIComponent(cliRedirect)}` : '')}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 10,
-            width: '100%',
-            padding: '10px 0',
-            background: '#fff',
-            color: '#333',
-            borderRadius: 8,
-            textDecoration: 'none',
-            fontWeight: 500,
-            fontSize: 14,
-            marginBottom: 20,
-            boxSizing: 'border-box',
-          }}
+          className="mb-5 flex w-full items-center justify-center gap-2.5 rounded-lg bg-white py-2.5 text-sm font-medium text-gray-800 no-underline"
         >
           <svg width="18" height="18" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
             <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
@@ -102,99 +73,60 @@ export function LoginPage() {
           Continue with Google
         </a>
 
-        <div style={{
-          textAlign: 'center',
-          color: 'var(--shell-muted)',
-          fontSize: 12,
-          marginBottom: 20,
-          position: 'relative',
-        }}>
-          <span style={{ background: 'var(--shell-surface, #141416)', padding: '0 12px', position: 'relative', zIndex: 1 }}>or</span>
-          <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: 1, background: 'var(--shell-border, #2a2a2f)' }} />
+        <div className="relative mb-5 text-center text-xs text-text-3">
+          <span className="relative z-10 bg-bg-panel px-3">or</span>
+          <Separator className="absolute left-0 right-0 top-1/2" />
         </div>
 
         <form onSubmit={handleSubmit}>
           {mode === 'signup' && (
-            <input
+            <Input
               type="text"
               placeholder="Name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              style={inputStyle}
+              className="mb-3 bg-bg-shell"
             />
           )}
-          <input
+          <Input
             type="email"
             placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            style={inputStyle}
+            className="mb-3 bg-bg-shell"
           />
-          <input
+          <Input
             type="password"
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
             minLength={6}
-            style={inputStyle}
+            className="mb-3 bg-bg-shell"
           />
 
           {error && (
-            <p style={{ color: '#ef4444', fontSize: 13, marginBottom: 12 }}>{error}</p>
+            <p className="mb-3 text-sm text-red-500">{error}</p>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              width: '100%',
-              padding: '10px 0',
-              background: 'var(--shell-accent, #f97316)',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 8,
-              fontWeight: 600,
-              fontSize: 14,
-              cursor: loading ? 'wait' : 'pointer',
-              opacity: loading ? 0.7 : 1,
-            }}
-          >
+          <Button type="submit" disabled={loading} className="w-full">
             {loading ? '...' : mode === 'login' ? 'Sign in' : 'Create account'}
-          </button>
+          </Button>
         </form>
 
-        <p style={{ textAlign: 'center', marginTop: 16, fontSize: 13, color: 'var(--shell-muted)' }}>
+        <p className="mt-4 text-center text-[13px] text-text-3">
           {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
-          <button
+          <Button
+            variant="link"
+            size="sm"
             onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(''); }}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: 'var(--shell-accent, #f97316)',
-              cursor: 'pointer',
-              fontWeight: 500,
-              fontSize: 13,
-            }}
+            className="h-auto p-0 text-[13px] text-accent"
           >
             {mode === 'login' ? 'Sign up' : 'Sign in'}
-          </button>
+          </Button>
         </p>
       </div>
     </div>
   );
 }
-
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '10px 12px',
-  marginBottom: 12,
-  background: 'var(--shell-bg, #0a0a0b)',
-  border: '1px solid var(--shell-border, #2a2a2f)',
-  borderRadius: 8,
-  color: 'var(--shell-text, #e8e8ed)',
-  fontSize: 14,
-  outline: 'none',
-  boxSizing: 'border-box',
-};

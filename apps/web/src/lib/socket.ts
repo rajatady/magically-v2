@@ -1,6 +1,6 @@
 import { io, Socket } from 'socket.io-client';
-import { useStore } from './store.js';
-import type { FeedItem } from './api.js';
+import { useStore } from './store';
+import type { FeedItem } from './api';
 
 let socket: Socket | null = null;
 

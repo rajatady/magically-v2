@@ -1,11 +1,12 @@
 import { useNavigate } from 'react-router-dom';
-import { useStore } from '../../lib/store';
-import { useAuthStore } from '../../lib/auth';
+import { useStore } from '@/lib/store';
+import { useAuthStore } from '@/lib/auth';
 import { Sidebar } from './Sidebar';
 import { HomeView } from '../home/HomeView';
 import { FeedView } from '../feed/FeedView';
 import { ZeusPanel } from '../zeus/ZeusPanel';
 import { AgentView } from '../agent/AgentView';
+import { Button } from '@/components/ui/button';
 
 export function Shell() {
   const { view, zeusOpen } = useStore();
@@ -19,50 +20,24 @@ export function Shell() {
   };
 
   return (
-    <div style={{
-      display: 'flex',
-      height: '100vh',
-      width: '100vw',
-      overflow: 'hidden',
-      background: 'var(--bg-shell)',
-    }}>
+    <div className="flex h-screen w-screen overflow-hidden bg-bg-shell">
       <Sidebar />
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        {/* Header */}
-        <header style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'flex-end',
-          padding: '8px 16px',
-          borderBottom: '1px solid var(--border-1, #2a2a2f)',
-          gap: 12,
-          flexShrink: 0,
-        }}>
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <header className="flex shrink-0 items-center justify-end gap-3 border-b border-border px-4 py-2">
           {user && (
             <>
-              <span style={{ fontSize: 13, color: 'var(--text-2, #a1a1aa)' }}>
+              <span className="text-[13px] text-text-2">
                 {user.name ?? user.email}
               </span>
-              <button
-                onClick={handleLogout}
-                style={{
-                  background: 'none',
-                  border: '1px solid var(--border-1, #2a2a2f)',
-                  color: 'var(--text-2, #a1a1aa)',
-                  borderRadius: 6,
-                  padding: '4px 10px',
-                  fontSize: 12,
-                  cursor: 'pointer',
-                }}
-              >
+              <Button variant="outline" size="sm" onClick={handleLogout}>
                 Logout
-              </button>
+              </Button>
             </>
           )}
         </header>
 
-        <main style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        <main className="flex flex-1 flex-col overflow-hidden">
           {view === 'home'     && <HomeView />}
           {view === 'feed'     && <FeedView />}
           {view === 'agent'    && <AgentView />}
@@ -79,16 +54,7 @@ export function Shell() {
 
 function PlaceholderView({ title }: { title: string }) {
   return (
-    <div style={{
-      flex: 1,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      color: 'var(--text-3)',
-      fontStyle: 'italic',
-      fontFamily: 'var(--font-serif)',
-      fontSize: 24,
-    }}>
+    <div className="flex flex-1 items-center justify-center font-serif text-2xl italic text-text-3">
       {title} — coming soon
     </div>
   );
