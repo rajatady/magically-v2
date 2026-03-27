@@ -1,28 +1,28 @@
 import { memo } from 'react';
 import { X } from 'lucide-react';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 
 interface Props {
   onClose: () => void;
-  className?: string;
+  connected?: boolean;
+  sessionId?: string | null;
 }
 
-export const ZeusHeader = memo(function ZeusHeader({ onClose, className }: Props) {
+export const ZeusHeader = memo(function ZeusHeader({ onClose, connected, sessionId }: Props) {
   return (
-    <div
-      className={cn(
-        'flex shrink-0 items-center justify-between border-b border-white/[0.07] px-5 py-4',
-        className,
-      )}
-    >
+    <div className="flex shrink-0 items-center justify-between border-b border-border px-5 py-4">
       <div className="flex items-center gap-2">
-        <span className="text-base text-[#f97316]">◈</span>
-        <span className="text-sm font-semibold text-[#f4f4f5]">Zeus</span>
+        <span className="text-base text-accent">◈</span>
+        <span className="text-sm font-semibold text-text-1">Zeus</span>
+        <span className={cn(
+          'size-2 rounded-full',
+          connected ? 'bg-green-500' : 'bg-red-500',
+        )} />
       </div>
       <button
         onClick={onClose}
         aria-label="Close Zeus"
-        className="flex h-7 w-7 items-center justify-center rounded-md text-[#71717a] transition-colors hover:bg-white/5 hover:text-[#a1a1aa]"
+        className="flex size-7 items-center justify-center rounded-md text-text-3 transition-colors hover:bg-bg-hover hover:text-text-2"
       >
         <X size={15} />
       </button>

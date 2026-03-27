@@ -54,15 +54,22 @@ export class ZeusService {
     callbacks: ExecutionCallbacks,
     abortController?: AbortController,
   ) {
-    // Get agent session ID for resume if conversation exists
+    // Get conversation for resume + history context
     const conversation = await this.getConversation(sessionId);
-    const agentSessionId = conversation?.agentSessionId ?? undefined;
+    const agentSessionIds = conversation?.agentSessionId
+      ? [conversation.agentSessionId]
+      : undefined;
+
+    // Build conversation history for fallback if resume fails
+    const messages = (conversation?.messages ?? []) as Array<{ role: string; content: string }>;
+    const conversationHistory = messages.length > 0 ? messages : undefined;
 
     return executePrompt({
       sessionId,
       prompt,
       userId,
-      agentSessionId,
+      agentSessionIds,
+      conversationHistory,
       abortController,
       callbacks,
       zeus: this,
@@ -118,7 +125,7 @@ export class ZeusService {
       .from(zeusConversations)
       .where(eq(zeusConversations.id, id))
       .limit(1);
-    return rows[0] as (typeof rows)[0] & { agentSessionId?: string } | undefined;
+    return rows[0];
   }
 
   async listConversations(limit = 50) {
@@ -132,9 +139,8 @@ export class ZeusService {
   async updateConversationAgentSessionId(conversationId: string, agentSessionId: string) {
     await this.db
       .update(zeusConversations)
-      .set({ updatedAt: new Date() })
+      .set({ agentSessionId, updatedAt: new Date() })
       .where(eq(zeusConversations.id, conversationId));
-    // Note: agentSessionId column needs to be added to schema in Phase 5
     this.logger.log(`Agent session ${agentSessionId} linked to conversation ${conversationId}`);
   }
 

@@ -61,9 +61,12 @@ export type NewMemoryEntry = typeof zeusMemory.$inferInsert;
 
 export const zeusConversations = pgTable('zeus_conversations', {
   id: text('id').primaryKey(),
+  title: text('title'),
   messages: jsonb('messages').notNull(),
   mode: text('mode').default('chat').notNull(),
   agentId: text('agent_id'),
+  agentSessionId: text('agent_session_id'),
+  userId: text('user_id'),
   createdAt: timestamp('created_at').notNull(),
   updatedAt: timestamp('updated_at').notNull(),
 });

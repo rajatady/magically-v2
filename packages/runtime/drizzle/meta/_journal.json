@@ -8,6 +8,13 @@
       "when": 1774530124296,
       "tag": "0000_square_machine_man",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1774647613733,
+      "tag": "0001_yummy_mole_man",
+      "breakpoints": true
     }
   ]
 }

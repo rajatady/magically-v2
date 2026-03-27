@@ -2,12 +2,21 @@
  * Zeus execution engine — wraps the Claude Agent SDK query() function.
  * Ported from cc-harness/packages/gateway/src/sessions/executor.ts,
  * adapted for Magically's multi-tenant model.
+ *
+ * Session strategy:
+ * - persistSession: true — SDK saves to ~/.claude/projects/ so resume works
+ * - On first prompt: no resume, SDK creates a new session
+ * - On subsequent prompts: try resume with stored agentSessionId
+ * - If resume fails (session deleted/corrupted): fall back to fresh session,
+ *   prepend conversation history as context in the prompt
  */
+import { Logger } from '@nestjs/common';
 import type { ZeusService } from './zeus.service';
 import type { AgentsService } from '../agents/agents.service';
 import { createMagicallyMcpServer } from './tools';
 
-// Lazy-loaded SDK — dynamic import() at runtime avoids CJS/ESM mismatch at compile time
+const logger = new Logger('ZeusExecutor');
+
 let _sdk: { query: Function; [key: string]: unknown };
 async function getSdk() {
   if (!_sdk) _sdk = await import('@anthropic-ai/claude-agent-sdk') as typeof _sdk;
@@ -39,52 +48,115 @@ export interface ExecutionOptions {
   sessionId: string;
   prompt: string;
   userId: string;
-  agentSessionId?: string;
+  /** SDK session IDs to try resuming from (most recent first) */
+  agentSessionIds?: string[];
+  /** Prior conversation messages for context if resume fails */
+  conversationHistory?: Array<{ role: string; content: string }>;
   abortController?: AbortController;
   callbacks: ExecutionCallbacks;
   zeus: ZeusService;
   agents: AgentsService;
 }
 
+function buildQueryOptions(
+  workspaceDir: string,
+  zeusContext: string,
+  mcpServer: unknown,
+  abortController?: AbortController,
+  resumeSessionId?: string,
+) {
+  return {
+    cwd: workspaceDir,
+    systemPrompt: {
+      type: 'preset' as const,
+      preset: 'claude_code' as const,
+      append: zeusContext,
+    },
+    tools: ['Read', 'Write', 'Edit', 'Bash', 'Glob', 'Grep', 'WebFetch', 'WebSearch'],
+    allowedTools: ['Read', 'Write', 'Edit', 'Bash', 'Glob', 'Grep', 'WebFetch', 'WebSearch'],
+    permissionMode: 'bypassPermissions' as const,
+    allowDangerouslySkipPermissions: true,
+    mcpServers: { magically: mcpServer },
+    includePartialMessages: true,
+    enableFileCheckpointing: true,
+    persistSession: true,
+    maxTurns: 30,
+    maxBudgetUsd: 1.00,
+    model: 'claude-sonnet-4-6',
+    settingSources: [] as string[],
+    ...(resumeSessionId ? { resume: resumeSessionId } : {}),
+    ...(abortController ? { abortController } : {}),
+  };
+}
+
+/**
+ * Build a prompt that includes conversation history as context
+ * when we can't resume an SDK session.
+ */
+function buildPromptWithHistory(
+  prompt: string,
+  history?: Array<{ role: string; content: string }>,
+): string {
+  if (!history || history.length === 0) return prompt;
+
+  const contextLines = history.map((m) =>
+    `[${m.role}]: ${m.content.slice(0, 500)}`,
+  );
+
+  return [
+    'Here is the conversation so far (for context — you may not remember it):',
+    '---',
+    ...contextLines,
+    '---',
+    '',
+    'Now, the user says:',
+    prompt,
+  ].join('\n');
+}
+
 export async function executePrompt(options: ExecutionOptions) {
-  const { sessionId, prompt, userId, agentSessionId, abortController, callbacks, zeus, agents } = options;
+  const {
+    sessionId, prompt, userId, agentSessionIds, conversationHistory,
+    abortController, callbacks, zeus, agents,
+  } = options;
 
   const sdk = await getSdk();
-
-  // Ensure user workspace exists
   const workspaceDir = await zeus.ensureWorkspace(userId);
-
-  // Create MCP server with user-scoped dependencies
   const mcpServer = await createMagicallyMcpServer({ agents, zeus, userId });
-
-  // Build Zeus context to append to system prompt
   const zeusContext = await zeus.buildZeusContext();
 
-  const queryResult = sdk.query({
-    prompt,
-    options: {
-      cwd: workspaceDir,
-      systemPrompt: {
-        type: 'preset',
-        preset: 'claude_code',
-        append: zeusContext,
-      },
-      tools: ['Read', 'Write', 'Edit', 'Bash', 'Glob', 'Grep', 'WebFetch', 'WebSearch'],
-      allowedTools: ['Read', 'Write', 'Edit', 'Bash', 'Glob', 'Grep', 'WebFetch', 'WebSearch'],
-      permissionMode: 'bypassPermissions',
-      allowDangerouslySkipPermissions: true,
-      mcpServers: { magically: mcpServer },
-      includePartialMessages: true,
-      enableFileCheckpointing: true,
-      persistSession: false,
-      maxTurns: 30,
-      maxBudgetUsd: 1.00,
-      model: 'claude-sonnet-4-6',
-      settingSources: [],
-      ...(agentSessionId ? { resume: agentSessionId } : {}),
-      ...(abortController ? { abortController } : {}),
-    },
-  });
+  // Try to resume from most recent SDK session, fall back to fresh
+  let queryResult: AsyncIterable<Record<string, unknown>> | null = null;
+  let resumeSucceeded = false;
+
+  if (agentSessionIds && agentSessionIds.length > 0) {
+    for (const sid of agentSessionIds) {
+      try {
+        logger.log(`Attempting resume from SDK session ${sid}`);
+        queryResult = sdk.query({
+          prompt,
+          options: buildQueryOptions(workspaceDir, zeusContext, mcpServer, abortController, sid),
+        }) as AsyncIterable<Record<string, unknown>>;
+        resumeSucceeded = true;
+        break;
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        logger.warn(`Resume failed for session ${sid}: ${msg}`);
+      }
+    }
+  }
+
+  // If resume didn't work (or no sessions to resume), start fresh
+  if (!queryResult) {
+    const effectivePrompt = resumeSucceeded
+      ? prompt
+      : buildPromptWithHistory(prompt, conversationHistory);
+
+    queryResult = sdk.query({
+      prompt: effectivePrompt,
+      options: buildQueryOptions(workspaceDir, zeusContext, mcpServer, abortController),
+    }) as AsyncIterable<Record<string, unknown>>;
+  }
 
   let fullResponse = '';
   let savedAgentSessionId = false;
@@ -94,15 +166,17 @@ export async function executePrompt(options: ExecutionOptions) {
     for await (const message of queryResult) {
       if (abortController?.signal.aborted) break;
 
-      // Persist SDK session ID for resume
-      if (!savedAgentSessionId && 'session_id' in message && message.session_id) {
-        await zeus.updateConversationAgentSessionId(sessionId, message.session_id);
+      const msg = message as Record<string, unknown>;
+
+      // Persist SDK session ID for future resume
+      if (!savedAgentSessionId && msg.session_id && typeof msg.session_id === 'string') {
+        await zeus.updateConversationAgentSessionId(sessionId, msg.session_id);
         savedAgentSessionId = true;
       }
 
-      switch (message.type) {
+      switch (msg.type) {
         case 'stream_event': {
-          const event = (message as { event?: { type: string; delta?: { type: string; text: string }; content_block?: { type: string; id: string; name: string } } }).event;
+          const event = msg.event as { type: string; delta?: { type: string; text: string }; content_block?: { type: string; id: string; name: string } } | undefined;
           if (!event) break;
 
           if (event.type === 'content_block_delta' && event.delta?.type === 'text_delta') {
@@ -125,9 +199,8 @@ export async function executePrompt(options: ExecutionOptions) {
         }
 
         case 'assistant': {
-          const msg = message as { message?: { content?: Array<{ type: string; text?: string; id?: string; name?: string; input?: unknown }> }; parent_tool_use_id?: string | null };
-          const contentBlocks = msg.message?.content ?? [];
-          const parentId = msg.parent_tool_use_id ?? null;
+          const contentBlocks = (msg.message as { content?: Array<{ type: string; text?: string; id?: string; name?: string; input?: unknown }> })?.content ?? [];
+          const parentId = (msg.parent_tool_use_id as string | null) ?? null;
 
           for (const block of contentBlocks) {
             if (block.type === 'text' && block.text) {
@@ -144,9 +217,8 @@ export async function executePrompt(options: ExecutionOptions) {
         }
 
         case 'user': {
-          const userMsg = message as { tool_use_result?: unknown; message?: { content?: Array<{ type: string; tool_use_id?: string; content?: unknown }> } };
-          if (userMsg.tool_use_result !== undefined) {
-            const msgContent = userMsg.message?.content;
+          if (msg.tool_use_result !== undefined) {
+            const msgContent = (msg.message as { content?: Array<{ type: string; tool_use_id?: string; content?: unknown }> })?.content;
             if (Array.isArray(msgContent)) {
               for (const block of msgContent) {
                 if (block.type === 'tool_result' && block.tool_use_id) {
@@ -169,27 +241,29 @@ export async function executePrompt(options: ExecutionOptions) {
         }
 
         case 'system': {
-          const sysMsg = message as { subtype?: string; status?: string };
-          if (sysMsg.subtype === 'status' && sysMsg.status) {
-            callbacks.onStatus?.(sysMsg.status);
+          const subtype = msg.subtype as string | undefined;
+          const status = msg.status as string | undefined;
+          if (subtype === 'status' && status) {
+            callbacks.onStatus?.(status);
           }
           break;
         }
 
         case 'result': {
-          const r = message as { subtype?: string; result?: string; total_cost_usd?: number; num_turns?: number; duration_ms?: number; modelUsage?: Record<string, unknown>; errors?: string[] };
-          if (r.subtype === 'success' && r.result && !fullResponse) {
-            fullResponse = r.result;
+          const subtype = msg.subtype as string | undefined;
+          if (subtype === 'success' && msg.result && !fullResponse) {
+            fullResponse = String(msg.result);
             callbacks.onChunk?.(fullResponse);
           }
           callbacks.onResult?.({
-            cost: r.total_cost_usd ?? 0,
-            turns: r.num_turns ?? 0,
-            durationMs: r.duration_ms ?? 0,
-            usage: r.modelUsage ?? null,
+            cost: (msg.total_cost_usd as number) ?? 0,
+            turns: (msg.num_turns as number) ?? 0,
+            durationMs: (msg.duration_ms as number) ?? 0,
+            usage: msg.modelUsage ?? null,
           });
-          if (r.subtype !== 'success') {
-            callbacks.onError?.(r.errors?.join('; ') ?? r.subtype ?? 'Unknown error');
+          if (subtype !== 'success') {
+            const errors = msg.errors as string[] | undefined;
+            callbacks.onError?.(errors?.join('; ') ?? subtype ?? 'Unknown error');
           }
           break;
         }
@@ -199,6 +273,7 @@ export async function executePrompt(options: ExecutionOptions) {
     callbacks.onDone?.();
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
+    logger.error(`Execution error: ${message}`);
     callbacks.onError?.(message);
   }
 

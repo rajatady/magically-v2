@@ -15,7 +15,7 @@ export const ZeusPanel = memo(function ZeusPanel() {
   return (
     <div
       data-testid="zeus-panel"
-      className="flex h-full w-[360px] shrink-0 flex-col border-l border-white/[0.07] bg-[#141416]"
+      className="flex h-full w-[400px] shrink-0 flex-col border-l border-border bg-bg-panel"
     >
       <ZeusChat onClose={toggleZeus} />
     </div>
