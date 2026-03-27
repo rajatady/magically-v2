@@ -2,32 +2,26 @@ import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { eq, desc } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
-import {
-  streamText,
-  createUIMessageStream,
-  convertToModelMessages,
-  stepCountIs,
-  type UIMessage,
-  type UIMessageChunk,
-} from 'ai';
+import { mkdir } from 'fs/promises';
+import { join } from 'path';
 import { InjectDB, type DrizzleDB } from '../db';
-import {
-  zeusConversations,
-  zeusMemory,
-  zeusTasks,
-} from '../db/schema';
-import { LlmService } from '../llm/llm.service';
+import { zeusConversations, zeusMemory, zeusTasks } from '../db/schema';
 import { AgentsService } from '../agents/agents.service';
 import { EventsGateway } from '../events/events.gateway';
-import { createZeusTools } from './tools';
+import { executePrompt, type ExecutionCallbacks } from './executor';
 
-const ZEUS_SYSTEM_PROMPT = `You are Zeus, the trusted AI companion inside Magically — a personal Agent OS.
+import { tmpdir, homedir } from 'os';
+
+const DATA_DIR = process.env.DATA_DIR
+  ?? (process.env.NODE_ENV === 'production' ? '/data' : join(homedir(), '.magically'));
+
+const ZEUS_SYSTEM_CONTEXT = `You are Zeus, the trusted AI companion inside Magically — a personal Agent OS.
 
 You are the kernel of the system. You have access to all agents, tools, and the user's memory.
 
 Your responsibilities:
 1. Help users accomplish tasks by routing to the right agents and tools
-2. Build new agents when asked, by creating their manifest, UI, and logic
+2. Build new agents when asked — create their manifest, functions, and UI in the user's workspace
 3. Maintain memory about the user to personalize experiences
 4. Orchestrate complex multi-step tasks across agents
 
@@ -35,8 +29,8 @@ Key behaviors:
 - Be warm, direct, and efficient. No filler.
 - When building agents, create a brief "blueprint" first and confirm with the user.
 - You know what agents are installed and their capabilities.
-- Route "add brisket to grocery list" → find GroceryList agent → call its function.
-- If an agent doesn't exist, suggest building one or offer an alternative.
+- Use the Magically MCP tools (ListAgents, WriteMemory, CreateTask, etc.) for OS operations.
+- Use Read/Write/Edit/Bash for file operations in the user's workspace.
 
 You are NOT a chatbot. You are an operating system kernel that happens to speak.`;
 
@@ -46,80 +40,63 @@ export class ZeusService {
 
   constructor(
     @InjectDB() private readonly db: DrizzleDB,
-    private readonly llm: LlmService,
     private readonly agents: AgentsService,
     private readonly events: EventsGateway,
     private readonly emitter: EventEmitter2,
   ) {}
 
-  // ─── Streaming Chat ───────────────────────────────────────────────────────
+  // ─── Execution ──────────────────────────────────────────────────────
 
-  async streamChat(messages: UIMessage[], conversationId?: string): Promise<ReadableStream<UIMessageChunk>> {
-    const system = await this.buildSystemPrompt();
-    const modelMessages = await convertToModelMessages(messages);
+  async runPrompt(
+    sessionId: string,
+    prompt: string,
+    userId: string,
+    callbacks: ExecutionCallbacks,
+    abortController?: AbortController,
+  ) {
+    // Get agent session ID for resume if conversation exists
+    const conversation = await this.getConversation(sessionId);
+    const agentSessionId = conversation?.agentSessionId ?? undefined;
 
-    const tools = createZeusTools({
-      getMemory: () => this.getMemory(),
-      setMemory: (key, value, category, source) => this.setMemory(key, value, category, source),
-      findAllAgents: async () => {
-        const all = await this.agents.findAll();
-        return all.map((a) => ({
-          id: a.id,
-          name: a.name,
-          description: a.description,
-          icon: a.icon,
-          enabled: a.enabled,
-          functions: Array.isArray((a.manifest as { functions?: unknown[] })?.functions)
-            ? ((a.manifest as { functions: Array<{ name?: string }> }).functions).map((f) => f.name ?? '')
-            : [],
-        }));
-      },
-    });
-
-    return createUIMessageStream({
-      execute: async ({ writer: dataStream }) => {
-        const result = streamText({
-          model: this.llm.getModel(),
-          system,
-          messages: modelMessages,
-          tools,
-          stopWhen: stepCountIs(5),
-        });
-        dataStream.merge(result.toUIMessageStream());
-      },
-      onFinish: async ({ messages: finishedMessages }) => {
-        if (!conversationId || finishedMessages.length === 0) return;
-        try {
-          const serialized = finishedMessages.map((m) => ({
-            id: m.id,
-            role: m.role,
-            content: m.parts
-              .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
-              .map((p) => p.text)
-              .join(''),
-            parts: m.parts,
-          }));
-          await this.db
-            .update(zeusConversations)
-            .set({ messages: [...messages, ...serialized], updatedAt: new Date() })
-            .where(eq(zeusConversations.id, conversationId));
-        } catch (err) {
-          this.logger.error('Failed to persist Zeus conversation', err);
-        }
-      },
-      onError: () => 'An error occurred. Please try again.',
+    return executePrompt({
+      sessionId,
+      prompt,
+      userId,
+      agentSessionId,
+      abortController,
+      callbacks,
+      zeus: this,
+      agents: this.agents,
     });
   }
 
-  private async buildSystemPrompt(): Promise<string> {
+  async buildZeusContext(): Promise<string> {
     const allAgents = await this.agents.findAll();
     const agentList = allAgents
       .map((a) => `- ${a.id}: ${a.name} — ${a.description ?? ''}`)
       .join('\n');
-    return `${ZEUS_SYSTEM_PROMPT}\n\nInstalled agents:\n${agentList || 'None yet.'}`;
+
+    const memory = await this.getMemory();
+    const memoryList = memory
+      .map((m) => `- [${m.category}] ${m.key}: ${m.value}`)
+      .join('\n');
+
+    return [
+      ZEUS_SYSTEM_CONTEXT,
+      '',
+      `Installed agents:\n${agentList || 'None yet.'}`,
+      '',
+      memoryList ? `User memory:\n${memoryList}` : '',
+    ].filter(Boolean).join('\n');
   }
 
-  // ─── Conversation Management ─────────────────────────────────────────────
+  async ensureWorkspace(userId: string): Promise<string> {
+    const dir = join(DATA_DIR, 'workspaces', userId);
+    await mkdir(dir, { recursive: true });
+    return dir;
+  }
+
+  // ─── Conversation Management ─────────────────────────────────────────
 
   async createConversation(mode: 'chat' | 'build' | 'edit' | 'task' = 'chat', agentId?: string) {
     const id = randomUUID();
@@ -141,13 +118,36 @@ export class ZeusService {
       .from(zeusConversations)
       .where(eq(zeusConversations.id, id))
       .limit(1);
-    return rows[0];
+    return rows[0] as (typeof rows)[0] & { agentSessionId?: string } | undefined;
   }
 
-  // ─── Memory ───────────────────────────────────────────────────────────────
+  async listConversations(limit = 50) {
+    return this.db
+      .select()
+      .from(zeusConversations)
+      .orderBy(desc(zeusConversations.updatedAt))
+      .limit(limit);
+  }
+
+  async updateConversationAgentSessionId(conversationId: string, agentSessionId: string) {
+    await this.db
+      .update(zeusConversations)
+      .set({ updatedAt: new Date() })
+      .where(eq(zeusConversations.id, conversationId));
+    // Note: agentSessionId column needs to be added to schema in Phase 5
+    this.logger.log(`Agent session ${agentSessionId} linked to conversation ${conversationId}`);
+  }
+
+  async deleteConversation(id: string) {
+    await this.db
+      .delete(zeusConversations)
+      .where(eq(zeusConversations.id, id));
+  }
+
+  // ─── Memory ──────────────────────────────────────────────────────────
 
   async getMemory() {
-    return await this.db.select().from(zeusMemory);
+    return this.db.select().from(zeusMemory);
   }
 
   async setMemory(key: string, value: string, category: string, source: string) {
@@ -157,9 +157,8 @@ export class ZeusService {
       .from(zeusMemory)
       .where(eq(zeusMemory.key, key))
       .limit(1);
-    const existing = rows[0];
 
-    if (existing) {
+    if (rows[0]) {
       await this.db
         .update(zeusMemory)
         .set({ value, category, source, updatedAt: now })
@@ -178,12 +177,10 @@ export class ZeusService {
   }
 
   async deleteMemory(key: string) {
-    await this.db
-      .delete(zeusMemory)
-      .where(eq(zeusMemory.key, key));
+    await this.db.delete(zeusMemory).where(eq(zeusMemory.key, key));
   }
 
-  // ─── Zeus Tasks ───────────────────────────────────────────────────────────
+  // ─── Tasks ──────────────────────────────────────────────────────────
 
   async createTask(params: {
     requesterId: string;
@@ -192,7 +189,6 @@ export class ZeusService {
     deliverables?: string[];
     priority?: 'low' | 'normal' | 'high';
     requiresApproval?: boolean;
-    callbackEndpoint?: string;
   }) {
     const id = randomUUID();
     const now = new Date();
@@ -212,7 +208,7 @@ export class ZeusService {
   }
 
   async getTasks() {
-    return await this.db
+    return this.db
       .select()
       .from(zeusTasks)
       .orderBy(desc(zeusTasks.createdAt));
