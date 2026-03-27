@@ -4,15 +4,18 @@ WORKDIR /app
 RUN npm i -g bun@1.2.3
 
 COPY package.json bun.lock turbo.json tsconfig.base.json ./
+COPY packages/shared/package.json packages/shared/
 COPY packages/runtime/package.json packages/runtime/
 COPY packages/agent-sdk/package.json packages/agent-sdk/
 COPY packages/widget-dsl/package.json packages/widget-dsl/
 RUN bun install
 
+COPY packages/shared/ packages/shared/
 COPY packages/runtime/ packages/runtime/
 COPY packages/agent-sdk/ packages/agent-sdk/
 COPY packages/widget-dsl/ packages/widget-dsl/
 
+RUN cd packages/shared && bun run build
 RUN cd packages/runtime && bun run build
 
 FROM node:22-slim
@@ -21,11 +24,13 @@ WORKDIR /app
 RUN npm i -g bun@1.2.3
 
 COPY --from=builder /app/package.json /app/bun.lock ./
+COPY --from=builder /app/packages/shared/package.json packages/shared/
 COPY --from=builder /app/packages/runtime/package.json packages/runtime/
 COPY --from=builder /app/packages/agent-sdk/package.json packages/agent-sdk/
 COPY --from=builder /app/packages/widget-dsl/package.json packages/widget-dsl/
 RUN bun install --production
 
+COPY --from=builder /app/packages/shared/dist packages/shared/dist
 COPY --from=builder /app/packages/runtime/dist packages/runtime/dist
 COPY --from=builder /app/packages/runtime/drizzle packages/runtime/drizzle
 COPY agents/ agents/
