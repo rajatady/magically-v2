@@ -1,20 +1,22 @@
 import { publishCommand } from './publish';
-import * as childProcess from 'child_process';
-import * as fs from 'fs';
+
+jest.mock('child_process', () => ({
+  execSync: jest.fn().mockReturnValue(Buffer.from('')),
+}));
+jest.mock('fs', () => ({
+  ...jest.requireActual('fs'),
+  readFileSync: jest.fn().mockReturnValue(Buffer.from('fake-bundle')),
+  existsSync: jest.fn().mockReturnValue(true),
+}));
+
+import { execSync } from 'child_process';
 
 const mockFetch = jest.fn();
-let mockExecSync: jest.SpyInstance;
+const mockExecSync = execSync as jest.MockedFunction<typeof execSync>;
 
 describe('publishCommand', () => {
   beforeAll(() => {
-    mockExecSync = jest.spyOn(childProcess, 'execSync').mockReturnValue(Buffer.from('') as any);
-    jest.spyOn(fs, 'readFileSync').mockReturnValue(Buffer.from('fake-bundle') as any);
-    jest.spyOn(fs, 'existsSync').mockReturnValue(true as any);
-    global.fetch = mockFetch as any;
-  });
-
-  afterAll(() => {
-    jest.restoreAllMocks();
+    global.fetch = mockFetch as jest.MockedFunction<typeof fetch>;
   });
 
   beforeEach(() => {

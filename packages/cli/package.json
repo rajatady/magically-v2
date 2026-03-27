@@ -7,7 +7,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "jest --no-coverage"
+    "test": "jest --no-coverage --testPathIgnorePatterns=dist"
   },
   "dependencies": {
     "@magically/shared": "workspace:*",
