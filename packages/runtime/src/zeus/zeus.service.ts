@@ -19,6 +19,7 @@ import {
 import { LlmService } from '../llm/llm.service';
 import { AgentsService } from '../agents/agents.service';
 import { EventsGateway } from '../events/events.gateway';
+import { createZeusTools } from './tools';
 
 const ZEUS_SYSTEM_PROMPT = `You are Zeus, the trusted AI companion inside Magically — a personal Agent OS.
 
@@ -57,12 +58,31 @@ export class ZeusService {
     const system = await this.buildSystemPrompt();
     const modelMessages = await convertToModelMessages(messages);
 
+    const tools = createZeusTools({
+      getMemory: () => this.getMemory(),
+      setMemory: (key, value, category, source) => this.setMemory(key, value, category, source),
+      findAllAgents: async () => {
+        const all = await this.agents.findAll();
+        return all.map((a) => ({
+          id: a.id,
+          name: a.name,
+          description: a.description,
+          icon: a.icon,
+          enabled: a.enabled,
+          functions: Array.isArray((a.manifest as { functions?: unknown[] })?.functions)
+            ? ((a.manifest as { functions: Array<{ name?: string }> }).functions).map((f) => f.name ?? '')
+            : [],
+        }));
+      },
+    });
+
     return createUIMessageStream({
       execute: async ({ writer: dataStream }) => {
         const result = streamText({
           model: this.llm.getModel(),
           system,
           messages: modelMessages,
+          tools,
           stopWhen: stepCountIs(5),
         });
         dataStream.merge(result.toUIMessageStream());
