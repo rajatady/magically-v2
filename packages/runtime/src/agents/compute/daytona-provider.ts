@@ -94,16 +94,18 @@ export class DaytonaProvider extends ComputeProvider {
       logs.push(`Sandbox stopped (exit_code=${exitCode})`);
 
       return { exitCode, logs, durationMs: Date.now() - startedAt };
-    } catch (err: any) {
-      logs.push(`Execution failed: ${err.message}`);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      logs.push(`Execution failed: ${message}`);
       return { exitCode: 1, logs, durationMs: Date.now() - startedAt };
     } finally {
       // Always clean up
       try {
         await client.delete(sandbox, 60);
         logs.push('Sandbox deleted');
-      } catch (deleteErr: any) {
-        this.logger.warn(`Failed to delete sandbox: ${deleteErr.message}`);
+      } catch (deleteErr: unknown) {
+        const message = deleteErr instanceof Error ? deleteErr.message : String(deleteErr);
+        this.logger.warn(`Failed to delete sandbox: ${message}`);
       }
     }
   }

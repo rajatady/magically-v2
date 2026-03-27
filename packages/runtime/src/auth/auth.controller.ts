@@ -14,6 +14,23 @@ import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { Public } from './auth.guard';
 
+interface AuthenticatedRequest extends Request {
+  user: { sub: string; email: string; name?: string };
+}
+
+interface GoogleTokenResponse {
+  access_token?: string;
+  error?: string;
+  error_description?: string;
+}
+
+interface GoogleProfile {
+  id: string;
+  email: string;
+  name: string;
+  picture?: string;
+}
+
 @Controller('api/auth')
 export class AuthController {
   constructor(
@@ -76,7 +93,7 @@ export class AuthController {
       }),
     });
 
-    const tokens = await tokenRes.json() as any;
+    const tokens = await tokenRes.json() as GoogleTokenResponse;
     if (!tokens.access_token) {
       console.error('Google token exchange error:', tokens);
       throw new UnauthorizedException(`Google token exchange failed: ${tokens.error_description ?? tokens.error ?? 'unknown'}`);
@@ -87,7 +104,7 @@ export class AuthController {
       headers: { Authorization: `Bearer ${tokens.access_token}` },
     });
 
-    const profile = await profileRes.json() as any;
+    const profile = await profileRes.json() as GoogleProfile;
 
     const result = await this.auth.findOrCreateGoogleUser({
       email: profile.email,
@@ -115,16 +132,15 @@ export class AuthController {
   // ─── API Keys ─────────────────────────────────────────────────────────────
 
   @Post('api-keys')
-  async createApiKey(@Req() req: Request, @Body() body: { name: string }) {
-    const user = (req as any).user;
-    return this.auth.createApiKey(user.sub, body.name);
+  async createApiKey(@Req() req: AuthenticatedRequest, @Body() body: { name: string }) {
+    return this.auth.createApiKey(req.user.sub, body.name);
   }
 
   // ─── Current user ─────────────────────────────────────────────────────────
 
   @Get('me')
-  me(@Req() req: Request) {
-    return (req as any).user;
+  me(@Req() req: AuthenticatedRequest) {
+    return req.user;
   }
 
   // ─── Helpers ──────────────────────────────────────────────────────────────

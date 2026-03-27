@@ -1,8 +1,19 @@
 import { ConfigService } from '@nestjs/config';
 import { GitHubActionsBuildProvider } from './github-actions-build-provider';
 
-const mockFetch = jest.fn();
-global.fetch = mockFetch as any;
+const mockFetch = jest.fn() as jest.MockedFunction<typeof fetch>;
+global.fetch = mockFetch;
+
+function mockResponse(body: Record<string, unknown> & { ok: boolean }): Response {
+  return {
+    ...body,
+    json: 'json' in body ? body.json : async () => ({}),
+  } as unknown as Response;
+}
+
+function mockJsonResponse(data: unknown): Response {
+  return { ok: true, json: async () => data } as unknown as Response;
+}
 
 describe('GitHubActionsBuildProvider', () => {
   let provider: GitHubActionsBuildProvider;
@@ -45,21 +56,15 @@ describe('GitHubActionsBuildProvider', () => {
   describe('build', () => {
     it('dispatches a workflow and polls until completion', async () => {
       // 1. Dispatch workflow — 204 No Content
-      mockFetch.mockResolvedValueOnce({ ok: true, status: 204 });
+      mockFetch.mockResolvedValueOnce(mockResponse({ ok: true, status: 204 }));
 
       // 2. List runs — find the triggered run
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          workflow_runs: [{ id: 12345, status: 'in_progress' }],
-        }),
-      });
+      mockFetch.mockResolvedValueOnce(mockJsonResponse({
+        workflow_runs: [{ id: 12345, status: 'in_progress' }],
+      }));
 
       // 3. Poll run status — completed
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ id: 12345, status: 'completed', conclusion: 'success' }),
-      });
+      mockFetch.mockResolvedValueOnce(mockJsonResponse({ id: 12345, status: 'completed', conclusion: 'success' }));
 
       const result = await provider.build({
         agentId: 'hello-world',
@@ -76,23 +81,17 @@ describe('GitHubActionsBuildProvider', () => {
 
       // Verify dispatch was called
       expect(mockFetch.mock.calls[0][0]).toContain('/actions/workflows/build-agent.yml/dispatches');
-      expect(mockFetch.mock.calls[0][1].method).toBe('POST');
+      expect(mockFetch.mock.calls[0]![1]!.method).toBe('POST');
     });
 
     it('throws on workflow failure', async () => {
-      mockFetch.mockResolvedValueOnce({ ok: true, status: 204 });
+      mockFetch.mockResolvedValueOnce(mockResponse({ ok: true, status: 204 }));
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          workflow_runs: [{ id: 999, status: 'completed' }],
-        }),
-      });
+      mockFetch.mockResolvedValueOnce(mockJsonResponse({
+        workflow_runs: [{ id: 999, status: 'completed' }],
+      }));
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ id: 999, status: 'completed', conclusion: 'failure' }),
-      });
+      mockFetch.mockResolvedValueOnce(mockJsonResponse({ id: 999, status: 'completed', conclusion: 'failure' }));
 
       await expect(
         provider.build({

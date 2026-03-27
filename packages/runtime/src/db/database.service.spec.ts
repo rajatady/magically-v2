@@ -39,14 +39,14 @@ describe('Database (DrizzleModule)', () => {
 
   it('connects and can query', async () => {
     const result = await service.db.execute(sql`SELECT 1 as ok`);
-    expect((result as any).rows[0].ok).toBe(1);
+    expect((result as unknown as { rows: Array<{ ok: number }> }).rows[0].ok).toBe(1);
   });
 
   it('has all required tables', async () => {
     const result = await service.db.execute(sql`
       SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name
     `);
-    const tables = (result as any).rows.map((r: any) => r.table_name);
+    const tables = (result as unknown as { rows: Array<{ table_name: string }> }).rows.map((r) => r.table_name);
     expect(tables).toContain('agents');
     expect(tables).toContain('feed_events');
     expect(tables).toContain('zeus_memory');

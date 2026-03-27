@@ -56,10 +56,11 @@ export class DockerProvider extends ComputeProvider {
         logs: output.split('\n').filter(Boolean),
         durationMs: Date.now() - startedAt,
       };
-    } catch (err: any) {
-      const output = (err.stdout || '') + (err.stderr || '');
+    } catch (err: unknown) {
+      const execErr = err as { stdout?: string; stderr?: string; status?: number };
+      const output = (execErr.stdout || '') + (execErr.stderr || '');
       return {
-        exitCode: err.status ?? 1,
+        exitCode: execErr.status ?? 1,
         logs: output.split('\n').filter(Boolean),
         durationMs: Date.now() - startedAt,
       };

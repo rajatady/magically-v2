@@ -1,18 +1,26 @@
+import type { Job } from 'bullmq';
 import { BuildProcessor, type AgentBuildJobData } from './build.processor';
 import { BuildService } from './build.service';
 import { StorageService } from '../registry/storage.service';
 import type { DrizzleDB } from '../db';
 
-jest.mock('child_process', () => ({
-  execSync: jest.fn().mockReturnValue(Buffer.from('')),
-}));
-jest.mock('fs', () => ({
-  ...jest.requireActual('fs'),
-  mkdtempSync: jest.fn().mockReturnValue('/tmp/magically-build-abc'),
-  rmSync: jest.fn(),
-}));
+// @ts-expect-error — Bun global
+const isBun = typeof Bun !== 'undefined';
 
-describe('BuildProcessor', () => {
+if (!isBun) {
+  jest.mock('child_process', () => ({
+    execSync: jest.fn().mockReturnValue(Buffer.from('')),
+  }));
+  jest.mock('fs', () => ({
+    ...jest.requireActual('fs'),
+    mkdtempSync: jest.fn().mockReturnValue('/tmp/magically-build-abc'),
+    rmSync: jest.fn(),
+  }));
+}
+
+const maybeDescribe = isBun ? describe.skip : describe;
+
+maybeDescribe('BuildProcessor', () => {
   let processor: BuildProcessor;
   let mockDb: Partial<DrizzleDB>;
   let mockStorage: Partial<StorageService>;
@@ -37,7 +45,7 @@ describe('BuildProcessor', () => {
     const updateSet = jest.fn().mockReturnValue({ where: jest.fn().mockResolvedValue(undefined) });
     mockDb = {
       update: jest.fn().mockReturnValue({ set: updateSet }),
-    } as any;
+    } as unknown as DrizzleDB;
 
     mockStorage = {
       downloadBundle: jest.fn().mockResolvedValue(Buffer.from('fake-tar-gz')),
@@ -58,7 +66,7 @@ describe('BuildProcessor', () => {
   });
 
   it('processes a build job for a container agent', async () => {
-    const job = { data: baseJobData } as any;
+    const job = { data: baseJobData } as unknown as Job<AgentBuildJobData>;
 
     await processor.process(job);
 
@@ -80,7 +88,7 @@ describe('BuildProcessor', () => {
         ...baseJobData,
         manifest: { id: 'lightweight', name: 'Light' },
       },
-    } as any;
+    } as unknown as Job<AgentBuildJobData>;
 
     await processor.process(job);
 
@@ -91,7 +99,7 @@ describe('BuildProcessor', () => {
 
   it('sets status to failed on build error', async () => {
     (mockBuildService.build as jest.Mock).mockRejectedValue(new Error('build crashed'));
-    const job = { data: baseJobData } as any;
+    const job = { data: baseJobData } as unknown as Job<AgentBuildJobData>;
 
     await expect(processor.process(job)).rejects.toThrow('build crashed');
 

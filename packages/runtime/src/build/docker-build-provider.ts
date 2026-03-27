@@ -44,7 +44,7 @@ export class DockerBuildProvider extends BuildProvider {
           timeout: 600_000,
         });
       } catch (err: unknown) {
-        const stderr = err instanceof Error && 'stderr' in err ? String((err as any).stderr) : '';
+        const stderr = err instanceof Error && 'stderr' in err ? String((err as { stderr: unknown }).stderr) : '';
         throw new ImageBuildError(agentId, version, 'building image', 'Image build failed', stderr);
       }
 

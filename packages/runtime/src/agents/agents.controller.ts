@@ -17,6 +17,7 @@ import {FunctionRunnerService} from './function-runner.service';
 import {AgentActionDto} from './dto/agent-action.dto';
 import {Public} from '../auth';
 import {readFileSync, existsSync} from 'fs';
+import type { AgentManifest } from '@magically/shared/validation';
 import {join} from 'path';
 
 @Controller('api/agents')
@@ -40,7 +41,7 @@ export class AgentsController {
             color: agent.color,
             category: agent.category,
             enabled: agent.enabled,
-            functions: (agent.manifest as any).functions ?? [],
+            functions: (agent.manifest as AgentManifest).functions ?? [],
         }));
     }
 
@@ -48,7 +49,7 @@ export class AgentsController {
     async getWidget(@Param('id') id: string) {
         // Widgets are declared in the manifest — no filesystem needed
         const agent = await this.agentsService.findOne(id);
-        const manifest = agent.manifest as any;
+        const manifest = agent.manifest as AgentManifest;
         if (!manifest.ui?.widget) return { widget: null };
         // TODO: widget data should come from DB or bundle, not filesystem
         return { widget: null };

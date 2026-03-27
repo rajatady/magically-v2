@@ -15,7 +15,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { Request } from 'express';
 import { RegistryService } from './registry.service';
+
+interface AuthenticatedRequest extends Request {
+  user: { sub: string; id?: string; email: string; name?: string };
+}
 
 @Controller('api/registry')
 export class RegistryController {
@@ -24,8 +29,8 @@ export class RegistryController {
   @Post('publish')
   @UseInterceptors(FileInterceptor('bundle'))
   async publish(
-    @Req() req: any,
-    @Body('manifest') manifestField: string | Record<string, any>,
+    @Req() req: AuthenticatedRequest,
+    @Body('manifest') manifestField: string | Record<string, unknown>,
     @UploadedFile() bundle?: Express.Multer.File,
   ) {
     const userId = req.user?.id ?? req.user?.sub;
@@ -69,14 +74,14 @@ export class RegistryController {
   }
 
   @Post('agents/:id/install')
-  async install(@Req() req: any, @Param('id') id: string) {
+  async install(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
     const userId = req.user?.id ?? req.user?.sub;
     return this.registry.install(userId, id);
   }
 
   @Delete('agents/:id/uninstall')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async uninstall(@Req() req: any, @Param('id') id: string) {
+  async uninstall(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
     const userId = req.user?.id ?? req.user?.sub;
     await this.registry.uninstall(userId, id);
   }

@@ -74,10 +74,13 @@ export class BuildProcessor extends WorkerHost {
       await this.updateVersion(versionId, update);
 
       this.logger.log(`Built ${agentId}@${version} → ${result.imageRef} (${result.durationMs}ms)`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Store user-facing message, log full details internally
-      const userMessage = err.message ?? 'Unknown build error';
-      const logDetails = typeof err.toLog === 'function' ? err.toLog() : { message: err.message, stack: err.stack };
+      const error = err instanceof Error ? err : new Error(String(err));
+      const userMessage = error.message ?? 'Unknown build error';
+      const logDetails = 'toLog' in error && typeof (error as { toLog: () => unknown }).toLog === 'function'
+        ? (error as { toLog: () => unknown }).toLog()
+        : { message: error.message, stack: error.stack };
 
       this.logger.error(`Build failed for ${agentId}@${version}`, logDetails);
       await this.updateVersion(versionId, {

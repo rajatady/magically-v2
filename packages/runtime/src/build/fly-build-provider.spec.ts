@@ -1,18 +1,25 @@
 import { ConfigService } from '@nestjs/config';
 import { FlyBuildProvider } from './fly-build-provider';
 
-jest.mock('child_process', () => ({
-  execSync: jest.fn().mockReturnValue(Buffer.from('')),
-}));
-jest.mock('fs', () => ({
-  ...jest.requireActual('fs'),
-  writeFileSync: jest.fn(),
-  unlinkSync: jest.fn(),
-}));
+// @ts-expect-error — Bun global
+const isBun = typeof Bun !== 'undefined';
+
+if (!isBun) {
+  jest.mock('child_process', () => ({
+    execSync: jest.fn().mockReturnValue(Buffer.from('')),
+  }));
+  jest.mock('fs', () => ({
+    ...jest.requireActual('fs'),
+    writeFileSync: jest.fn(),
+    unlinkSync: jest.fn(),
+  }));
+}
 
 import { execSync } from 'child_process';
 
-describe('FlyBuildProvider', () => {
+const maybeDescribe = isBun ? describe.skip : describe;
+
+maybeDescribe('FlyBuildProvider', () => {
   let provider: FlyBuildProvider;
   const mockExecSync = execSync as jest.MockedFunction<typeof execSync>;
 

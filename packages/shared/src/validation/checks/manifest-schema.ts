@@ -26,6 +26,8 @@ const ManifestSchema = z.object({
   })).default([]),
 }).passthrough();
 
+export type AgentManifest = z.infer<typeof ManifestSchema>;
+
 export const manifestSchema: ValidationCheck = {
   meta: {
     id: 'manifest-schema',

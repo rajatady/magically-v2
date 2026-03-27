@@ -12,6 +12,7 @@ import { DockerProvider } from './compute/docker-provider';
 import { FlyProvider } from './compute/fly-provider';
 import { DaytonaProvider } from './compute/daytona-provider';
 import type { AgentContext } from './agent-context';
+import type { AgentManifest } from '@magically/shared/validation';
 
 export interface RunLog {
   level: 'info' | 'warn' | 'error';
@@ -156,10 +157,10 @@ export class FunctionRunnerService implements OnModuleInit {
     trigger: AgentContext['trigger'],
   ): Promise<RunResult> {
     const agent = await this.agents.findOne(agentId);
-    const manifest = agent.manifest as any;
+    const manifest = agent.manifest as AgentManifest;
 
     // Verify function is declared in manifest
-    const declared = manifest.functions?.find((f: any) => f.name === functionName);
+    const declared = manifest.functions?.find((f) => f.name === functionName);
     if (!declared) {
       throw new Error(
         `Function '${functionName}' is not declared in ${agentId} manifest`,
@@ -210,7 +211,7 @@ export class FunctionRunnerService implements OnModuleInit {
 
   private async runLightweight(
     agentId: string,
-    manifest: any,
+    manifest: AgentManifest,
     functionName: string,
     trigger: AgentContext['trigger'],
   ): Promise<RunResult> {
@@ -223,7 +224,7 @@ export class FunctionRunnerService implements OnModuleInit {
 
   private async runInContainer(
     agentId: string,
-    manifest: any,
+    manifest: AgentManifest,
     functionName: string,
     trigger: AgentContext['trigger'],
   ): Promise<RunResult> {
@@ -242,7 +243,7 @@ export class FunctionRunnerService implements OnModuleInit {
     const image = registryImage;
 
     // Resolve the command to run
-    const fn = manifest.functions?.find((f: any) => f.name === functionName);
+    const fn = manifest.functions?.find((f) => f.name === functionName);
     const runCmd = fn?.run ?? `node functions/${functionName}.js`;
 
     // For JS functions, use the harness which handles module.exports calling

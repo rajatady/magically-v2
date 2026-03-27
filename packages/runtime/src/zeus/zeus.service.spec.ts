@@ -3,6 +3,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { sql } from 'drizzle-orm';
+import type { LanguageModelV3StreamResult } from '@ai-sdk/provider';
 import { MockLanguageModelV3, convertArrayToReadableStream } from 'ai/test';
 import { ZeusService } from './zeus.service';
 import { LlmService } from '../llm/llm.service';
@@ -88,19 +89,13 @@ describe('ZeusService', () => {
 
   describe('streamChat', () => {
     function makeMockModel(textDelta = 'Hello world') {
-      return new MockLanguageModelV3({
-        doStream: async () => ({
-          stream: convertArrayToReadableStream([
-            { type: 'text-delta' as const, textDelta },
-            {
-              type: 'finish' as const,
-              finishReason: 'stop' as const,
-              usage: { inputTokens: 10, outputTokens: 5 },
-            },
-          ]),
-          rawCall: { rawPrompt: '', rawSettings: {} },
-        } as any),
-      });
+      const streamResult: LanguageModelV3StreamResult = {
+        stream: convertArrayToReadableStream([
+          { type: 'text-delta', textDelta },
+          { type: 'finish', finishReason: 'stop', usage: { inputTokens: 10, outputTokens: 5 } },
+        ]) as unknown as ReadableStream<import('@ai-sdk/provider').LanguageModelV3StreamPart>,
+      };
+      return new MockLanguageModelV3({ doStream: streamResult });
     }
 
     it('returns a ReadableStream', async () => {
