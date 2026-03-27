@@ -2,17 +2,42 @@
   "name": "@magically/shared",
   "version": "0.1.0",
   "private": true,
+  "main": "./dist/types.js",
   "types": "./dist/types.d.ts",
   "exports": {
-    "./types":      { "types": "./dist/types.d.ts",            "import": "./dist/types.js" },
-    "./api-client": { "types": "./dist/api-client.d.ts",       "import": "./dist/api-client.js" },
-    "./errors":     { "types": "./dist/errors/index.d.ts",     "import": "./dist/errors/index.js" },
-    "./validation": { "types": "./dist/validation/index.d.ts", "import": "./dist/validation/index.js" },
-    "./dockerfile": { "types": "./dist/dockerfile.d.ts",       "import": "./dist/dockerfile.js" },
-    "./harness":    { "types": "./dist/harness.d.ts",          "import": "./dist/harness.js" }
+    ".": {
+      "types": "./dist/types.d.ts",
+      "default": "./dist/types.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "default": "./dist/types.js"
+    },
+    "./api-client": {
+      "types": "./dist/api-client.d.ts",
+      "default": "./dist/api-client.js"
+    },
+    "./errors": {
+      "types": "./dist/errors/index.d.ts",
+      "default": "./dist/errors/index.js"
+    },
+    "./validation": {
+      "types": "./dist/validation/index.d.ts",
+      "default": "./dist/validation/index.js"
+    },
+    "./dockerfile": {
+      "types": "./dist/dockerfile.d.ts",
+      "default": "./dist/dockerfile.js"
+    },
+    "./harness": {
+      "types": "./dist/harness.d.ts",
+      "default": "./dist/harness.js"
+    }
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -b",
+    "dev": "tsc -b --watch",
+    "typecheck": "tsc --noEmit",
     "test": "jest"
   },
   "devDependencies": {

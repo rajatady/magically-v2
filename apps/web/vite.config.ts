@@ -25,7 +25,13 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    include: ['@magically/shared'],
+    include: ['@magically/shared/api-client', '@magically/shared/types'],
+  },
+  build: {
+    commonjsOptions: {
+      include: [/shared/, /node_modules/],
+      transformMixedEsModules: true,
+    },
   },
   test: {
     environment: 'jsdom',
