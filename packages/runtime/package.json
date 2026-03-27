@@ -6,7 +6,7 @@
     "build": "nest build",
     "dev": "nest start --watch",
     "start": "node dist/main",
-    "test": "DATABASE_URL=${DATABASE_URL:-postgres://localhost:5432/magically_v2_test} jest",
+    "test": "jest",
     "test:setup-db": "ts-node src/test-global-setup.ts",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",

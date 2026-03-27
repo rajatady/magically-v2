@@ -3,9 +3,15 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { join } from 'path';
 
-const TEST_DB = 'magically_v2_test';
-const TEST_DB_URL = `postgres://localhost:5432/${TEST_DB}`;
-const ADMIN_URL = 'postgres://localhost:5432/postgres';
+// Use DATABASE_URL from env (CI sets this with credentials), fall back to local dev default
+const envUrl = process.env.DATABASE_URL;
+const TEST_DB_URL = envUrl ?? 'postgres://localhost:5432/magically_v2_test';
+
+// Parse the base URL (without db name) for admin connection to create the test DB
+const parsed = new URL(TEST_DB_URL);
+const TEST_DB = parsed.pathname.replace('/', '');
+parsed.pathname = '/postgres';
+const ADMIN_URL = parsed.toString();
 
 export default async function globalSetup() {
   // Create test DB if it doesn't exist
