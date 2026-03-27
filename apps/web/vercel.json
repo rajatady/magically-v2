@@ -1,6 +1,6 @@
 {
   "installCommand": "cd ../.. && bun install",
-  "buildCommand": "bun run build",
+  "buildCommand": "cd ../../packages/shared && bun run build && cd ../../apps/web && bun run build",
   "outputDirectory": "dist",
   "framework": "vite",
   "rewrites": [
