@@ -91,22 +91,22 @@ describe('ZeusService', () => {
       return new MockLanguageModelV3({
         doStream: async () => ({
           stream: convertArrayToReadableStream([
-            { type: 'text-delta', textDelta },
+            { type: 'text-delta' as const, textDelta },
             {
-              type: 'finish',
-              finishReason: 'stop',
+              type: 'finish' as const,
+              finishReason: 'stop' as const,
               usage: { inputTokens: 10, outputTokens: 5 },
             },
           ]),
           rawCall: { rawPrompt: '', rawSettings: {} },
-        }),
+        } as any),
       });
     }
 
     it('returns a ReadableStream', async () => {
       (llm.getModel as jest.Mock).mockReturnValue(makeMockModel());
       const stream = await service.streamChat([
-        { id: 'msg-1', role: 'user', content: 'Hello', parts: [{ type: 'text', text: 'Hello' }] },
+        { id: 'msg-1', role: 'user' as const, parts: [{ type: 'text' as const, text: 'Hello' }] },
       ]);
       expect(stream).toBeInstanceOf(ReadableStream);
     });
@@ -116,7 +116,7 @@ describe('ZeusService', () => {
 
       const { id: conversationId } = await service.createConversation();
       const stream = await service.streamChat(
-        [{ id: 'msg-1', role: 'user', content: 'Hello', parts: [{ type: 'text', text: 'Hello' }] }],
+        [{ id: 'msg-1', role: 'user' as const, parts: [{ type: 'text' as const, text: 'Hello' }] }],
         conversationId,
       );
 
@@ -140,7 +140,7 @@ describe('ZeusService', () => {
     it('streams without error when no conversationId provided', async () => {
       (llm.getModel as jest.Mock).mockReturnValue(makeMockModel());
       const stream = await service.streamChat([
-        { id: 'msg-1', role: 'user', content: 'Hello', parts: [{ type: 'text', text: 'Hello' }] },
+        { id: 'msg-1', role: 'user' as const, parts: [{ type: 'text' as const, text: 'Hello' }] },
       ]);
       const reader = stream.getReader();
       while (true) {

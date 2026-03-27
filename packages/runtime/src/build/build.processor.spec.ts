@@ -2,8 +2,15 @@ import { BuildProcessor, type AgentBuildJobData } from './build.processor';
 import { BuildService } from './build.service';
 import { StorageService } from '../registry/storage.service';
 import type { DrizzleDB } from '../db';
-import * as childProcess from 'child_process';
-import * as fs from 'fs';
+
+jest.mock('child_process', () => ({
+  execSync: jest.fn().mockReturnValue(Buffer.from('')),
+}));
+jest.mock('fs', () => ({
+  ...jest.requireActual('fs'),
+  mkdtempSync: jest.fn().mockReturnValue('/tmp/magically-build-abc'),
+  rmSync: jest.fn(),
+}));
 
 describe('BuildProcessor', () => {
   let processor: BuildProcessor;
@@ -21,12 +28,6 @@ describe('BuildProcessor', () => {
       runtime: { base: 'python:3.12-slim' },
     },
   };
-
-  beforeAll(() => {
-    jest.spyOn(childProcess, 'execSync').mockReturnValue(Buffer.from('') as any);
-    jest.spyOn(fs, 'mkdtempSync').mockReturnValue('/tmp/magically-build-abc');
-    jest.spyOn(fs, 'rmSync').mockImplementation(() => {});
-  });
 
   afterAll(() => {
     jest.restoreAllMocks();

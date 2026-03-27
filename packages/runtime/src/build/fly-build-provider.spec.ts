@@ -1,11 +1,20 @@
 import { ConfigService } from '@nestjs/config';
 import { FlyBuildProvider } from './fly-build-provider';
-import * as childProcess from 'child_process';
-import * as fs from 'fs';
+
+jest.mock('child_process', () => ({
+  execSync: jest.fn().mockReturnValue(Buffer.from('')),
+}));
+jest.mock('fs', () => ({
+  ...jest.requireActual('fs'),
+  writeFileSync: jest.fn(),
+  unlinkSync: jest.fn(),
+}));
+
+import { execSync } from 'child_process';
 
 describe('FlyBuildProvider', () => {
   let provider: FlyBuildProvider;
-  let mockExecSync: jest.SpyInstance;
+  const mockExecSync = execSync as jest.MockedFunction<typeof execSync>;
 
   const mockConfig: Partial<ConfigService> = {
     get: jest.fn((key: string) => {
@@ -17,16 +26,6 @@ describe('FlyBuildProvider', () => {
       return map[key];
     }),
   };
-
-  beforeAll(() => {
-    mockExecSync = jest.spyOn(childProcess, 'execSync').mockReturnValue(Buffer.from('') as any);
-    jest.spyOn(fs, 'writeFileSync').mockImplementation(() => {});
-    jest.spyOn(fs, 'unlinkSync').mockImplementation(() => {});
-  });
-
-  afterAll(() => {
-    jest.restoreAllMocks();
-  });
 
   beforeEach(() => {
     provider = new FlyBuildProvider(mockConfig as ConfigService);
