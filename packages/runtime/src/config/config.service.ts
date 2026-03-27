@@ -35,6 +35,10 @@ export class ConfigService implements OnModuleInit {
     if (rows.length > 0) {
       this.config = rows[0].value as MagicallyConfig;
     }
+    // Env var is a fallback only — DB value takes precedence
+    if (!this.config.openrouterApiKey && process.env.OPENROUTER_API_KEY) {
+      this.config.openrouterApiKey = process.env.OPENROUTER_API_KEY;
+    }
     this.logger.log('Config loaded');
   }
 

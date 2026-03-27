@@ -18,6 +18,7 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^3.0.48",
     "@aws-sdk/client-s3": "^3.1016.0",
     "@daytonaio/sdk": "^0.155.0",
     "@nestjs/bullmq": "^11.0.4",
@@ -29,6 +30,7 @@
     "@nestjs/platform-socket.io": "^10.4.15",
     "@nestjs/schedule": "^4.1.2",
     "@nestjs/websockets": "^10.4.15",
+    "ai": "^6.0.138",
     "bullmq": "^5.71.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",

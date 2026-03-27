@@ -1,7 +1,7 @@
 import { readFileSync, existsSync, writeFileSync, unlinkSync } from 'fs';
 import { join } from 'path';
 import { execSync } from 'child_process';
-import { generateDockerfile, type RuntimeConfig } from '@magically/shared';
+import { generateDockerfile, type RuntimeConfig } from '@magically/shared/dockerfile';
 
 export { generateDockerfile };
 

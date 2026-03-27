@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { execSync } from 'child_process';
 import { writeFileSync, unlinkSync } from 'fs';
 import { join } from 'path';
-import { generateDockerfile } from '@magically/shared';
+import { generateDockerfile } from '@magically/shared/dockerfile';
 import { BuildProvider, type BuildInput, type BuildOutput } from './build-provider';
 
 /**

@@ -1,11 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import {
-  generateDockerfile,
-  ImageBuildError,
-  BuildTimeoutError,
-  BuildDispatchError,
-} from '@magically/shared';
+import { generateDockerfile } from '@magically/shared/dockerfile';
+import { ImageBuildError, BuildTimeoutError, BuildDispatchError } from '@magically/shared/errors';
 import { BuildProvider, type BuildInput, type BuildOutput } from './build-provider';
 
 /**

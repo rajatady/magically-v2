@@ -8,42 +8,28 @@ import {
   Res,
   HttpCode,
   HttpStatus,
+  BadRequestException,
 } from '@nestjs/common';
 import { Response } from 'express';
+import { pipeUIMessageStreamToResponse, type UIMessage } from 'ai';
 import { ZeusService } from './zeus.service';
-import { ChatDto } from './dto/chat.dto';
 import { SetMemoryDto } from './dto/memory.dto';
+import { chatRequestSchema } from './schema';
 
 @Controller('api/zeus')
 export class ZeusController {
   constructor(private readonly zeus: ZeusService) {}
 
-  /** POST /api/zeus/chat — SSE streaming response */
+  /** POST /api/zeus/chat — Vercel AI SDK streaming (useChat compatible) */
   @Post('chat')
-  async chat(@Body() body: ChatDto, @Res() res: Response) {
-    let convId = body.conversationId;
-    if (!convId) {
-      const conv = await this.zeus.createConversation(body.mode);
-      convId = conv.id;
+  async chat(@Body() body: unknown, @Res() res: Response) {
+    const parsed = chatRequestSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException(parsed.error.flatten());
     }
-
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-    res.setHeader('X-Conversation-Id', convId!);
-    res.flushHeaders();
-
-    try {
-      for await (const chunk of this.zeus.chat(convId!, body.message)) {
-        res.write(`data: ${JSON.stringify({ content: chunk })}\n\n`);
-      }
-      res.write(`data: ${JSON.stringify({ done: true, conversationId: convId })}\n\n`);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      res.write(`data: ${JSON.stringify({ error: msg })}\n\n`);
-    } finally {
-      res.end();
-    }
+    const { messages, conversationId } = parsed.data;
+    const stream = await this.zeus.streamChat(messages as UIMessage[], conversationId);
+    pipeUIMessageStreamToResponse({ stream, response: res });
   }
 
   @Post('conversations')

@@ -3,7 +3,8 @@ import { join, basename } from 'path';
 import { execSync } from 'child_process';
 import { tmpdir } from 'os';
 import { authCommand } from './auth';
-import { createPublishPipeline, HARNESS_SCRIPT, type ValidationContext } from '@magically/shared';
+import { createPublishPipeline, type ValidationContext } from '@magically/shared/validation';
+import { HARNESS_SCRIPT } from '@magically/shared/harness';
 
 interface PublishResult {
   agentId: string;

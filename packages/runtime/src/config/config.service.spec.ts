@@ -10,8 +10,11 @@ import { eq } from 'drizzle-orm';
 describe('ConfigService', () => {
   let service: ConfigService;
   let db: DrizzleDB;
+  let savedEnv: string | undefined;
 
   beforeEach(async () => {
+    savedEnv = process.env.OPENROUTER_API_KEY;
+    delete process.env.OPENROUTER_API_KEY;
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         {
@@ -30,6 +33,12 @@ describe('ConfigService', () => {
 
     service = module.get<ConfigService>(ConfigService);
     await service.onModuleInit();
+  });
+
+  afterEach(() => {
+    if (savedEnv !== undefined) {
+      process.env.OPENROUTER_API_KEY = savedEnv;
+    }
   });
 
   it('returns undefined for unconfigured keys', () => {

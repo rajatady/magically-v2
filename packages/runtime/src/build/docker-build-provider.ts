@@ -3,7 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { execSync } from 'child_process';
 import { writeFileSync, unlinkSync } from 'fs';
 import { join } from 'path';
-import { generateDockerfile, ImageBuildError, RegistryPushError } from '@magically/shared';
+import { generateDockerfile } from '@magically/shared/dockerfile';
+import { ImageBuildError, RegistryPushError } from '@magically/shared/errors';
 import { BuildProvider, type BuildInput, type BuildOutput } from './build-provider';
 
 @Injectable()

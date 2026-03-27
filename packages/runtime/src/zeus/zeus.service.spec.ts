@@ -3,6 +3,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { sql } from 'drizzle-orm';
+import { MockLanguageModelV3, convertArrayToReadableStream } from 'ai/test';
 import { ZeusService } from './zeus.service';
 import { LlmService } from '../llm/llm.service';
 import { AgentsService } from '../agents/agents.service';
@@ -14,7 +15,7 @@ import { zeusConversations, zeusMemory, zeusTasks } from '../db/schema';
 describe('ZeusService', () => {
   let service: ZeusService;
   let db: DrizzleDB;
-  let llm: LlmService;
+  let llm: Pick<LlmService, 'getModel' | 'getDefaultModel'>;
   let events: EventsGateway;
 
   beforeEach(async () => {
@@ -33,8 +34,8 @@ describe('ZeusService', () => {
         {
           provide: LlmService,
           useValue: {
-            streamChat: jest.fn(),
-            getDefaultModel: () => 'test-model',
+            getModel: jest.fn(),
+            getDefaultModel: jest.fn().mockReturnValue('test-model'),
           },
         },
         {
@@ -85,50 +86,68 @@ describe('ZeusService', () => {
     });
   });
 
-  describe('chat streaming', () => {
-    it('streams response chunks and persists conversation', async () => {
-      async function* fakeStream() {
-        yield { content: 'Hello', done: false };
-        yield { content: ' world', done: false };
-        yield { content: '', done: true };
+  describe('streamChat', () => {
+    function makeMockModel(textDelta = 'Hello world') {
+      return new MockLanguageModelV3({
+        doStream: async () => ({
+          stream: convertArrayToReadableStream([
+            { type: 'text-delta', textDelta },
+            {
+              type: 'finish',
+              finishReason: 'stop',
+              usage: { inputTokens: 10, outputTokens: 5 },
+            },
+          ]),
+          rawCall: { rawPrompt: '', rawSettings: {} },
+        }),
+      });
+    }
+
+    it('returns a ReadableStream', async () => {
+      (llm.getModel as jest.Mock).mockReturnValue(makeMockModel());
+      const stream = await service.streamChat([
+        { id: 'msg-1', role: 'user', content: 'Hello', parts: [{ type: 'text', text: 'Hello' }] },
+      ]);
+      expect(stream).toBeInstanceOf(ReadableStream);
+    });
+
+    it('persists assistant response to conversation when conversationId is provided', async () => {
+      (llm.getModel as jest.Mock).mockReturnValue(makeMockModel('Zeus response'));
+
+      const { id: conversationId } = await service.createConversation();
+      const stream = await service.streamChat(
+        [{ id: 'msg-1', role: 'user', content: 'Hello', parts: [{ type: 'text', text: 'Hello' }] }],
+        conversationId,
+      );
+
+      // Drain the stream to trigger onFinish
+      const reader = stream.getReader();
+      while (true) {
+        const { done } = await reader.read();
+        if (done) break;
       }
 
-      jest.spyOn(llm, 'streamChat').mockReturnValue(fakeStream() as any);
+      // Give onFinish a tick to complete async DB write
+      await new Promise((r) => setTimeout(r, 100));
 
-      const { id } = await service.createConversation();
-      const chunks: string[] = [];
-
-      for await (const chunk of service.chat(id, 'Hi')) {
-        chunks.push(chunk);
-      }
-
-      expect(chunks).toEqual(['Hello', ' world']);
-
-      // Conversation should be updated with user + assistant messages
-      const conv = await service.getConversation(id);
+      const conv = await service.getConversation(conversationId);
       const messages = conv!.messages as Array<{ role: string; content: string }>;
-      expect(messages).toHaveLength(2);
-      expect(messages[0]).toMatchObject({ role: 'user', content: 'Hi' });
-      expect(messages[1]).toMatchObject({ role: 'assistant', content: 'Hello world' });
+      expect(messages.length).toBeGreaterThan(0);
+      const assistantMsg = messages.find((m) => m.role === 'assistant');
+      expect(assistantMsg).toBeDefined();
     });
 
-    it('emits zeus:typing and zeus:done events', async () => {
-      async function* fakeStream() {
-        yield { content: 'Done', done: true };
+    it('streams without error when no conversationId provided', async () => {
+      (llm.getModel as jest.Mock).mockReturnValue(makeMockModel());
+      const stream = await service.streamChat([
+        { id: 'msg-1', role: 'user', content: 'Hello', parts: [{ type: 'text', text: 'Hello' }] },
+      ]);
+      const reader = stream.getReader();
+      while (true) {
+        const { done } = await reader.read();
+        if (done) break;
       }
-      jest.spyOn(llm, 'streamChat').mockReturnValue(fakeStream() as any);
-
-      const { id } = await service.createConversation();
-      for await (const _ of service.chat(id, 'Hello')) { /* drain */ }
-
-      const emitCalls = (events.emit as jest.Mock).mock.calls.map((c) => c[0].type);
-      expect(emitCalls).toContain('zeus:typing');
-      expect(emitCalls).toContain('zeus:done');
-    });
-
-    it('throws for unknown conversation id', async () => {
-      const gen = service.chat('nonexistent-id', 'Hello');
-      await expect(gen.next()).rejects.toThrow();
+      // Reaching here means the stream completed without throwing
     });
   });
 

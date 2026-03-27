@@ -2,8 +2,15 @@
   "name": "@magically/shared",
   "version": "0.1.0",
   "private": true,
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "types": "./dist/types.d.ts",
+  "exports": {
+    "./types":      { "types": "./dist/types.d.ts",            "import": "./dist/types.js" },
+    "./api-client": { "types": "./dist/api-client.d.ts",       "import": "./dist/api-client.js" },
+    "./errors":     { "types": "./dist/errors/index.d.ts",     "import": "./dist/errors/index.js" },
+    "./validation": { "types": "./dist/validation/index.d.ts", "import": "./dist/validation/index.js" },
+    "./dockerfile": { "types": "./dist/dockerfile.d.ts",       "import": "./dist/dockerfile.js" },
+    "./harness":    { "types": "./dist/harness.d.ts",          "import": "./dist/harness.js" }
+  },
   "scripts": {
     "build": "tsc",
     "test": "jest"

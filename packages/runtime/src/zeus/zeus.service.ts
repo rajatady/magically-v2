@@ -2,13 +2,21 @@ import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { eq, desc } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
+import {
+  streamText,
+  createUIMessageStream,
+  convertToModelMessages,
+  stepCountIs,
+  type UIMessage,
+  type UIMessageChunk,
+} from 'ai';
 import { InjectDB, type DrizzleDB } from '../db';
 import {
   zeusConversations,
   zeusMemory,
   zeusTasks,
 } from '../db/schema';
-import { LlmService, ChatMessage } from '../llm/llm.service';
+import { LlmService } from '../llm/llm.service';
 import { AgentsService } from '../agents/agents.service';
 import { EventsGateway } from '../events/events.gateway';
 
@@ -43,6 +51,54 @@ export class ZeusService {
     private readonly emitter: EventEmitter2,
   ) {}
 
+  // ─── Streaming Chat ───────────────────────────────────────────────────────
+
+  async streamChat(messages: UIMessage[], conversationId?: string): Promise<ReadableStream<UIMessageChunk>> {
+    const system = await this.buildSystemPrompt();
+    const modelMessages = await convertToModelMessages(messages);
+
+    return createUIMessageStream({
+      execute: async ({ writer: dataStream }) => {
+        const result = streamText({
+          model: this.llm.getModel(),
+          system,
+          messages: modelMessages,
+          stopWhen: stepCountIs(5),
+        });
+        dataStream.merge(result.toUIMessageStream());
+      },
+      onFinish: async ({ messages: finishedMessages }) => {
+        if (!conversationId || finishedMessages.length === 0) return;
+        try {
+          const serialized = finishedMessages.map((m) => ({
+            id: m.id,
+            role: m.role,
+            content: m.parts
+              .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
+              .map((p) => p.text)
+              .join(''),
+            parts: m.parts,
+          }));
+          await this.db
+            .update(zeusConversations)
+            .set({ messages: [...messages, ...serialized], updatedAt: new Date() })
+            .where(eq(zeusConversations.id, conversationId));
+        } catch (err) {
+          this.logger.error('Failed to persist Zeus conversation', err);
+        }
+      },
+      onError: () => 'An error occurred. Please try again.',
+    });
+  }
+
+  private async buildSystemPrompt(): Promise<string> {
+    const allAgents = await this.agents.findAll();
+    const agentList = allAgents
+      .map((a) => `- ${a.id}: ${a.name} — ${a.description ?? ''}`)
+      .join('\n');
+    return `${ZEUS_SYSTEM_PROMPT}\n\nInstalled agents:\n${agentList || 'None yet.'}`;
+  }
+
   // ─── Conversation Management ─────────────────────────────────────────────
 
   async createConversation(mode: 'chat' | 'build' | 'edit' | 'task' = 'chat', agentId?: string) {
@@ -66,64 +122,6 @@ export class ZeusService {
       .where(eq(zeusConversations.id, id))
       .limit(1);
     return rows[0];
-  }
-
-  // ─── Chat (SSE streaming) ─────────────────────────────────────────────────
-
-  async *chat(
-    conversationId: string,
-    userMessage: string,
-  ): AsyncGenerator<string> {
-    const conv = await this.getConversation(conversationId);
-    if (!conv) throw new Error(`Conversation ${conversationId} not found`);
-
-    const history = (conv.messages as ChatMessage[]) ?? [];
-    const newHistory: ChatMessage[] = [
-      ...history,
-      { role: 'user', content: userMessage },
-    ];
-
-    // Inject agent context into system prompt
-    const allAgents = await this.agents.findAll();
-    const agentList = allAgents
-      .map((a) => `- ${a.id}: ${a.name} — ${a.description ?? ''}`)
-      .join('\n');
-
-    const systemPrompt = `${ZEUS_SYSTEM_PROMPT}\n\nInstalled agents:\n${agentList || 'None yet.'}`;
-
-    // Emit typing event over WebSocket
-    this.events.emit({ type: 'zeus:typing', conversationId });
-
-    let fullResponse = '';
-
-    for await (const chunk of this.llm.streamChat(newHistory, undefined, systemPrompt)) {
-      if (chunk.content) {
-        fullResponse += chunk.content;
-        this.events.emit({
-          type: 'zeus:chunk',
-          conversationId,
-          content: chunk.content,
-        });
-        yield chunk.content;
-      }
-    }
-
-    // Persist updated conversation
-    const updatedHistory: ChatMessage[] = [
-      ...newHistory,
-      { role: 'assistant', content: fullResponse },
-    ];
-
-    await this.db
-      .update(zeusConversations)
-      .set({ messages: updatedHistory, updatedAt: new Date() })
-      .where(eq(zeusConversations.id, conversationId));
-
-    this.events.emit({
-      type: 'zeus:done',
-      conversationId,
-      message: fullResponse,
-    });
   }
 
   // ─── Memory ───────────────────────────────────────────────────────────────

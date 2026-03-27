@@ -1,5 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import OpenAI from 'openai';
+import { createOpenAI } from '@ai-sdk/openai';
+import type { LanguageModel } from 'ai';
 import { ConfigService } from '../config/config.service';
 
 export interface ChatMessage {
@@ -46,6 +48,26 @@ export class LlmService {
   /** Invalidate client (e.g. after key update) */
   resetClient() {
     this.client = null;
+  }
+
+  /** Return an AI SDK LanguageModel configured for OpenRouter */
+  getModel(modelId?: string): LanguageModel {
+    const apiKey = this.config.get('openrouterApiKey');
+    if (!apiKey) {
+      throw new Error('No LLM API key configured. Set openrouterApiKey in config.');
+    }
+    const provider = createOpenAI({
+      baseURL: 'https://openrouter.ai/api/v1',
+      apiKey,
+      headers: {
+        'HTTP-Referer': 'https://magically.app',
+        'X-Title': 'Magically',
+      },
+    });
+    // Use .chat() to force the Chat Completions API (/v1/chat/completions).
+    // @ai-sdk/openai v3+ defaults to the Responses API (/v1/responses) which
+    // OpenRouter does not support.
+    return provider.chat(modelId ?? this.getDefaultModel());
   }
 
   getDefaultModel(): string {

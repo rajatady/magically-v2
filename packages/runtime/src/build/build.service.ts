@@ -1,6 +1,6 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { BuildProviderUnavailableError } from '@magically/shared';
+import { BuildProviderUnavailableError } from '@magically/shared/errors';
 import { BuildProvider, type BuildInput, type BuildOutput } from './build-provider';
 
 export const BUILD_PROVIDERS = 'BUILD_PROVIDERS';
