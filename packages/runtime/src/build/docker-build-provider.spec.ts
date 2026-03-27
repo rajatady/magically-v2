@@ -13,7 +13,7 @@ jest.mock('fs', () => ({
 
 import { execSync } from 'child_process';
 
-maybeDescribe('DockerBuildProvider', () => {
+describe('DockerBuildProvider', () => {
   let provider: DockerBuildProvider;
   const mockExecSync = execSync as jest.MockedFunction<typeof execSync>;
 
