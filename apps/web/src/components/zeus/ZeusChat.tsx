@@ -1,4 +1,5 @@
-import { memo, useCallback, useState } from 'react';
+import { memo, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useZeusSocket } from '@/hooks/use-zeus-socket';
 import { ZeusHeader } from './ZeusHeader';
 import { ZeusMessages } from './ZeusMessages';
@@ -8,8 +9,15 @@ interface Props {
   onClose: () => void;
 }
 
+function extractChatId(pathname: string): string | null {
+  const match = pathname.match(/^\/zeus\/(.+)$/);
+  return match ? match[1] : null;
+}
+
 export const ZeusChat = memo(function ZeusChat({ onClose }: Props) {
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const chatId = extractChatId(location.pathname);
 
   const {
     connected,
@@ -19,8 +27,10 @@ export const ZeusChat = memo(function ZeusChat({ onClose }: Props) {
     sendMessage,
     interrupt,
   } = useZeusSocket({
-    sessionId,
-    onSessionCreated: (id) => setSessionId(id),
+    sessionId: chatId,
+    onSessionCreated: (id) => {
+      navigate(`/zeus/${id}`, { replace: true });
+    },
   });
 
   const handleSubmit = useCallback(
@@ -33,7 +43,7 @@ export const ZeusChat = memo(function ZeusChat({ onClose }: Props) {
 
   return (
     <div className="flex h-full flex-col">
-      <ZeusHeader onClose={onClose} connected={connected} sessionId={sessionId} />
+      <ZeusHeader onClose={onClose} connected={connected} sessionId={chatId} />
       <ZeusMessages messages={messages} stream={stream} streaming={streaming} />
       <ZeusInput
         onSubmit={handleSubmit}

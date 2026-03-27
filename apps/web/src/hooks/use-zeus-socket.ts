@@ -5,6 +5,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { io, type Socket } from 'socket.io-client';
 import { useAuthStore } from '../lib/auth';
+import { zeus } from '../lib/api';
 import {
   createEmptyStreamState,
   applyChunk,
@@ -44,6 +45,25 @@ export function useZeusSocket({ sessionId, onSessionCreated }: UseZeusSocketOpti
       blocks: [...stateRef.current.blocks],
     });
   }, []);
+
+  // Load past messages when sessionId is provided (e.g., navigating to /zeus/:chatId)
+  useEffect(() => {
+    if (!sessionId) return;
+
+    zeus.getConversation(sessionId)
+      .then((conv) => {
+        if (!conv?.messages || !Array.isArray(conv.messages)) return;
+        const loaded: ZeusMessage[] = conv.messages.map((m, i) => ({
+          id: crypto.randomUUID(),
+          role: m.role as 'user' | 'assistant',
+          content: m.content,
+          blocks: m.blocks as ZeusMessage['blocks'],
+          createdAt: conv.createdAt ?? new Date().toISOString(),
+        }));
+        setMessages(loaded);
+      })
+      .catch(() => {});
+  }, [sessionId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const token = useAuthStore.getState().token;

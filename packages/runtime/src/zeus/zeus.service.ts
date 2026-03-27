@@ -136,6 +136,19 @@ export class ZeusService {
       .limit(limit);
   }
 
+  async appendMessages(conversationId: string, newMessages: Array<{ role: string; content: string; blocks?: unknown[] }>) {
+    const conv = await this.getConversation(conversationId);
+    if (!conv) return;
+    const existing = (conv.messages ?? []) as unknown[];
+    await this.db
+      .update(zeusConversations)
+      .set({
+        messages: [...existing, ...newMessages],
+        updatedAt: new Date(),
+      })
+      .where(eq(zeusConversations.id, conversationId));
+  }
+
   async updateConversationAgentSessionId(conversationId: string, agentSessionId: string) {
     await this.db
       .update(zeusConversations)

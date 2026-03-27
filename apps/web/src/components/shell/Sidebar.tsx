@@ -16,7 +16,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'settings', icon: '⚙', label: 'Settings' },
 ];
 
-export function Sidebar() {
+export function Sidebar({ onZeusClick }: { onZeusClick?: () => void }) {
   const { view, zeusOpen, setView, toggleZeus, agents } = useStore();
 
   return (
@@ -28,7 +28,7 @@ export function Sidebar() {
       <div className="mb-3 text-[22px]">✨</div>
 
       {/* Zeus button */}
-      <SidebarButton icon="◈" label="Zeus" active={zeusOpen} onClick={toggleZeus} />
+      <SidebarButton icon="◈" label="Zeus" active={zeusOpen} onClick={onZeusClick ?? toggleZeus} />
 
       <Separator className="my-2 w-8" />
 

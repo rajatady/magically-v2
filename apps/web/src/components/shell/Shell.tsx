@@ -1,4 +1,5 @@
-import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { useStore } from '@/lib/store';
 import { useAuthStore } from '@/lib/auth';
 import { Sidebar } from './Sidebar';
@@ -9,19 +10,41 @@ import { AgentView } from '../agent/AgentView';
 import { Button } from '@/components/ui/button';
 
 export function Shell() {
-  const { view, zeusOpen } = useStore();
+  const { view, zeusOpen, toggleZeus } = useStore();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Sync URL → store: /zeus or /zeus/:chatId opens the panel
+  useEffect(() => {
+    const isZeusRoute = location.pathname.startsWith('/zeus');
+    if (isZeusRoute && !zeusOpen) {
+      toggleZeus();
+    }
+  }, [location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
+  const handleCloseZeus = () => {
+    toggleZeus();
+    // Navigate away from /zeus route when closing
+    if (location.pathname.startsWith('/zeus')) {
+      navigate('/');
+    }
+  };
+
+  const handleOpenZeus = () => {
+    if (!zeusOpen) toggleZeus();
+    navigate('/zeus');
+  };
+
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-bg-shell">
-      <Sidebar />
+      <Sidebar onZeusClick={handleOpenZeus} />
 
       <div className="flex flex-1 flex-col overflow-hidden">
         <header className="flex shrink-0 items-center justify-end gap-3 border-b border-border px-4 py-2">
@@ -47,7 +70,7 @@ export function Shell() {
         </main>
       </div>
 
-      {zeusOpen && <ZeusPanel />}
+      {zeusOpen && <ZeusPanel onClose={handleCloseZeus} />}
     </div>
   );
 }

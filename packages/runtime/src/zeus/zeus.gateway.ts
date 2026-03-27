@@ -96,7 +96,7 @@ export class ZeusGateway implements OnGatewayConnection, OnGatewayDisconnect {
     activeExecutions.set(client.id, abortController);
 
     try {
-      await this.zeus.runPrompt(sessionId, payload.prompt, userId, {
+      const { fullResponse, blocks } = await this.zeus.runPrompt(sessionId, payload.prompt, userId, {
         onChunk: (text) => client.emit('chunk', { text }),
         onToolStart: (id, tool, input) => client.emit('tool:start', { id, tool, input }),
         onToolResult: (id, result) => client.emit('tool:result', { id, result }),
@@ -105,6 +105,12 @@ export class ZeusGateway implements OnGatewayConnection, OnGatewayDisconnect {
         onError: (message) => client.emit('error', { message }),
         onDone: () => client.emit('done', { sessionId }),
       }, abortController);
+
+      // Persist both user message and assistant response
+      await this.zeus.appendMessages(sessionId, [
+        { role: 'user', content: payload.prompt },
+        { role: 'assistant', content: fullResponse, blocks },
+      ]).catch((err) => this.logger.error('Failed to persist messages', err));
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
       if (message !== 'aborted') {

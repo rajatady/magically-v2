@@ -103,6 +103,12 @@ export class ApiClient {
         method: 'POST',
         body: JSON.stringify({ mode }),
       }),
+    getConversation: (id: string) =>
+      this.req<{ id: string; messages: Array<{ role: string; content: string; blocks?: unknown[] }>; mode: string; createdAt: string }>(`/zeus/conversations/${id}`),
+    listConversations: () =>
+      this.req<Array<{ id: string; title: string | null; mode: string; createdAt: string; updatedAt: string }>>('/zeus/conversations'),
+    deleteConversation: (id: string) =>
+      this.req<void>(`/zeus/conversations/${id}`, { method: 'DELETE' }),
     memory: () => this.req<MemoryEntry[]>('/zeus/memory'),
     tasks: () => this.req<ZeusTask[]>('/zeus/tasks'),
   };

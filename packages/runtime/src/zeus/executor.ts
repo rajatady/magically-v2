@@ -199,18 +199,22 @@ export async function executePrompt(options: ExecutionOptions) {
         }
 
         case 'assistant': {
+          // When includePartialMessages is true, text arrives via stream_event
+          // deltas first, then the complete assistant message follows.
+          // Only process tool_use blocks here — text was already handled above.
           const contentBlocks = (msg.message as { content?: Array<{ type: string; text?: string; id?: string; name?: string; input?: unknown }> })?.content ?? [];
           const parentId = (msg.parent_tool_use_id as string | null) ?? null;
 
           for (const block of contentBlocks) {
-            if (block.type === 'text' && block.text) {
-              fullResponse += block.text;
-              orderedBlocks.push({ type: 'text', text: block.text, parentToolUseId: parentId });
-              callbacks.onChunk?.(fullResponse);
-            }
             if (block.type === 'tool_use') {
-              orderedBlocks.push({ type: 'tool_use', id: block.id, tool: block.name, input: block.input, status: 'running', parentToolUseId: parentId });
-              callbacks.onToolStart?.(block.id!, block.name!, block.input);
+              // Deduplicate — may already exist from stream_event content_block_start
+              const existing = orderedBlocks.find((b) => b.type === 'tool_use' && b.id === block.id);
+              if (existing && existing.type === 'tool_use') {
+                existing.input = block.input; // update with full parsed input
+              } else {
+                orderedBlocks.push({ type: 'tool_use', id: block.id, tool: block.name, input: block.input, status: 'running', parentToolUseId: parentId });
+                callbacks.onToolStart?.(block.id!, block.name!, block.input);
+              }
             }
           }
           break;
