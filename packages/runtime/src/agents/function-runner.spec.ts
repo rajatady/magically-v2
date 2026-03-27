@@ -118,7 +118,7 @@ describe('FunctionRunnerService', () => {
     expect(runs.length).toBe(1);
     expect(runs[0].agentId).toBe('run-tracker');
     expect(runs[0].functionName).toBe('greet');
-  }, 15_000);
+  }, 30_000);
 
   it('throws for lightweight agents (no runtime block)', async () => {
     const now = new Date();

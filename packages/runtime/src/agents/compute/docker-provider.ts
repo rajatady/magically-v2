@@ -8,7 +8,7 @@ export class DockerProvider extends ComputeProvider {
 
   async isAvailable(): Promise<boolean> {
     try {
-      execSync('docker info', { stdio: 'ignore' });
+      execSync('docker info', { stdio: 'ignore', timeout: 5_000 });
       return true;
     } catch {
       return false;
