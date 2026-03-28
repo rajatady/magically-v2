@@ -92,12 +92,17 @@ Only agents with a `runtime` block in their manifest use compute/build providers
 - Vite + React 19. Tailwind v4 + shadcn/ui for styling. CSS variables for theming tokens (defined in `@theme` block of `global.css`).
 - Use `cn()` from `@/lib/utils` for conditional class merging.
 - Extract component logic to `.logic.ts` files with corresponding `.logic.test.ts` tests.
-- Use shadcn UI primitives (`Button`, `Input`, `Badge`, `Skeleton`, `Spinner`, etc.) instead of custom elements.
+- Use shadcn UI primitives (`Button`, `Input`, `Badge`, `Skeleton`, `Spinner`, `Tabs`, `Card`, `Avatar`, `ScrollArea`, etc.) instead of custom elements.
 - `ErrorBoundary` wraps the entire app. `TooltipProvider` at root for shadcn tooltips.
 - Zustand for state management.
 - React Router for routing. Protected routes via `ProtectedRoute` component.
-- Auth state persisted to localStorage via `useAuthStore`.
-- API client auto-injects auth headers. Redirects to `/login` on 401.
+- Auth state persisted to localStorage via `useAuthStore`. Synchronous init from localStorage.
+- Use `@magically/shared` `ApiClient` for ALL API calls. Never use raw `fetch()` in components or hooks.
+- Socket.IO for real-time: events gateway on `/` namespace, Zeus gateway on `/zeus` namespace.
+- Zeus chat: WebSocket via `useZeusSocket` hook. Block tree rendering (text + tool calls). Session resume via Agent SDK.
+- Gallery: Dreamer-inspired gradient cards. `AgentCard`, `AgentDetail` components. No hard borders on cards.
+- `AgentImage` wrapper for all images — controls loading, fallback, future CDN switching.
+- URL routing for Zeus: `/zeus` and `/zeus/:chatId`. Panel state syncs with URL.
 
 ## CLI
 
