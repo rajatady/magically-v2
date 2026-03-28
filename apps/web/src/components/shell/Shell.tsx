@@ -7,6 +7,7 @@ import { HomeView } from '../home/HomeView';
 import { FeedView } from '../feed/FeedView';
 import { ZeusPanel } from '../zeus/ZeusPanel';
 import { AgentView } from '../agent/AgentView';
+import { GalleryView } from '../gallery/GalleryView';
 import { Button } from '@/components/ui/button';
 
 export function Shell() {
@@ -64,7 +65,7 @@ export function Shell() {
           {view === 'home'     && <HomeView />}
           {view === 'feed'     && <FeedView />}
           {view === 'agent'    && <AgentView />}
-          {view === 'gallery'  && <PlaceholderView title="Gallery" />}
+          {view === 'gallery'  && <GalleryView />}
           {view === 'build'    && <PlaceholderView title="Build" />}
           {view === 'settings' && <PlaceholderView title="Settings" />}
         </main>
