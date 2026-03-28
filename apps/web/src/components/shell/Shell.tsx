@@ -1,23 +1,19 @@
 import { useEffect } from 'react';
-import { useNavigate, useLocation, useParams } from 'react-router-dom';
+import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useStore } from '@/lib/store';
 import { useAuthStore } from '@/lib/auth';
 import { Sidebar } from './Sidebar';
-import { HomeView } from '../home/HomeView';
-import { FeedView } from '../feed/FeedView';
 import { ZeusPanel } from '../zeus/ZeusPanel';
-import { AgentView } from '../agent/AgentView';
-import { GalleryView } from '../gallery/GalleryView';
 import { Button } from '@/components/ui/button';
 
 export function Shell() {
-  const { view, zeusOpen, toggleZeus } = useStore();
+  const { zeusOpen, toggleZeus } = useStore();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Sync URL → store: /zeus or /zeus/:chatId opens the panel
+  // Sync URL → state: /zeus or /zeus/:chatId opens the panel
   useEffect(() => {
     const isZeusRoute = location.pathname.startsWith('/zeus');
     if (isZeusRoute && !zeusOpen) {
@@ -31,7 +27,7 @@ export function Shell() {
   };
 
   const handleCloseZeus = () => {
-    toggleZeus();
+    if (zeusOpen) toggleZeus();
     // Navigate away from /zeus route when closing
     if (location.pathname.startsWith('/zeus')) {
       navigate('/');
@@ -40,7 +36,12 @@ export function Shell() {
 
   const handleOpenZeus = () => {
     if (!zeusOpen) toggleZeus();
-    navigate('/zeus');
+    // Only change URL if we're at root or already on a zeus route
+    // Preserve the current page URL when opening from gallery, feed, etc.
+    const isNeutralRoute = location.pathname === '/' || location.pathname.startsWith('/zeus');
+    if (isNeutralRoute) {
+      navigate('/zeus');
+    }
   };
 
   return (
@@ -62,24 +63,11 @@ export function Shell() {
         </header>
 
         <main className="flex flex-1 flex-col overflow-hidden">
-          {view === 'home'     && <HomeView />}
-          {view === 'feed'     && <FeedView />}
-          {view === 'agent'    && <AgentView />}
-          {view === 'gallery'  && <GalleryView />}
-          {view === 'build'    && <PlaceholderView title="Build" />}
-          {view === 'settings' && <PlaceholderView title="Settings" />}
+          <Outlet />
         </main>
       </div>
 
       {zeusOpen && <ZeusPanel onClose={handleCloseZeus} />}
-    </div>
-  );
-}
-
-function PlaceholderView({ title }: { title: string }) {
-  return (
-    <div className="flex flex-1 items-center justify-center font-serif text-2xl italic text-text-3">
-      {title} — coming soon
     </div>
   );
 }

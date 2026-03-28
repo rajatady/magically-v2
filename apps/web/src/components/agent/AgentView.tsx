@@ -1,11 +1,13 @@
+import { useParams } from 'react-router-dom';
 import { useStore } from '../../lib/store';
 import { useAuthStore } from '../../lib/auth';
 import { BASE_URL } from '../../lib/api';
 
 export function AgentView() {
-  const { activeAgentId, agents } = useStore();
+  const { agentId } = useParams<{ agentId: string }>();
+  const { agents } = useStore();
   const token = useAuthStore((s) => s.token);
-  const agent = agents.find((a) => a.id === activeAgentId);
+  const agent = agents.find((a) => a.id === agentId);
 
   if (!agent) {
     return (

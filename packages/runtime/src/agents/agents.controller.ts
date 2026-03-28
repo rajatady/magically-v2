@@ -6,11 +6,12 @@ import {
     Param,
     Body,
     Res,
+    Req,
     HttpCode,
     HttpStatus,
     NotFoundException,
 } from '@nestjs/common';
-import {Response} from 'express';
+import {Request, Response} from 'express';
 import {AgentsService} from './agents.service';
 import {AgentUiService} from './agent-ui.service';
 import {FunctionRunnerService} from './function-runner.service';
@@ -42,6 +43,24 @@ export class AgentsController {
             category: agent.category,
             enabled: agent.enabled,
             functions: (agent.manifest as AgentManifest).functions ?? [],
+        }));
+    }
+
+    @Get('me')
+    async findMine(@Req() req: Request) {
+        const myAgents = await this.agentsService.findByAuthor(req.user!.sub);
+        return myAgents.map((agent) => ({
+            id: agent.id,
+            name: agent.name,
+            version: agent.latestVersion,
+            description: agent.description,
+            icon: agent.icon,
+            color: agent.color,
+            category: agent.category,
+            status: agent.status,
+            enabled: agent.enabled,
+            hasWidget: false,
+            functions: (agent.manifest as AgentManifest)?.functions ?? [],
         }));
     }
 

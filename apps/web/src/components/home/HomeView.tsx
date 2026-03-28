@@ -1,9 +1,11 @@
+import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../lib/store';
 import { Button } from '@/components/ui/button';
 import { filterWidgetAgents, getGreeting } from './HomeView.logic';
 
 export function HomeView() {
-  const { agents, setView } = useStore();
+  const { agents } = useStore();
+  const navigate = useNavigate();
   const widgetAgents = filterWidgetAgents(agents);
 
   return (
@@ -20,7 +22,7 @@ export function HomeView() {
             <WidgetCard
               key={agent.id}
               agent={agent}
-              onClick={() => setView('agent', agent.id)}
+              onClick={() => navigate(`/agents/${agent.id}`)}
             />
           ))}
         </div>
@@ -52,7 +54,7 @@ function WidgetCard({
 }
 
 function EmptyState() {
-  const { toggleZeus } = useStore();
+  const navigate = useNavigate();
   return (
     <div className="flex flex-col items-center justify-center gap-4 pt-20 text-center text-text-3">
       <div className="text-5xl">✨</div>
@@ -60,7 +62,7 @@ function EmptyState() {
       <p className="max-w-xs text-sm">
         Ask Zeus to build your first agent, or browse the Gallery to find one.
       </p>
-      <Button onClick={toggleZeus} className="mt-2">
+      <Button onClick={() => navigate('/zeus')} className="mt-2">
         Ask Zeus
       </Button>
     </div>

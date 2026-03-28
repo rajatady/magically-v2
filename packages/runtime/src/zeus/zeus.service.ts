@@ -1,13 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, gt, and } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { mkdir, access, writeFile } from 'fs/promises';
 import { existsSync } from 'fs';
 import { join } from 'path';
 import { scaffoldAgent } from '@magically/shared/scaffold';
 import { InjectDB, type DrizzleDB } from '../db';
-import { zeusConversations, zeusMemory, zeusTasks } from '../db/schema';
+import { zeusConversations, zeusMessages, zeusMemory, zeusTasks, agents, agentVersions } from '../db/schema';
 import { AgentsService } from '../agents/agents.service';
 import { EventsGateway } from '../events/events.gateway';
 import { executePrompt, type ExecutionCallbacks } from './executor';
@@ -55,6 +55,7 @@ export class ZeusService {
     userId: string,
     callbacks: ExecutionCallbacks,
     abortController?: AbortController,
+    assistantMsgId?: string,
   ) {
     // Get conversation for resume + history context
     const conversation = await this.getConversation(sessionId);
@@ -62,14 +63,20 @@ export class ZeusService {
       ? [conversation.agentSessionId]
       : undefined;
 
-    // Build conversation history for fallback if resume fails
-    const messages = (conversation?.messages ?? []) as Array<{ role: string; content: string }>;
-    const conversationHistory = messages.length > 0 ? messages : undefined;
+    // Build conversation history from zeus_messages table
+    const msgs = await this.getMessages(sessionId);
+    const conversationHistory = msgs.length > 0
+      ? msgs.map((m) => ({ role: m.role, content: m.content }))
+      : undefined;
+
+    // If no assistantMsgId provided (SSE fallback), create one
+    const msgId = assistantMsgId ?? (await this.saveMessage(sessionId, 'assistant', '')).id;
 
     return executePrompt({
       sessionId,
       prompt,
       userId,
+      assistantMsgId: msgId,
       agentSessionIds,
       conversationHistory,
       abortController,
@@ -122,7 +129,6 @@ Do NOT create functions or triggers yet — just fill in the identity fields. Th
     const manifestPath = join(dir, 'manifest.json');
 
     if (!existsSync(manifestPath)) {
-      // Fresh workspace — scaffold agent template
       scaffoldAgent(dir, {
         agentId: 'my-agent',
         agentName: 'My Agent',
@@ -131,12 +137,51 @@ Do NOT create functions or triggers yet — just fill in the identity fields. Th
       this.logger.log(`Scaffolded new agent workspace for user ${userId}`);
     }
 
+    // Sync workspace manifest → agents table as a draft
+    await this.syncWorkspaceDraft(userId, dir, manifestPath);
+
     return dir;
+  }
+
+  private async syncWorkspaceDraft(userId: string, _dir: string, manifestPath: string): Promise<void> {
+    try {
+      const { readFileSync } = await import('fs');
+      const manifest = JSON.parse(readFileSync(manifestPath, 'utf-8')) as Record<string, unknown>;
+      const agentId = `workspace-${userId}`;
+      const now = new Date();
+
+      await this.db
+        .insert(agents)
+        .values({
+          id: agentId,
+          name: (manifest.name as string) ?? 'My Agent',
+          description: (manifest.description as string) ?? null,
+          icon: (manifest.icon as string) ?? null,
+          authorId: userId,
+          latestVersion: (manifest.version as string) ?? '0.1.0',
+          status: 'draft',
+          createdAt: now,
+          updatedAt: now,
+        })
+        .onConflictDoUpdate({
+          target: agents.id,
+          set: {
+            name: (manifest.name as string) ?? 'My Agent',
+            description: (manifest.description as string) ?? null,
+            icon: (manifest.icon as string) ?? null,
+            latestVersion: (manifest.version as string) ?? '0.1.0',
+            updatedAt: now,
+          },
+        });
+    } catch (err) {
+      this.logger.warn(`Failed to sync workspace draft: ${err}`);
+    }
   }
 
   isOnboarded(workspaceDir: string): boolean {
     return existsSync(join(workspaceDir, '.magically', 'onboarded'));
   }
+
 
   // ─── Conversation Management ─────────────────────────────────────────
 
@@ -145,7 +190,6 @@ Do NOT create functions or triggers yet — just fill in the identity fields. Th
     const now = new Date();
     await this.db.insert(zeusConversations).values({
       id,
-      messages: [],
       mode,
       agentId,
       createdAt: now,
@@ -163,25 +207,90 @@ Do NOT create functions or triggers yet — just fill in the identity fields. Th
     return rows[0];
   }
 
+  /** Get conversation with messages from the zeus_messages table */
+  async getConversationWithMessages(id: string) {
+    const conv = await this.getConversation(id);
+    if (!conv) return null;
+    const msgs = await this.getMessages(id);
+    return { ...conv, messages: msgs };
+  }
+
   async listConversations(limit = 50) {
     return this.db
-      .select()
+      .select({
+        id: zeusConversations.id,
+        title: zeusConversations.title,
+        mode: zeusConversations.mode,
+        agentId: zeusConversations.agentId,
+        userId: zeusConversations.userId,
+        createdAt: zeusConversations.createdAt,
+        updatedAt: zeusConversations.updatedAt,
+      })
       .from(zeusConversations)
       .orderBy(desc(zeusConversations.updatedAt))
       .limit(limit);
   }
 
-  async appendMessages(conversationId: string, newMessages: Array<{ role: string; content: string; blocks?: unknown[] }>) {
-    const conv = await this.getConversation(conversationId);
-    if (!conv) return;
-    const existing = (conv.messages ?? []) as unknown[];
+  // ─── Message CRUD (zeus_messages table) ─────────────────────────────
+
+  async saveMessage(
+    conversationId: string,
+    role: string,
+    content: string,
+    blocks?: unknown[],
+    sdkUuid?: string,
+  ): Promise<{ id: string }> {
+    const id = randomUUID();
+    await this.db.insert(zeusMessages).values({
+      id,
+      conversationId,
+      role,
+      content,
+      blocks: blocks ? JSON.stringify(blocks) : null,
+      sdkUuid: sdkUuid ?? null,
+    });
+    // Touch conversation updatedAt
     await this.db
       .update(zeusConversations)
-      .set({
-        messages: [...existing, ...newMessages],
-        updatedAt: new Date(),
-      })
+      .set({ updatedAt: new Date() })
       .where(eq(zeusConversations.id, conversationId));
+    return { id };
+  }
+
+  async updateMessage(
+    messageId: string,
+    content: string,
+    blocks?: unknown[],
+    sdkUuid?: string,
+  ): Promise<void> {
+    const set: Record<string, unknown> = { content };
+    if (blocks) set.blocks = JSON.stringify(blocks);
+    if (sdkUuid) set.sdkUuid = sdkUuid;
+    await this.db
+      .update(zeusMessages)
+      .set(set)
+      .where(eq(zeusMessages.id, messageId));
+  }
+
+  async getMessages(conversationId: string, limit = 200, offset = 0) {
+    return this.db
+      .select()
+      .from(zeusMessages)
+      .where(eq(zeusMessages.conversationId, conversationId))
+      .orderBy(zeusMessages.createdAt)
+      .limit(limit)
+      .offset(offset);
+  }
+
+  async deleteMessagesAfter(conversationId: string, messageId: string) {
+    const msg = await this.db.select().from(zeusMessages).where(eq(zeusMessages.id, messageId)).limit(1);
+    if (!msg[0]) return;
+    await this.db.delete(zeusMessages).where(
+      and(
+        eq(zeusMessages.conversationId, conversationId),
+        gt(zeusMessages.createdAt, msg[0].createdAt),
+      ),
+    );
   }
 
   async updateConversationAgentSessionId(conversationId: string, agentSessionId: string) {
@@ -192,7 +301,27 @@ Do NOT create functions or triggers yet — just fill in the identity fields. Th
     this.logger.log(`Agent session ${agentSessionId} linked to conversation ${conversationId}`);
   }
 
+  async setRewindPoint(conversationId: string, sdkUuid: string) {
+    await this.db
+      .update(zeusConversations)
+      .set({ rewindToSdkUuid: sdkUuid })
+      .where(eq(zeusConversations.id, conversationId));
+  }
+
+  async getRewindPoint(conversationId: string): Promise<string | null> {
+    const conv = await this.getConversation(conversationId);
+    return conv?.rewindToSdkUuid ?? null;
+  }
+
+  async clearRewindPoint(conversationId: string) {
+    await this.db
+      .update(zeusConversations)
+      .set({ rewindToSdkUuid: null })
+      .where(eq(zeusConversations.id, conversationId));
+  }
+
   async deleteConversation(id: string) {
+    // Messages cascade-deleted via FK
     await this.db
       .delete(zeusConversations)
       .where(eq(zeusConversations.id, id));

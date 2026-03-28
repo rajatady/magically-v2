@@ -53,12 +53,13 @@ export function useZeusSocket({ sessionId, onSessionCreated }: UseZeusSocketOpti
     zeus.getConversation(sessionId)
       .then((conv) => {
         if (!conv?.messages || !Array.isArray(conv.messages)) return;
-        const loaded: ZeusMessage[] = conv.messages.map((m, i) => ({
-          id: crypto.randomUUID(),
+        const loaded: ZeusMessage[] = conv.messages.map((m: { id?: string; role: string; content: string; blocks?: string | unknown[]; createdAt?: string }) => ({
+          id: m.id ?? crypto.randomUUID(),
           role: m.role as 'user' | 'assistant',
           content: m.content,
-          blocks: m.blocks as ZeusMessage['blocks'],
-          createdAt: conv.createdAt ?? new Date().toISOString(),
+          // blocks may be a JSON string (from zeus_messages table) or already parsed
+          blocks: typeof m.blocks === 'string' ? JSON.parse(m.blocks) : m.blocks as ZeusMessage['blocks'],
+          createdAt: m.createdAt ?? new Date().toISOString(),
         }));
         setMessages(loaded);
       })

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Shell } from './shell/Shell';
+import { Outlet } from 'react-router-dom';
 import { useStore } from '../lib/store';
 import { agents, feed, config } from '../lib/api';
 import { connectSocket, disconnectSocket } from '../lib/socket';
@@ -53,5 +53,5 @@ export function AuthenticatedApp() {
 
   if (loading) return <AppSkeleton />;
 
-  return <Shell />;
+  return <Outlet />;
 }

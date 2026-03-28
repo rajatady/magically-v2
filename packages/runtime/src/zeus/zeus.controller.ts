@@ -49,6 +49,9 @@ export class ZeusController {
     const abortController = new AbortController();
     req.on('close', () => abortController.abort());
 
+    // Persist user message before execution
+    await this.zeus.saveMessage(sessionId, 'user', prompt);
+
     await this.zeus.runPrompt(sessionId, prompt, userId, {
       onChunk: (text) => {
         res.write(`data: ${JSON.stringify({ type: 'chunk', text })}\n\n`);
@@ -89,7 +92,7 @@ export class ZeusController {
 
   @Get('conversations/:id')
   async getConversation(@Param('id') id: string) {
-    const conv = await this.zeus.getConversation(id);
+    const conv = await this.zeus.getConversationWithMessages(id);
     if (!conv) throw new NotFoundException('Conversation not found');
     return conv;
   }

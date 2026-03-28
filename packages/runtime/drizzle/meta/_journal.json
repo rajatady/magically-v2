@@ -15,6 +15,13 @@
       "when": 1774647613733,
       "tag": "0001_yummy_mole_man",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1774672895659,
+      "tag": "0002_gorgeous_amazoness",
+      "breakpoints": true
     }
   ]
 }

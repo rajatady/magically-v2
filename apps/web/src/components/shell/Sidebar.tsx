@@ -1,23 +1,31 @@
-import { useStore, type View } from '../../lib/store';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useStore } from '../../lib/store';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 
 interface NavItem {
-  id: View;
+  path: string;
   icon: string;
   label: string;
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { id: 'home',     icon: '⌂',  label: 'Home' },
-  { id: 'feed',     icon: '◎',  label: 'Feed' },
-  { id: 'gallery',  icon: '⊞',  label: 'Gallery' },
-  { id: 'build',    icon: '+',  label: 'Build' },
-  { id: 'settings', icon: '⚙', label: 'Settings' },
+  { path: '/',         icon: '⌂',  label: 'Home' },
+  { path: '/feed',     icon: '◎',  label: 'Feed' },
+  { path: '/gallery',  icon: '⊞',  label: 'Gallery' },
+  { path: '/build',    icon: '+',  label: 'Build' },
+  { path: '/settings', icon: '⚙', label: 'Settings' },
 ];
 
 export function Sidebar({ onZeusClick }: { onZeusClick?: () => void }) {
-  const { view, zeusOpen, setView, toggleZeus, agents } = useStore();
+  const { zeusOpen, toggleZeus, agents } = useStore();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const isActive = (path: string) => {
+    if (path === '/') return location.pathname === '/';
+    return location.pathname.startsWith(path);
+  };
 
   return (
     <nav
@@ -35,11 +43,11 @@ export function Sidebar({ onZeusClick }: { onZeusClick?: () => void }) {
       {/* Main nav */}
       {NAV_ITEMS.map((item) => (
         <SidebarButton
-          key={item.id}
+          key={item.path}
           icon={item.icon}
           label={item.label}
-          active={view === item.id}
-          onClick={() => setView(item.id)}
+          active={isActive(item.path)}
+          onClick={() => navigate(item.path)}
         />
       ))}
 
@@ -51,8 +59,8 @@ export function Sidebar({ onZeusClick }: { onZeusClick?: () => void }) {
           key={agent.id}
           icon={agent.icon ?? '◇'}
           label={agent.name}
-          active={view === 'agent'}
-          onClick={() => setView('agent', agent.id)}
+          active={location.pathname === `/agents/${agent.id}`}
+          onClick={() => navigate(`/agents/${agent.id}`)}
         />
       ))}
     </nav>

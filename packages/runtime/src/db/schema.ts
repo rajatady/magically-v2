@@ -62,10 +62,11 @@ export type NewMemoryEntry = typeof zeusMemory.$inferInsert;
 export const zeusConversations = pgTable('zeus_conversations', {
   id: text('id').primaryKey(),
   title: text('title'),
-  messages: jsonb('messages').notNull(),
+  messages: jsonb('messages'),             // Legacy — nullable, being replaced by zeus_messages table
   mode: text('mode').default('chat').notNull(),
   agentId: text('agent_id'),
   agentSessionId: text('agent_session_id'),
+  rewindToSdkUuid: text('rewind_to_sdk_uuid'),
   userId: text('user_id'),
   createdAt: timestamp('created_at').notNull(),
   updatedAt: timestamp('updated_at').notNull(),
@@ -73,6 +74,21 @@ export const zeusConversations = pgTable('zeus_conversations', {
 
 export type Conversation = typeof zeusConversations.$inferSelect;
 export type NewConversation = typeof zeusConversations.$inferInsert;
+
+// ─── Zeus Messages ──────────────────────────────────────────────────────
+
+export const zeusMessages = pgTable('zeus_messages', {
+  id: text('id').primaryKey(),
+  conversationId: text('conversation_id').notNull().references(() => zeusConversations.id, { onDelete: 'cascade' }),
+  role: text('role').notNull(),             // 'user' | 'assistant'
+  content: text('content').notNull().default(''),
+  blocks: text('blocks'),                   // JSON string of ContentBlock[]
+  sdkUuid: text('sdk_uuid'),               // SDK message UUID for rewind/fork
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type ZeusMessage = typeof zeusMessages.$inferSelect;
+export type NewZeusMessage = typeof zeusMessages.$inferInsert;
 
 // ─── Zeus Tasks ──────────────────────────────────────────────────────────
 

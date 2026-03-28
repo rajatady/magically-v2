@@ -40,7 +40,9 @@ export interface AgentSummary {
   description?: string;
   icon?: string;
   color?: string;
+  category?: string;
   author?: string;
+  status?: string;            // 'draft' | 'processing' | 'building' | 'live' | 'failed'
   enabled: boolean;
   hasWidget: boolean;
   functions: AgentFunction[];

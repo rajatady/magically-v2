@@ -3,7 +3,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, desc } from 'drizzle-orm';
 import { InjectDB, type DrizzleDB } from '../db';
 import { agents, agentVersions } from '../db/schema';
 
@@ -47,6 +47,34 @@ export class AgentsService {
         status: agent.status,
         enabled: agent.enabled,
         manifest: version.manifest as Record<string, unknown>,
+      });
+    }
+    return result;
+  }
+
+  /** All agents authored by a user — drafts, building, live */
+  async findByAuthor(userId: string): Promise<AgentWithManifest[]> {
+    const rows = await this.db
+      .select()
+      .from(agents)
+      .where(eq(agents.authorId, userId))
+      .orderBy(desc(agents.updatedAt));
+
+    const result: AgentWithManifest[] = [];
+    for (const agent of rows) {
+      // For drafts/processing, there may be no live version yet — use latest of any status
+      const version = await this.getAnyLatestVersion(agent.id);
+      result.push({
+        id: agent.id,
+        name: agent.name,
+        latestVersion: agent.latestVersion,
+        description: agent.description,
+        icon: agent.icon,
+        color: agent.color,
+        category: agent.category,
+        status: agent.status,
+        enabled: agent.enabled,
+        manifest: (version?.manifest ?? {}) as Record<string, unknown>,
       });
     }
     return result;
@@ -106,6 +134,17 @@ export class AgentsService {
         eq(agentVersions.agentId, agentId),
         eq(agentVersions.status, 'live'),
       ))
+      .limit(1);
+
+    return rows[0] ?? null;
+  }
+
+  private async getAnyLatestVersion(agentId: string) {
+    const rows = await this.db
+      .select()
+      .from(agentVersions)
+      .where(eq(agentVersions.agentId, agentId))
+      .orderBy(desc(agentVersions.publishedAt))
       .limit(1);
 
     return rows[0] ?? null;

@@ -6,76 +6,163 @@ Magically is an operating system for AI agents. Not a chatbot. Not a developer t
 
 You install agents like apps. They run in the background, do things for you, and show you what happened. A home screen with widgets shows you everything at a glance. A feed shows what your agents did while you were away. And Zeus — the kernel — orchestrates it all.
 
-## Who is this for?
+---
 
-**Everyone.** The same way iOS is for everyone, not just app developers.
+## Tech Stack
 
-- You want an agent that posts to your Instagram on autopilot? Install it. Configure your account. Done.
-- You want an agent that watches research papers in your field and sends you a daily digest? Install it.
-- You want an agent that transcribes your voice memos and files them? Install it.
-- You want to build your own agent? You can do that too.
+| Layer | Technology |
+|-------|------------|
+| Backend | NestJS (TypeScript) |
+| Frontend | Vite + React 19 |
+| Database | PostgreSQL (Neon prod, local dev) |
+| ORM | Drizzle ORM |
+| Job Queue | BullMQ + Redis |
+| Storage | Tigris S3 (agent bundles) |
+| AI | Claude Agent SDK (Zeus brain) |
+| Styling | Tailwind v4 + shadcn/ui |
+| Fonts | DM Sans (body) + Instrument Serif (display) + JetBrains Mono (code) |
+| CLI | Commander.js |
+| Package Manager | Bun |
 
-The 95% who can't code don't need to. They browse the gallery, install what they need, and go about their day. The 5% who can code build the agents that the 95% use.
+---
 
-## How it works
+## Quick Start
 
-**Agents are apps.** Each agent has:
-- A **UI** — a full interactive experience (like opening an app)
-- A **widget** — a glanceable snapshot on your home screen
-- **Functions** — things it can do (fetch analytics, publish a post, generate a report)
-- **Triggers** — when it runs automatically (every morning, when you get an email, on a schedule)
+```bash
+bun install
+cp .env.example .env                    # fill in DATABASE_URL, JWT_SECRET, ANTHROPIC_API_KEY
+cd packages/shared && bun run build     # build shared package (CJS)
+cd ../runtime && bun run db:migrate     # apply database migrations
+bun run start:dev                       # start NestJS backend (port 4321)
+cd ../../apps/web && bun run dev        # start Vite frontend (port 5173)
+```
 
-**Tools are capabilities.** Agents use tools:
-- Instagram Publisher, Google Calendar, Weather Data, Web Search
-- Tools are shared across agents — install once, any agent can use it
+---
 
-**Zeus is the kernel.** The orchestrator that ties everything together:
-- Routes requests between you and your agents
-- Manages your memory and preferences
-- Enables agents to work together (Recipe Book + Grocery List = dinner planned)
+## Documentation
 
-## The analogy
+| Document | Description |
+|----------|-------------|
+| [Architecture](docs/current/architecture.md) | System overview, monorepo packages, data flow diagrams, env vars |
+| [Database](docs/current/database.md) | All 13 tables with every column, type, constraint. Migration history |
+| [API Reference](docs/current/api.md) | All 39 REST endpoints across 6 controllers with request/response shapes |
+| [WebSockets](docs/current/websockets.md) | Both gateways (/ and /zeus), every event, payloads, connection lifecycle |
+| [Authentication](docs/current/auth.md) | JWT, API keys, query tokens, Google OAuth, guards, Express augmentation |
+| [Zeus](docs/current/zeus.md) | Agent SDK executor, MCP tools, session management, message persistence, system prompt |
+| [Agents](docs/current/agents.md) | Manifest, lifecycle, compute/build providers, publish pipeline, validation, templates |
+| [Frontend](docs/current/frontend.md) | All 12 routes, components, Zustand stores, theme tokens, Zeus chat architecture |
+| [CLI](docs/current/cli.md) | All 10 commands with flags, credential storage, publish flow |
+| [Shared Package](docs/current/shared-package.md) | 8 subpath exports, types, ApiClient, errors, validation, scaffold |
+| [Testing](docs/current/testing.md) | 3 test runners, DB setup, mocking patterns, CI pipeline |
+| [Deployment](docs/current/deployment.md) | Fly.io, Vercel, Neon, GitHub Actions CI/CD, Dockerfile, env vars |
+| [Changelog](CHANGELOG.md) | Feature history with git hashes and dates |
 
-| iOS | Magically |
-|-----|-----------|
-| Apps | Agents |
-| App Store | Gallery |
-| Siri | Zeus |
-| Home screen widgets | Widget grid |
-| Notification Center | Feed |
-| System APIs (Camera, GPS, etc.) | Tools (Calendar, Email, Search, etc.) |
-| You install apps, they work | You install agents, they work |
+---
 
-## What makes this different
+## Project Structure
 
-**It's not a chat interface.** You don't type prompts to get things done. Your agents run autonomously — on schedules, on triggers, in the background. You check in when you want to, like checking your phone.
+```
+packages/
+  runtime/       NestJS backend — agents, Zeus, registry, build pipeline, compute
+  cli/           Commander.js CLI — publish, run, status, login, init
+  shared/        Types, ApiClient, validation, errors, scaffold (plain tsc, CJS)
+  agent-sdk/     SDK for agent UIs (planned)
+  widget-dsl/    Widget spec (planned)
+apps/
+  web/           Vite + React SPA — gallery, feed, Zeus chat, agent views
+agents/          Example agents (hello-world, instagram-auto-poster)
+builders/        Git submodule for GitHub Actions remote Docker builds
+docs/
+  current/       Comprehensive documentation (12 files, ~3900 lines)
+```
 
-**It's not a developer platform.** You don't need to know what an API is. You install an agent, configure it through a guided setup, and it works. The complexity is hidden behind the same kind of experience you're used to from your phone.
+---
 
-**Agents are composable.** Your Recipe Book agent can talk to your Grocery List agent through Zeus. One agent finds the recipe, another builds the shopping list. You didn't wire them together — Zeus figures it out.
+## Scripts
 
-## Security Model
+| Command | Where | Description |
+|---------|-------|-------------|
+| `bun install` | Root | Install all dependencies |
+| `bun run build` | `packages/shared` | Build shared package (required before runtime/web) |
+| `bun run start:dev` | `packages/runtime` | Start NestJS dev server (port 4321) |
+| `bun run dev` | `apps/web` | Start Vite dev server (port 5173) |
+| `bun run db:generate` | `packages/runtime` | Generate new Drizzle migration |
+| `bun run db:migrate` | `packages/runtime` | Apply pending migrations |
+| `bun run db:push` | `packages/runtime` | Destructive schema push (dev only) |
+| `npx jest` | `packages/runtime` | Run unit tests |
+| `npx jest --config test/jest-e2e.json --runInBand --forceExit` | `packages/runtime` | Run e2e tests |
+| `bunx vitest run` | `apps/web` | Run web tests |
+| `bun test` | Root | Run all tests across monorepo |
 
-Zeus sees everything — all memory, all agent state, all user context. But agents are sandboxed:
+---
 
-- **Zeus** = knows everything, decides what to run, passes only declared secrets/config/tools to the agent
-- **Compute layer** = isolated execution environment (container), separate from your device
-- **Agent** = only sees what the manifest declared (secrets, config, tools). Can't access other agents' data, can't access Zeus's memory directly
-- Same security model locally and in the cloud
+## Environment Variables
 
-## Status
+```env
+DATABASE_URL=postgresql://localhost:5432/magically_v2
+JWT_SECRET=your-secret-here
+ANTHROPIC_API_KEY=sk-ant-...
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
+AWS_ACCESS_KEY_ID=...              # Tigris S3
+AWS_SECRET_ACCESS_KEY=...          # Tigris S3
+AWS_ENDPOINT_URL_S3=...            # Tigris S3 endpoint
+REDIS_URL=redis://localhost:6379   # BullMQ
+RUNTIME_URL=http://localhost:4321  # OAuth callbacks
+WEB_URL=http://localhost:5173      # CORS + OAuth redirects
+```
 
-This is early. The runtime works end-to-end, but the consumer experience (the home screen, the gallery, one-click install) is being built.
+See [Architecture > Environment Variables](docs/current/architecture.md#environment-variables) for the full list.
 
-What works today:
-- `magically publish` — validate, bundle, build Docker image remotely (GitHub Actions), push to GHCR + Fly registry
-- `magically run` — execute agent functions on Fly Machines or Docker locally
-- `magically status` — check build status of a published agent
-- Async build pipeline — BullMQ + Redis, with structured error surfacing
-- Validation pipeline — RxJS Observable checks at publish time (manifest, schema, functions, secrets)
-- Container harness — JS functions using `module.exports` pattern are called correctly via injected `_harness.js`
-- Authentication — Google OAuth, email/password, API keys, JWT
-- Runtime on Fly.io, database on Neon, storage on Tigris, builds on GitHub Actions
-- Web app on Vercel (basic shell)
-- Multiple compute providers: Fly Machines (production), Docker (local dev), Daytona (future)
+---
 
+## What Works Today
+
+- [x] **Zeus** — AI kernel with Claude Agent SDK, full Claude Code tools, MCP integration, WebSocket streaming
+- [x] **Gallery** — My Agents (from API) + Explore (editorial layout), agent detail with parallax scroll
+- [x] **Authentication** — Google OAuth, email/password, JWT, API keys, global guard
+- [x] **Agent Registry** — Publish, discover, install agents. Async build pipeline via BullMQ
+- [x] **Container Execution** — Fly Machines (prod), Docker (dev), Daytona (future)
+- [x] **Validation Pipeline** — RxJS Observable checks at publish time
+- [x] **CLI** — publish, run, status, login, init commands
+- [x] **Feed** — Real-time activity feed from agents
+- [x] **URL Routing** — Every view has a URL, back button works, deep links work
+- [x] **Responsive** — Mobile, tablet, desktop breakpoints
+
+---
+
+## Deployment
+
+| Service | Purpose | Target |
+|---------|---------|--------|
+| [Fly.io](https://fly.io) | NestJS runtime | `magically-runtime` |
+| [Vercel](https://vercel.com) | React web app | Auto-deploy from git |
+| [Neon](https://neon.tech) | PostgreSQL database | Serverless Postgres |
+| [Tigris](https://tigris.dev) | Agent bundle storage | S3-compatible |
+| [Redis](https://redis.io) | BullMQ job queue | Fly Redis or Upstash |
+| [GHCR](https://ghcr.io) | Agent Docker images | GitHub Container Registry |
+
+See [Deployment docs](docs/current/deployment.md) for full setup.
+
+---
+
+## Documentation Version
+
+> **Last synced**: 2026-03-28 | **Commit**: `97ab426` (development branch)
+>
+> | Metric | Value |
+> |--------|-------|
+> | Frontend Routes | 12 |
+> | REST Endpoints | 39 |
+> | WebSocket Events | 13 |
+> | DB Tables | 13 |
+> | Migrations | 3 |
+> | Doc Files | 12 |
+> | Doc Lines | ~4,100 |
+> | Test Files | 44 |
+
+---
+
+## License
+
+Private.

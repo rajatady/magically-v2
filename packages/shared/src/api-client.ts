@@ -76,6 +76,7 @@ export class ApiClient {
 
   agents = {
     list: () => this.req<AgentSummary[]>('/agents'),
+    mine: () => this.req<AgentSummary[]>('/agents/me'),
     get: (id: string) => this.req<AgentSummary>(`/agents/${id}`),
     widget: (id: string) => this.req<unknown>(`/agents/${id}/widget`),
     enable: (id: string) => this.req(`/agents/${id}/enable`, { method: 'PUT' }),
@@ -111,6 +112,7 @@ export class ApiClient {
       this.req<void>(`/zeus/conversations/${id}`, { method: 'DELETE' }),
     memory: () => this.req<MemoryEntry[]>('/zeus/memory'),
     tasks: () => this.req<ZeusTask[]>('/zeus/tasks'),
+    getWorkspace: () => this.req<{ agent: Record<string, unknown> | null }>('/zeus/workspace'),
   };
 
   // ─── Config ────────────────────────────────────────────────────────────────

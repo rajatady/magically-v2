@@ -48,6 +48,8 @@ export interface ExecutionOptions {
   sessionId: string;
   prompt: string;
   userId: string;
+  /** Pre-created assistant message ID for incremental updates */
+  assistantMsgId: string;
   /** SDK session IDs to try resuming from (most recent first) */
   agentSessionIds?: string[];
   /** Prior conversation messages for context if resume fails */
@@ -116,7 +118,7 @@ function buildPromptWithHistory(
 
 export async function executePrompt(options: ExecutionOptions) {
   const {
-    sessionId, prompt, userId, agentSessionIds, conversationHistory,
+    sessionId, prompt, userId, assistantMsgId, agentSessionIds, conversationHistory,
     abortController, callbacks, zeus, agents,
   } = options;
 
@@ -188,6 +190,8 @@ export async function executePrompt(options: ExecutionOptions) {
               orderedBlocks.push({ type: 'text', text: event.delta.text });
             }
             callbacks.onChunk?.(fullResponse);
+            // Incremental persist (debounced by nature of streaming)
+            zeus.updateMessage(assistantMsgId, fullResponse, orderedBlocks).catch(() => {});
           }
 
           if (event.type === 'content_block_start' && event.content_block?.type === 'tool_use') {
@@ -240,6 +244,8 @@ export async function executePrompt(options: ExecutionOptions) {
                 }
               }
             }
+            // Persist after tool results
+            zeus.updateMessage(assistantMsgId, fullResponse, orderedBlocks).catch(() => {});
           }
           break;
         }
@@ -274,10 +280,16 @@ export async function executePrompt(options: ExecutionOptions) {
       }
     }
 
+    // Final persist with complete content
+    await zeus.updateMessage(assistantMsgId, fullResponse, orderedBlocks.length > 0 ? orderedBlocks : undefined).catch(() => {});
     callbacks.onDone?.();
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     logger.error(`Execution error: ${message}`);
+    // Persist partial response on error
+    if (fullResponse || orderedBlocks.length > 0) {
+      await zeus.updateMessage(assistantMsgId, fullResponse || '[Error during execution]', orderedBlocks.length > 0 ? orderedBlocks : undefined).catch(() => {});
+    }
     callbacks.onError?.(message);
   }
 

@@ -1,0 +1,147 @@
+# Architecture
+
+> **Last synced**: 2026-03-28 | **Commit**: `97ab426` (development branch)
+
+## System Overview
+
+Magically is an operating system for AI agents. The system is a monorepo with five packages, a web frontend, and example agents.
+
+```
+Browser ──► Vite React SPA (apps/web)
+               │
+               ├── REST API ──► NestJS Runtime (packages/runtime)
+               │                     │
+               │                     ├── PostgreSQL (Neon prod / local dev)
+               │                     ├── BullMQ + Redis (async build jobs)
+               │                     ├── Tigris S3 (agent bundle storage)
+               │                     └── Agent SDK (Zeus brain — Claude Code tools)
+               │
+               └── Socket.IO ──► NestJS Gateways
+                                   ├── / namespace (feed, agent events)
+                                   └── /zeus namespace (chat streaming)
+
+CLI (packages/cli) ──► REST API (publish, run, status, login)
+```
+
+## Monorepo Packages
+
+```
+packages/
+  runtime/     NestJS backend. All API endpoints, DB, Zeus, agent execution.
+  cli/         Commander.js CLI. publish, run, status, login, init.
+  shared/      Types, ApiClient, validation pipeline, errors, scaffold, Dockerfile generator.
+                Plain tsc -b, CJS output. Consumed by runtime, web, and CLI.
+  agent-sdk/   SDK for agent UIs (planned, not built).
+  widget-dsl/  Widget spec (planned, not built).
+
+apps/
+  web/         Vite + React 19. Tailwind v4 + shadcn/ui. The user-facing SPA.
+
+agents/        Example agents (hello-world, instagram-auto-poster).
+builders/      Git submodule (rajatady/magically-builders). GitHub Actions for remote Docker builds.
+```
+
+## Package Dependency Graph
+
+```
+@magically/shared ◄── packages/runtime
+                  ◄── packages/cli
+                  ◄── apps/web (via Vite commonjsOptions)
+```
+
+The shared package uses **plain `tsc -b`** with CJS output. No bundler. No `"type": "module"`. Exports use `"default"` condition. Vite handles CJS→ESM at dev/build time via `optimizeDeps.include` and `build.commonjsOptions`.
+
+## Data Flow
+
+### Agent Publish Pipeline
+
+```
+Developer runs `magically publish .`
+  └─► CLI validates manifest (RxJS validation pipeline)
+      └─► CLI bundles agent directory (tar.gz)
+          └─► CLI uploads bundle to Tigris S3 via POST /api/registry/publish
+              └─► Runtime creates agents + agent_versions records (status: processing)
+                  └─► BullMQ job enqueued for async build
+                      └─► Build worker downloads bundle
+                          └─► BuildProvider builds Docker image
+                              ├── DockerBuildProvider (local dev)
+                              ├── FlyBuildProvider (Fly registry)
+                              └── GitHubActionsBuildProvider (GHCR + Fly)
+                                  └─► On success: imageRef stored, status → live
+                                      On failure: buildError stored, status → failed
+```
+
+### Zeus Chat Flow
+
+```
+User sends message via WebSocket (/zeus namespace)
+  └─► ZeusGateway.handlePrompt()
+      ├── Creates conversation if new (zeus_conversations table)
+      ├── Saves user message (zeus_messages table)
+      ├── Creates empty assistant message for incremental updates
+      └── ZeusService.runPrompt()
+          ├── ensureWorkspace() — scaffold agent template if first use
+          │   └── syncWorkspaceDraft() — upsert draft agent into agents table
+          ├── getMessages() — load conversation history from zeus_messages
+          └── executePrompt() — runs Agent SDK query()
+              ├── System prompt: claude_code preset + Zeus context
+              ├── Tools: Read, Write, Edit, Bash, Glob, Grep, WebFetch, WebSearch
+              ├── MCP: magically tools (ListAgents, WriteMemory, CreateTask, etc.)
+              ├── stream_event → text deltas → onChunk callback → WS 'chunk' event
+              ├── assistant → tool_use blocks → onToolStart → WS 'tool:start'
+              ├── user → tool_result → onToolResult → WS 'tool:result'
+              ├── result → cost/turns → onResult → WS 'result'
+              └── Each step: incremental updateMessage() to zeus_messages table
+```
+
+### Frontend Data Loading
+
+```
+App startup (AuthenticatedApp.tsx):
+  ├── connectSocket() — global Socket.IO to / namespace
+  └── Promise.allSettled([
+        agents.list()  → store.setAgents()     — all live agents
+        feed.list(50)  → store.setFeed()       — recent feed items
+        config.get()   → store.setConfig()     — app configuration
+      ])
+
+Per-page:
+  /gallery       → agents.mine()              — user's agents (draft + live)
+  /zeus/:chatId  → zeus.getConversation(id)   — past messages
+  /agents/:id    → iframes to /api/agents/:id/ui
+```
+
+## Key Architectural Decisions
+
+| Decision | Choice | Why |
+|----------|--------|-----|
+| Monorepo module resolution | Plain tsc -b, CJS, `"default"` exports | Only setup that works across NestJS (CJS), Vite (ESM), and Jest (CJS) |
+| Zeus brain | Claude Agent SDK (`query()`) | Full Claude Code tool suite out of the box + MCP for custom tools |
+| Agent execution | Docker containers + env vars + stdout | Language-agnostic. No SDK required. Works in Python, Go, Rust, anything. |
+| Build pipeline | Async via BullMQ | Builds take minutes. CLI polls status. No blocking. |
+| Real-time | Socket.IO (not raw WebSocket) | Namespaces, rooms, auto-reconnect, fallback to polling |
+| Frontend state | Zustand (not Redux, not Context) | Simple, no boilerplate, works outside React (socket listeners) |
+| CSS | Tailwind v4 + shadcn/ui | Utility-first, dark-only theme, component primitives |
+| Auth | JWT + API keys + query token | JWT for browser, API key for CLI/programmatic, query token for iframes |
+
+## Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `DATABASE_URL` | Yes | PostgreSQL connection string |
+| `JWT_SECRET` | Yes | JWT signing secret |
+| `GOOGLE_CLIENT_ID` | For OAuth | Google OAuth client ID |
+| `GOOGLE_CLIENT_SECRET` | For OAuth | Google OAuth client secret |
+| `AWS_ACCESS_KEY_ID` | For publish | Tigris S3 access key |
+| `AWS_SECRET_ACCESS_KEY` | For publish | Tigris S3 secret key |
+| `AWS_ENDPOINT_URL_S3` | For publish | Tigris S3 endpoint URL |
+| `AWS_REGION` | No | S3 region (default: `auto`) |
+| `REDIS_URL` | For builds | Redis URL for BullMQ (default: `redis://localhost:6379`) |
+| `GITHUB_BUILDER_REPO` | For GH Actions builds | Builder repository (owner/repo) |
+| `GITHUB_BUILDER_TOKEN` | For GH Actions builds | GitHub PAT for dispatching builder workflow |
+| `RUNTIME_URL` | For OAuth | Runtime base URL for OAuth callbacks (default: `http://localhost:4321`) |
+| `WEB_URL` | For CORS/OAuth | Web app URL for CORS origins and OAuth redirects (default: `http://localhost:5173`) |
+| `COMPUTE_PROVIDER` | No | `docker`, `fly`, `daytona`, or `auto` (default: auto) |
+| `BUILD_PROVIDER` | No | `docker`, `fly`, `github-actions`, or `auto` (default: auto) |
+| `DATA_DIR` | No | Workspace root. Default: `/data` (prod), `~/.magically` (dev) |
+| `ANTHROPIC_API_KEY` | For Zeus | Claude API key for Agent SDK (read by SDK from env) |
