@@ -2,8 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { eq, desc } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
-import { mkdir } from 'fs/promises';
+import { mkdir, access, writeFile } from 'fs/promises';
+import { existsSync } from 'fs';
 import { join } from 'path';
+import { scaffoldAgent } from '@magically/shared/scaffold';
 import { InjectDB, type DrizzleDB } from '../db';
 import { zeusConversations, zeusMemory, zeusTasks } from '../db/schema';
 import { AgentsService } from '../agents/agents.service';
@@ -77,7 +79,7 @@ export class ZeusService {
     });
   }
 
-  async buildZeusContext(): Promise<string> {
+  async buildZeusContext(workspaceDir?: string): Promise<string> {
     const allAgents = await this.agents.findAll();
     const agentList = allAgents
       .map((a) => `- ${a.id}: ${a.name} — ${a.description ?? ''}`)
@@ -88,19 +90,52 @@ export class ZeusService {
       .map((m) => `- [${m.category}] ${m.key}: ${m.value}`)
       .join('\n');
 
-    return [
+    const needsOnboarding = workspaceDir && !this.isOnboarded(workspaceDir);
+
+    const parts = [
       ZEUS_SYSTEM_CONTEXT,
       '',
       `Installed agents:\n${agentList || 'None yet.'}`,
       '',
       memoryList ? `User memory:\n${memoryList}` : '',
-    ].filter(Boolean).join('\n');
+    ];
+
+    if (needsOnboarding) {
+      parts.push('');
+      parts.push(`IMPORTANT: This workspace has not been onboarded yet. The agent template has placeholder values (manifest.json has "my-agent" as the ID, "My Agent" as the name, etc.).
+
+Before doing anything else, ask the user what they want to build and fill in these fields:
+- Agent ID (lowercase, hyphens only, e.g., "grocery-list")
+- Agent name (display name, e.g., "Grocery List")
+- Description (what the agent does)
+
+Once you have these, update manifest.json and AGENTS.md with the real values. Then create the file .magically/onboarded to mark onboarding as complete.
+
+Do NOT create functions or triggers yet — just fill in the identity fields. The user may not know exactly what they want to build yet, and that's fine. The identity is enough to start.`);
+    }
+
+    return parts.filter(Boolean).join('\n');
   }
 
   async ensureWorkspace(userId: string): Promise<string> {
     const dir = join(DATA_DIR, 'workspaces', userId);
-    await mkdir(dir, { recursive: true });
+    const manifestPath = join(dir, 'manifest.json');
+
+    if (!existsSync(manifestPath)) {
+      // Fresh workspace — scaffold agent template
+      scaffoldAgent(dir, {
+        agentId: 'my-agent',
+        agentName: 'My Agent',
+        agentDescription: 'A new Magically agent',
+      });
+      this.logger.log(`Scaffolded new agent workspace for user ${userId}`);
+    }
+
     return dir;
+  }
+
+  isOnboarded(workspaceDir: string): boolean {
+    return existsSync(join(workspaceDir, '.magically', 'onboarded'));
   }
 
   // ─── Conversation Management ─────────────────────────────────────────

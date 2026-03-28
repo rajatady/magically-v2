@@ -123,7 +123,7 @@ export async function executePrompt(options: ExecutionOptions) {
   const sdk = await getSdk();
   const workspaceDir = await zeus.ensureWorkspace(userId);
   const mcpServer = await createMagicallyMcpServer({ agents, zeus, userId });
-  const zeusContext = await zeus.buildZeusContext();
+  const zeusContext = await zeus.buildZeusContext(workspaceDir);
 
   // Try to resume from most recent SDK session, fall back to fresh
   let queryResult: AsyncIterable<Record<string, unknown>> | null = null;

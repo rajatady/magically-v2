@@ -55,6 +55,20 @@
 | [ ] | Agent install UI | Browse registry, one-click install, permission grants. |
 | [ ] | Notifications | Agent feed posts trigger notifications. |
 
+## Zeus / Agent SDK
+
+| Done | Task | Description |
+|------|------|-------------|
+| [x] | Agent SDK integration | Zeus uses `@anthropic-ai/claude-agent-sdk` query() with MCP tools. |
+| [x] | MCP tools | ListAgents, GetAgent, ReadMemory, WriteMemory, DeleteMemory, CreateTask, ListTasks. |
+| [x] | WebSocket gateway | Socket.IO /zeus namespace. Streaming events, interrupt, session resume. |
+| [x] | Session persistence | agentSessionId stored, resume on reconnect, conversation history fallback. |
+| [ ] | `zeus_messages` table | Replace JSONB blob with proper messages table. Pagination, proper IDs. |
+| [ ] | Per-user workspace volumes | Fly.io persistent volumes per user. Currently shared `/data/workspaces/{userId}/`. |
+| [ ] | PublishAgent MCP tool | Wire `magically publish .` or registry API as MCP tool for Zeus. |
+| [ ] | Composability via Zeus | Zeus discovers + invokes other agents' functions. Cross-agent orchestration. |
+| [ ] | Chat history UI | List past conversations in Zeus panel. Navigate between them. |
+
 ## Infrastructure
 
 | Done | Task | Description |

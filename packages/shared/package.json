@@ -32,6 +32,10 @@
     "./harness": {
       "types": "./dist/harness.d.ts",
       "default": "./dist/harness.js"
+    },
+    "./scaffold": {
+      "types": "./dist/scaffold.d.ts",
+      "default": "./dist/scaffold.js"
     }
   },
   "scripts": {

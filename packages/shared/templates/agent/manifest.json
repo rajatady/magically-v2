@@ -1,0 +1,17 @@
+{
+  "id": "{{agentId}}",
+  "name": "{{agentName}}",
+  "version": "1.0.0",
+  "description": "{{agentDescription}}",
+  "icon": "🤖",
+  "author": "",
+  "functions": [
+    {
+      "name": "hello",
+      "description": "A greeting function to verify the agent works",
+      "parameters": {}
+    }
+  ],
+  "triggers": [],
+  "secrets": []
+}
