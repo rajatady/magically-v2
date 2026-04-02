@@ -3,6 +3,12 @@
  * Ported from cc-harness/packages/gateway/src/sessions/executor.ts,
  * adapted for Magically's multi-tenant model.
  *
+ * Persistence strategy (inspired by cc-harness):
+ * - Text deltas are accumulated in memory, NOT persisted individually
+ * - Persist on SDK batch boundaries: assistant message events, tool results
+ * - Final persist on completion or error
+ * - Queries continue running on disconnect — client reconnects and fetches
+ *
  * Session strategy:
  * - persistSession: true — SDK saves to ~/.claude/projects/ so resume works
  * - On first prompt: no resume, SDK creates a new session
@@ -11,37 +17,164 @@
  *   prepend conversation history as context in the prompt
  */
 import { Logger } from '@nestjs/common';
-import type { ZeusService } from './zeus.service';
-import type { AgentsService } from '../agents/agents.service';
+import type { FileAttachment } from '@magically/shared/types';
 import { createMagicallyMcpServer } from './tools';
+import { buildPromptWithFiles } from './file-processor';
+import type { AgentWithManifest } from '../agents/agents.service';
 
 const logger = new Logger('ZeusExecutor');
 
-let _sdk: { query: Function; [key: string]: unknown };
-async function getSdk() {
-  if (!_sdk) _sdk = await import('@anthropic-ai/claude-agent-sdk') as typeof _sdk;
-  return _sdk;
+// ─── SDK types ────────────────────────────────────────────────────────────────
+// The Agent SDK doesn't export these types, so we define the shapes we consume.
+
+interface SdkTextDelta {
+  type: 'content_block_delta';
+  delta: { type: 'text_delta'; text: string };
 }
+
+interface SdkToolBlockStart {
+  type: 'content_block_start';
+  content_block: { type: 'tool_use'; id: string; name: string };
+}
+
+type SdkStreamEvent = SdkTextDelta | SdkToolBlockStart;
+
+interface SdkContentBlockText {
+  type: 'text';
+  text: string;
+}
+
+interface SdkContentBlockToolUse {
+  type: 'tool_use';
+  id: string;
+  name: string;
+  input: Record<string, string>;
+}
+
+interface SdkToolResultContent {
+  type: 'text';
+  text: string;
+}
+
+interface SdkToolResultBlock {
+  type: 'tool_result';
+  tool_use_id: string;
+  content: string | SdkToolResultContent[];
+}
+
+interface SdkStreamEventMessage {
+  type: 'stream_event';
+  session_id?: string;
+  event?: SdkStreamEvent;
+}
+
+interface SdkAssistantMessage {
+  type: 'assistant';
+  message: { content: Array<SdkContentBlockText | SdkContentBlockToolUse> };
+  parent_tool_use_id?: string | null;
+}
+
+interface SdkUserMessage {
+  type: 'user';
+  tool_use_result?: boolean;
+  message: { content: SdkToolResultBlock[] };
+}
+
+interface SdkSystemMessage {
+  type: 'system';
+  subtype?: string;
+  status?: string;
+}
+
+interface SdkResultMessage {
+  type: 'result';
+  subtype: string;
+  result?: string;
+  total_cost_usd?: number;
+  num_turns?: number;
+  duration_ms?: number;
+  modelUsage?: Record<string, number>;
+  errors?: string[];
+}
+
+export type SdkMessage = SdkStreamEventMessage | SdkAssistantMessage | SdkUserMessage | SdkSystemMessage | SdkResultMessage;
+
+// ─── Chat config ──────────────────────────────────────────────────────────────
+
+export interface ChatConfig {
+  tools: string[];
+  model: string;
+  maxTurns: number;
+  maxBudgetUsd: number;
+  /** Whether to include Magically MCP tools (ListAgents, WriteMemory, etc.) */
+  includeMcpTools: boolean;
+}
+
+/** Top-level chat: full tool access, all MCP tools, personal hub. */
+export const TOP_LEVEL_CHAT_CONFIG: ChatConfig = {
+  tools: ['Read', 'Write', 'Edit', 'Bash', 'Glob', 'Grep', 'WebFetch', 'WebSearch'],
+  model: 'claude-sonnet-4-6',
+  maxTurns: 30,
+  maxBudgetUsd: 1.00,
+  includeMcpTools: true,
+};
+
+/** Agent-scoped chat: restricted tools, no filesystem writes, no MCP. */
+export const AGENT_SCOPED_CHAT_CONFIG: ChatConfig = {
+  tools: ['Read', 'Glob', 'Grep', 'WebFetch', 'WebSearch'],
+  model: 'claude-sonnet-4-6',
+  maxTurns: 10,
+  maxBudgetUsd: 0.25,
+  includeMcpTools: false,
+};
+
+// ─── Public types ─────────────────────────────────────────────────────────────
 
 export interface ContentBlock {
   type: 'text' | 'tool_use';
   text?: string;
   id?: string;
   tool?: string;
-  input?: unknown;
+  input?: Record<string, string>;
   result?: string;
   status?: 'running' | 'done';
   parentToolUseId?: string | null;
 }
 
+export interface ExecutionResult {
+  cost: number;
+  turns: number;
+  durationMs: number;
+  usage: Record<string, number> | null;
+}
+
 export interface ExecutionCallbacks {
   onChunk?: (content: string) => void;
-  onToolStart?: (toolUseId: string, tool: string, input: unknown) => void;
+  onToolStart?: (toolUseId: string, tool: string, input: Record<string, string>) => void;
   onToolResult?: (toolUseId: string, result: string) => void;
   onStatus?: (status: string) => void;
-  onResult?: (result: { cost: number; turns: number; durationMs: number; usage: unknown }) => void;
+  onResult?: (result: ExecutionResult) => void;
   onError?: (message: string) => void;
   onDone?: () => void;
+}
+
+/** Interface the executor + tools need from ZeusService */
+export interface ExecutorZeusDelegate {
+  ensureWorkspace(userId: string): Promise<string>;
+  buildZeusContext(workspaceDir?: string): Promise<string>;
+  updateMessage(messageId: string, content: string, blocks?: ContentBlock[], sdkUuid?: string): Promise<void>;
+  updateConversationAgentSessionId(conversationId: string, agentSessionId: string): Promise<void>;
+  getMemory(): Promise<Array<{ key: string; value: string; category: string; source: string }>>;
+  setMemory(key: string, value: string, category: string, source: string): Promise<void>;
+  deleteMemory(key: string): Promise<void>;
+  createTask(params: { requesterId: string; goal: string; priority?: 'low' | 'normal' | 'high' }): Promise<string>;
+  getTasks(): Promise<Array<{ id: string; status: string; goal: string; priority: string; requesterId: string }>>;
+}
+
+/** Interface the executor + tools need from AgentsService */
+export interface ExecutorAgentsDelegate {
+  findAll(): Promise<AgentWithManifest[]>;
+  findOne(id: string): Promise<AgentWithManifest>;
 }
 
 export interface ExecutionOptions {
@@ -56,17 +189,36 @@ export interface ExecutionOptions {
   conversationHistory?: Array<{ role: string; content: string }>;
   abortController?: AbortController;
   callbacks: ExecutionCallbacks;
-  zeus: ZeusService;
-  agents: AgentsService;
+  zeus: ExecutorZeusDelegate;
+  agents: ExecutorAgentsDelegate;
+  /** Override SDK config (tools, model, budget). Defaults to TOP_LEVEL_CHAT_CONFIG. */
+  chatConfig?: ChatConfig;
+  /** File attachments to include in the prompt */
+  files?: FileAttachment[];
 }
 
-function buildQueryOptions(
-  workspaceDir: string,
-  zeusContext: string,
-  mcpServer: unknown,
-  abortController?: AbortController,
-  resumeSessionId?: string,
-) {
+// ─── SDK loader ───────────────────────────────────────────────────────────────
+// Dynamic import avoids CJS/ESM mismatch at compile time.
+// We inline the import and let TypeScript infer the SDK's own types.
+
+async function loadSdk() {
+  return import('@anthropic-ai/claude-agent-sdk');
+}
+
+// ─── Query builder ────────────────────────────────────────────────────────────
+
+interface BuildQueryArgs {
+  workspaceDir: string;
+  zeusContext: string;
+  mcpServer: Awaited<ReturnType<typeof createMagicallyMcpServer>>;
+  config: ChatConfig;
+  abortController?: AbortController;
+  resumeSessionId?: string;
+}
+
+function buildQueryOptions(args: BuildQueryArgs) {
+  const { workspaceDir, zeusContext, mcpServer, config, abortController, resumeSessionId } = args;
+
   return {
     cwd: workspaceDir,
     systemPrompt: {
@@ -74,18 +226,18 @@ function buildQueryOptions(
       preset: 'claude_code' as const,
       append: zeusContext,
     },
-    tools: ['Read', 'Write', 'Edit', 'Bash', 'Glob', 'Grep', 'WebFetch', 'WebSearch'],
-    allowedTools: ['Read', 'Write', 'Edit', 'Bash', 'Glob', 'Grep', 'WebFetch', 'WebSearch'],
+    tools: config.tools,
+    allowedTools: config.tools,
     permissionMode: 'bypassPermissions' as const,
     allowDangerouslySkipPermissions: true,
-    mcpServers: { magically: mcpServer },
+    ...(config.includeMcpTools ? { mcpServers: { magically: mcpServer } } : {}),
     includePartialMessages: true,
     enableFileCheckpointing: true,
     persistSession: true,
-    maxTurns: 30,
-    maxBudgetUsd: 1.00,
-    model: 'claude-sonnet-4-6',
-    settingSources: [] as string[],
+    maxTurns: config.maxTurns,
+    maxBudgetUsd: config.maxBudgetUsd,
+    model: config.model,
+    settingSources: [] as Array<'user' | 'project' | 'local'>,
     ...(resumeSessionId ? { resume: resumeSessionId } : {}),
     ...(abortController ? { abortController } : {}),
   };
@@ -116,29 +268,143 @@ function buildPromptWithHistory(
   ].join('\n');
 }
 
+// ─── Message processors ───────────────────────────────────────────────────────
+
+function processStreamEvent(
+  event: SdkStreamEvent,
+  fullResponse: string,
+  orderedBlocks: ContentBlock[],
+  callbacks: ExecutionCallbacks,
+): string {
+  if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+    fullResponse += event.delta.text;
+    const last = orderedBlocks[orderedBlocks.length - 1];
+    if (last && last.type === 'text') {
+      last.text = (last.text ?? '') + event.delta.text;
+    } else {
+      orderedBlocks.push({ type: 'text', text: event.delta.text });
+    }
+    callbacks.onChunk?.(fullResponse);
+  }
+
+  if (event.type === 'content_block_start' && event.content_block.type === 'tool_use') {
+    const block = event.content_block;
+    orderedBlocks.push({ type: 'tool_use', id: block.id, tool: block.name, input: {}, status: 'running' });
+    callbacks.onToolStart?.(block.id, block.name, {});
+  }
+
+  return fullResponse;
+}
+
+function processAssistantMessage(
+  msg: SdkAssistantMessage,
+  orderedBlocks: ContentBlock[],
+  callbacks: ExecutionCallbacks,
+): void {
+  const contentBlocks = msg.message.content;
+  const parentId = msg.parent_tool_use_id ?? null;
+
+  for (const block of contentBlocks) {
+    if (block.type === 'tool_use') {
+      const existing = orderedBlocks.find((b) => b.type === 'tool_use' && b.id === block.id);
+      if (existing && existing.type === 'tool_use') {
+        existing.input = block.input;
+      } else {
+        orderedBlocks.push({ type: 'tool_use', id: block.id, tool: block.name, input: block.input, status: 'running', parentToolUseId: parentId });
+        callbacks.onToolStart?.(block.id, block.name, block.input);
+      }
+    }
+  }
+}
+
+function processToolResult(
+  msg: SdkUserMessage,
+  orderedBlocks: ContentBlock[],
+  callbacks: ExecutionCallbacks,
+): void {
+  for (const block of msg.message.content) {
+    if (block.type === 'tool_result' && block.tool_use_id) {
+      const resultText = typeof block.content === 'string'
+        ? block.content
+        : block.content.filter((c) => c.type === 'text').map((c) => c.text).join('\n');
+      const ob = orderedBlocks.find((b) => b.type === 'tool_use' && b.id === block.tool_use_id);
+      if (ob && ob.type === 'tool_use') {
+        ob.result = resultText.slice(0, 2000);
+        ob.status = 'done';
+      }
+      callbacks.onToolResult?.(block.tool_use_id, resultText.slice(0, 2000));
+    }
+  }
+}
+
+// ─── Persistence helper ───────────────────────────────────────────────────────
+
+function persistMessage(
+  zeus: ExecutorZeusDelegate,
+  assistantMsgId: string,
+  content: string,
+  blocks: ContentBlock[],
+  label: string,
+): void {
+  zeus.updateMessage(assistantMsgId, content, blocks.length > 0 ? blocks : undefined).catch((err: Error) => {
+    logger.warn(`Persistence failed (${label}): ${err.message}`);
+  });
+}
+
+async function persistMessageAwait(
+  zeus: ExecutorZeusDelegate,
+  assistantMsgId: string,
+  content: string,
+  blocks: ContentBlock[],
+  label: string,
+): Promise<void> {
+  try {
+    await zeus.updateMessage(assistantMsgId, content, blocks.length > 0 ? blocks : undefined);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    logger.error(`Persistence failed (${label}): ${message}`);
+  }
+}
+
+// ─── Main executor ────────────────────────────────────────────────────────────
+
 export async function executePrompt(options: ExecutionOptions) {
   const {
     sessionId, prompt, userId, assistantMsgId, agentSessionIds, conversationHistory,
-    abortController, callbacks, zeus, agents,
+    abortController, callbacks, zeus, agents, chatConfig, files,
   } = options;
 
-  const sdk = await getSdk();
+  const config = chatConfig ?? TOP_LEVEL_CHAT_CONFIG;
+
+  const sdk = await loadSdk();
   const workspaceDir = await zeus.ensureWorkspace(userId);
   const mcpServer = await createMagicallyMcpServer({ agents, zeus, userId });
   const zeusContext = await zeus.buildZeusContext(workspaceDir);
 
+  const queryArgs = { workspaceDir, zeusContext, mcpServer, config };
+
   // Try to resume from most recent SDK session, fall back to fresh
-  let queryResult: AsyncIterable<Record<string, unknown>> | null = null;
+  let queryResult: AsyncIterable<SdkMessage> | null = null;
   let resumeSucceeded = false;
+
+  // Always include conversation history so the model has context.
+  // SDK resume is a bonus for internal SDK state, but our DB messages are the source of truth.
+  const textPrompt = buildPromptWithHistory(prompt, conversationHistory);
+
+  // If files attached, build content blocks with base64 data.
+  // This must happen BEFORE the resume/fresh split so both paths include files.
+  const effectivePrompt = files && files.length > 0
+    ? await buildPromptWithFiles(textPrompt, files)
+    : textPrompt;
 
   if (agentSessionIds && agentSessionIds.length > 0) {
     for (const sid of agentSessionIds) {
       try {
         logger.log(`Attempting resume from SDK session ${sid}`);
         queryResult = sdk.query({
-          prompt,
-          options: buildQueryOptions(workspaceDir, zeusContext, mcpServer, abortController, sid),
-        }) as AsyncIterable<Record<string, unknown>>;
+          prompt: effectivePrompt,
+          options: buildQueryOptions({ ...queryArgs, abortController, resumeSessionId: sid }),
+        }) as AsyncIterable<SdkMessage>;
         resumeSucceeded = true;
         break;
       } catch (err: unknown) {
@@ -150,14 +416,10 @@ export async function executePrompt(options: ExecutionOptions) {
 
   // If resume didn't work (or no sessions to resume), start fresh
   if (!queryResult) {
-    const effectivePrompt = resumeSucceeded
-      ? prompt
-      : buildPromptWithHistory(prompt, conversationHistory);
-
     queryResult = sdk.query({
       prompt: effectivePrompt,
-      options: buildQueryOptions(workspaceDir, zeusContext, mcpServer, abortController),
-    }) as AsyncIterable<Record<string, unknown>>;
+      options: buildQueryOptions({ ...queryArgs, abortController }),
+    }) as AsyncIterable<SdkMessage>;
   }
 
   let fullResponse = '';
@@ -168,112 +430,58 @@ export async function executePrompt(options: ExecutionOptions) {
     for await (const message of queryResult) {
       if (abortController?.signal.aborted) break;
 
-      const msg = message as Record<string, unknown>;
-
       // Persist SDK session ID for future resume
-      if (!savedAgentSessionId && msg.session_id && typeof msg.session_id === 'string') {
-        await zeus.updateConversationAgentSessionId(sessionId, msg.session_id);
+      if (!savedAgentSessionId && message.type === 'stream_event' && message.session_id) {
+        await zeus.updateConversationAgentSessionId(sessionId, message.session_id);
         savedAgentSessionId = true;
       }
 
-      switch (msg.type) {
+      switch (message.type) {
         case 'stream_event': {
-          const event = msg.event as { type: string; delta?: { type: string; text: string }; content_block?: { type: string; id: string; name: string } } | undefined;
-          if (!event) break;
-
-          if (event.type === 'content_block_delta' && event.delta?.type === 'text_delta') {
-            fullResponse += event.delta.text;
-            const last = orderedBlocks[orderedBlocks.length - 1];
-            if (last && last.type === 'text') {
-              last.text = (last.text ?? '') + event.delta.text;
-            } else {
-              orderedBlocks.push({ type: 'text', text: event.delta.text });
-            }
-            callbacks.onChunk?.(fullResponse);
-            // Incremental persist (debounced by nature of streaming)
-            zeus.updateMessage(assistantMsgId, fullResponse, orderedBlocks).catch(() => {});
-          }
-
-          if (event.type === 'content_block_start' && event.content_block?.type === 'tool_use') {
-            const block = event.content_block;
-            orderedBlocks.push({ type: 'tool_use', id: block.id, tool: block.name, input: {}, status: 'running' });
-            callbacks.onToolStart?.(block.id, block.name, {});
-          }
+          if (!message.event) break;
+          // Text deltas are NOT persisted here — accumulated in memory.
+          // Persistence happens on assistant message events (SDK batch boundaries),
+          // tool result events, and final completion.
+          fullResponse = processStreamEvent(message.event, fullResponse, orderedBlocks, callbacks);
           break;
         }
 
         case 'assistant': {
-          // When includePartialMessages is true, text arrives via stream_event
-          // deltas first, then the complete assistant message follows.
-          // Only process tool_use blocks here — text was already handled above.
-          const contentBlocks = (msg.message as { content?: Array<{ type: string; text?: string; id?: string; name?: string; input?: unknown }> })?.content ?? [];
-          const parentId = (msg.parent_tool_use_id as string | null) ?? null;
-
-          for (const block of contentBlocks) {
-            if (block.type === 'tool_use') {
-              // Deduplicate — may already exist from stream_event content_block_start
-              const existing = orderedBlocks.find((b) => b.type === 'tool_use' && b.id === block.id);
-              if (existing && existing.type === 'tool_use') {
-                existing.input = block.input; // update with full parsed input
-              } else {
-                orderedBlocks.push({ type: 'tool_use', id: block.id, tool: block.name, input: block.input, status: 'running', parentToolUseId: parentId });
-                callbacks.onToolStart?.(block.id!, block.name!, block.input);
-              }
-            }
-          }
+          processAssistantMessage(message, orderedBlocks, callbacks);
+          // Persist at SDK batch boundary — this is a natural checkpoint
+          persistMessage(zeus, assistantMsgId, fullResponse, orderedBlocks, 'assistant event');
           break;
         }
 
         case 'user': {
-          if (msg.tool_use_result !== undefined) {
-            const msgContent = (msg.message as { content?: Array<{ type: string; tool_use_id?: string; content?: unknown }> })?.content;
-            if (Array.isArray(msgContent)) {
-              for (const block of msgContent) {
-                if (block.type === 'tool_result' && block.tool_use_id) {
-                  const resultText = typeof block.content === 'string'
-                    ? block.content
-                    : Array.isArray(block.content)
-                      ? (block.content as Array<{ type: string; text?: string }>).filter((c) => c.type === 'text').map((c) => c.text).join('\n')
-                      : JSON.stringify(block.content);
-                  const ob = orderedBlocks.find((b) => b.type === 'tool_use' && b.id === block.tool_use_id);
-                  if (ob && ob.type === 'tool_use') {
-                    ob.result = resultText.slice(0, 2000);
-                    ob.status = 'done';
-                  }
-                  callbacks.onToolResult?.(block.tool_use_id, resultText.slice(0, 2000));
-                }
-              }
-            }
-            // Persist after tool results
-            zeus.updateMessage(assistantMsgId, fullResponse, orderedBlocks).catch(() => {});
+          if (message.tool_use_result) {
+            processToolResult(message, orderedBlocks, callbacks);
+            // Persist after tool results — each tool completion is a checkpoint
+            persistMessage(zeus, assistantMsgId, fullResponse, orderedBlocks, 'tool result');
           }
           break;
         }
 
         case 'system': {
-          const subtype = msg.subtype as string | undefined;
-          const status = msg.status as string | undefined;
-          if (subtype === 'status' && status) {
-            callbacks.onStatus?.(status);
+          if (message.subtype === 'status' && message.status) {
+            callbacks.onStatus?.(message.status);
           }
           break;
         }
 
         case 'result': {
-          const subtype = msg.subtype as string | undefined;
-          if (subtype === 'success' && msg.result && !fullResponse) {
-            fullResponse = String(msg.result);
+          if (message.subtype === 'success' && message.result && !fullResponse) {
+            fullResponse = message.result;
             callbacks.onChunk?.(fullResponse);
           }
           callbacks.onResult?.({
-            cost: (msg.total_cost_usd as number) ?? 0,
-            turns: (msg.num_turns as number) ?? 0,
-            durationMs: (msg.duration_ms as number) ?? 0,
-            usage: msg.modelUsage ?? null,
+            cost: message.total_cost_usd ?? 0,
+            turns: message.num_turns ?? 0,
+            durationMs: message.duration_ms ?? 0,
+            usage: message.modelUsage ?? null,
           });
-          if (subtype !== 'success') {
-            const errors = msg.errors as string[] | undefined;
-            callbacks.onError?.(errors?.join('; ') ?? subtype ?? 'Unknown error');
+          if (message.subtype !== 'success') {
+            callbacks.onError?.(message.errors?.join('; ') ?? message.subtype ?? 'Unknown error');
           }
           break;
         }
@@ -281,16 +489,16 @@ export async function executePrompt(options: ExecutionOptions) {
     }
 
     // Final persist with complete content
-    await zeus.updateMessage(assistantMsgId, fullResponse, orderedBlocks.length > 0 ? orderedBlocks : undefined).catch(() => {});
+    await persistMessageAwait(zeus, assistantMsgId, fullResponse, orderedBlocks, 'final');
     callbacks.onDone?.();
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
-    logger.error(`Execution error: ${message}`);
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    logger.error(`Execution error: ${errorMessage}`);
     // Persist partial response on error
     if (fullResponse || orderedBlocks.length > 0) {
-      await zeus.updateMessage(assistantMsgId, fullResponse || '[Error during execution]', orderedBlocks.length > 0 ? orderedBlocks : undefined).catch(() => {});
+      await persistMessageAwait(zeus, assistantMsgId, fullResponse || '[Error during execution]', orderedBlocks, 'error recovery');
     }
-    callbacks.onError?.(message);
+    callbacks.onError?.(errorMessage);
   }
 
   return { fullResponse, blocks: orderedBlocks };

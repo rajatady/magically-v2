@@ -201,9 +201,10 @@ Controller: `packages/runtime/src/zeus/zeus.controller.ts`
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | POST | `/api/zeus/chat` | Required | SSE streaming chat (fallback for WebSocket) |
-| POST | `/api/zeus/conversations` | Required | Create conversation |
-| GET | `/api/zeus/conversations` | Required | List conversations (no messages) |
+| POST | `/api/zeus/conversations` | Required | Create conversation (stores userId) |
+| GET | `/api/zeus/conversations` | Required | List conversations (filtered by userId, supports `?limit=&offset=&search=`) |
 | GET | `/api/zeus/conversations/:id` | Required | Get conversation with messages |
+| PATCH | `/api/zeus/conversations/:id` | Required | Update conversation (title) |
 | DELETE | `/api/zeus/conversations/:id` | Required | Delete conversation |
 | GET | `/api/zeus/memory` | Required | List memory entries |
 | POST | `/api/zeus/memory` | Required | Create/update memory |
@@ -241,6 +242,49 @@ Returns conversation metadata + all messages from `zeus_messages` table ordered 
 ```
 
 Note: `blocks` is a JSON *string*, not a parsed object. Frontend must `JSON.parse()` it.
+
+### PATCH /api/zeus/conversations/:id
+
+**Body**: `{ title?: string | null }`
+
+**Response** `200`: Updated conversation object.
+
+### GET /api/zeus/conversations (with params)
+
+**Query params**: `?limit=50&offset=0&search=debug`
+
+All conversations are filtered by the authenticated user's ID. Search matches against title (case-insensitive).
+
+---
+
+## Uploads (`/api/uploads`)
+
+Controller: `packages/runtime/src/uploads/uploads.controller.ts`
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/api/uploads` | Required | Upload file to Tigris (`magically-v2-uploads` bucket) |
+
+### POST /api/uploads
+
+Upload a file via raw body stream. Max 10MB.
+
+**Headers**:
+- `Content-Type`: MIME type of the file
+- `X-File-Name`: Original filename
+- `Authorization`: Bearer token
+
+**Response** `200`:
+```json
+{
+  "url": "https://magically-v2-uploads.fly.storage.tigris.dev/1234-filename.jpg",
+  "pathname": "1234-filename.jpg",
+  "contentType": "image/jpeg",
+  "size": 102400
+}
+```
+
+Files are uploaded with `public-read` ACL. URLs use virtual-hosted style (`{bucket}.fly.storage.tigris.dev`).
 
 ### POST /api/zeus/memory
 

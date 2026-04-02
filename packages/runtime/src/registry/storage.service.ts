@@ -38,6 +38,37 @@ export class StorageService {
     return url;
   }
 
+  async uploadFile(fileName: string, data: Buffer, contentType: string): Promise<string> {
+    const { S3Client, PutObjectCommand } = await import('@aws-sdk/client-s3');
+
+    const client = new S3Client({
+      region: this.config.get('AWS_REGION') ?? 'auto',
+      endpoint: this.config.get('AWS_ENDPOINT_URL_S3'),
+      credentials: {
+        accessKeyId: this.config.getOrThrow('UPLOADS_AWS_ACCESS_KEY_ID'),
+        secretAccessKey: this.config.getOrThrow('UPLOADS_AWS_SECRET_ACCESS_KEY'),
+      },
+    });
+
+    const bucket = this.config.getOrThrow('UPLOADS_BUCKET_NAME');
+    const key = fileName;
+
+    await client.send(new PutObjectCommand({
+      Bucket: bucket,
+      Key: key,
+      Body: data,
+      ContentType: contentType,
+      ACL: 'public-read',
+    }));
+
+    // Tigris requires virtual-hosted style URLs for public access (buckets created after Feb 2025)
+    const endpoint = this.config.get('AWS_ENDPOINT_URL_S3') ?? 'https://fly.storage.tigris.dev';
+    const host = endpoint.replace('https://', '');
+    const url = `https://${bucket}.${host}/${key}`;
+    this.logger.log(`Uploaded file: ${url}`);
+    return url;
+  }
+
   async downloadBundle(bundleUrl: string): Promise<Buffer> {
     const { S3Client, GetObjectCommand } = await import('@aws-sdk/client-s3');
 

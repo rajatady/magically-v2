@@ -1,6 +1,6 @@
 # Frontend Architecture
 
-Last synced: 2026-03-28 | Commit: 97ab426 (development branch)
+Last synced: 2026-04-03 | Commit: ea00cd7
 
 ## Tech Stack
 
@@ -29,6 +29,9 @@ Last synced: 2026-03-28 | Commit: 97ab426 (development branch)
 | `/agents/:agentId` | `AgentView` | Yes | Running agent view (iframe or placeholder) |
 | `/zeus` | `HomeView` (Zeus panel auto-opens) | Yes | Opens Zeus panel over home |
 | `/zeus/:chatId` | `HomeView` (Zeus panel auto-opens) | Yes | Opens Zeus panel with loaded conversation |
+| `/chats` | `ChatsPage` → `ChatList` | Yes | Conversation history list |
+| `/chat/new` | `NewChatPage` | Yes | Creates conversation, redirects to `/chat/:id` |
+| `/chat/:id` | `ChatPage` → `ChatList` + `ChatView` | Yes | Full-page chat with sidebar |
 | `/settings` | `PlaceholderView("Settings")` | Yes | Placeholder |
 | `/build` | `PlaceholderView("Build")` | Yes | Placeholder |
 

@@ -2,9 +2,11 @@ import {
   Controller,
   Post,
   Get,
+  Patch,
   Delete,
   Body,
   Param,
+  Query,
   Req,
   Res,
   HttpCode,
@@ -81,13 +83,26 @@ export class ZeusController {
   // ─── Conversations ──────────────────────────────────────────────────
 
   @Post('conversations')
-  async createConversation(@Body() body: { mode?: 'chat' | 'build' | 'edit' | 'task' }) {
-    return this.zeus.createConversation(body.mode ?? 'chat');
+  async createConversation(
+    @Body() body: { mode?: 'chat' | 'build' | 'edit' | 'task' },
+    @Req() req: Request,
+  ) {
+    return this.zeus.createConversation(body.mode ?? 'chat', undefined, req.user!.sub);
   }
 
   @Get('conversations')
-  async listConversations() {
-    return this.zeus.listConversations();
+  async listConversations(
+    @Req() req: Request,
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
+    @Query('search') search?: string,
+  ) {
+    return this.zeus.listConversations({
+      userId: req.user!.sub,
+      limit: limit ? parseInt(limit, 10) : undefined,
+      offset: offset ? parseInt(offset, 10) : undefined,
+      search: search || undefined,
+    });
   }
 
   @Get('conversations/:id')
@@ -95,6 +110,17 @@ export class ZeusController {
     const conv = await this.zeus.getConversationWithMessages(id);
     if (!conv) throw new NotFoundException('Conversation not found');
     return conv;
+  }
+
+  @Patch('conversations/:id')
+  async updateConversation(
+    @Param('id') id: string,
+    @Body() body: { title?: string | null },
+  ) {
+    if (body.title !== undefined) {
+      await this.zeus.updateConversationTitle(id, body.title);
+    }
+    return this.zeus.getConversation(id);
   }
 
   @Delete('conversations/:id')

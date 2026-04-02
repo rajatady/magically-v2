@@ -12,6 +12,7 @@ import { ZeusModule } from './zeus/zeus.module';
 import { AuthModule } from './auth';
 import { RegistryModule } from './registry/registry.module';
 import { BuildModule } from './build/build.module';
+import { UploadsModule } from './uploads/uploads.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { BuildModule } from './build/build.module';
     ZeusModule,
     RegistryModule,
     BuildModule,
+    UploadsModule,
   ],
 })
 export class AppModule {}

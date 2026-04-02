@@ -39,11 +39,14 @@
 | [x] | Onboarding flow | `/onboard` skill fills manifest identity. System prompt detects `.magically/onboarded` marker. |
 | [x] | Block tree rendering | Text + tool call blocks in UI. Collapsible tool display with icons. |
 | [x] | URL routing | `/zeus` and `/zeus/:chatId` — panel syncs with URL, refresh preserves session. |
-| [ ] | `zeus_messages` table | Replace JSONB blob with proper messages table. Pagination, proper IDs. |
+| [x] | `zeus_messages` table | Replaced JSONB blob with proper messages table. Incremental persistence at SDK batch boundaries. `files` column added (migration 0003). |
 | [ ] | Per-user workspace volumes | Fly.io persistent volumes per user. Currently shared `~/.magically/workspaces/{userId}/`. |
 | [ ] | PublishAgent MCP tool | Wire `magically publish .` or registry API as MCP tool for Zeus. |
 | [ ] | Composability via Zeus | Zeus discovers + invokes other agents' functions. Cross-agent orchestration. |
-| [ ] | Chat history sidebar | List past conversations in Zeus panel. Navigate between them. |
+| [x] | Chat history sidebar | Full-page `/chats` list + `/chat/:id` pages. Shared `ChatView` used by both Zeus panel and chat page. |
+| [x] | File attachments | Drag/drop/paste/picker, XHR upload with progress to Tigris (`magically-v2-uploads`), base64→SDK content blocks. |
+| [x] | ChatConfig presets | `TOP_LEVEL_CHAT_CONFIG` (full tools, MCP) vs `AGENT_SCOPED_CHAT_CONFIG` (restricted). |
+| [x] | Conversation management | PATCH title, userId filter, pagination/search on list, multi-tenant. |
 
 ## UI
 

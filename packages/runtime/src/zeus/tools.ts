@@ -3,42 +3,23 @@
  * Same pattern as cc-harness cron.tools.ts — lazy-load SDK to avoid
  * top-level import issues.
  */
-import type { AgentsService } from '../agents/agents.service';
-import type { ZeusService } from './zeus.service';
-
-// Lazy-loaded SDK functions — dynamic import() at runtime avoids CJS/ESM mismatch at compile time
-let _createSdkMcpServer: Function;
-let _tool: Function;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let _z: any;
-
-async function loadSdk() {
-  if (!_createSdkMcpServer) {
-    const sdk = await import('@anthropic-ai/claude-agent-sdk');
-    _createSdkMcpServer = sdk.createSdkMcpServer;
-    _tool = sdk.tool;
-    const zod = await import('zod');
-    _z = zod.z;
-  }
-}
+import type { ExecutorAgentsDelegate, ExecutorZeusDelegate } from './executor';
 
 export interface MagicallyToolsDeps {
-  agents: AgentsService;
-  zeus: ZeusService;
+  agents: ExecutorAgentsDelegate;
+  zeus: ExecutorZeusDelegate;
   userId: string;
 }
 
 export async function createMagicallyMcpServer(deps: MagicallyToolsDeps) {
-  await loadSdk();
-  const z = _z;
+  const sdk = await import('@anthropic-ai/claude-agent-sdk');
+  const { z } = await import('zod');
 
-  return _createSdkMcpServer({
+  return sdk.createSdkMcpServer({
     name: 'magically',
     version: '1.0.0',
     tools: [
-      // ─── Agent Operations ─────────────────────────────────────────
-
-      _tool(
+      sdk.tool(
         'ListAgents',
         'List all installed agents with their IDs, names, descriptions, and available functions.',
         {},
@@ -47,18 +28,19 @@ export async function createMagicallyMcpServer(deps: MagicallyToolsDeps) {
           if (agents.length === 0) {
             return { content: [{ type: 'text' as const, text: 'No agents installed yet.' }] };
           }
-          const lines = agents.map((a) =>
-            `- ${a.id}: ${a.name} (v${a.latestVersion}) — ${a.description ?? 'No description'}\n  Functions: ${a.manifest && typeof a.manifest === 'object' && 'functions' in a.manifest ? (a.manifest as { functions?: Array<{ name: string }> }).functions?.map((f) => f.name).join(', ') || 'none' : 'none'}`,
-          );
+          const lines = agents.map((a) => {
+            const desc = a.description ?? 'No description';
+            return `- ${a.id}: ${a.name} (v${a.latestVersion}) — ${desc}`;
+          });
           return { content: [{ type: 'text' as const, text: lines.join('\n') }] };
         },
       ),
 
-      _tool(
+      sdk.tool(
         'GetAgent',
         'Get detailed information about a specific agent including its manifest.',
         { id: z.string().describe('The agent ID') },
-        async (args: { id: string }) => {
+        async (args) => {
           try {
             const agent = await deps.agents.findOne(args.id);
             return {
@@ -80,9 +62,7 @@ export async function createMagicallyMcpServer(deps: MagicallyToolsDeps) {
         },
       ),
 
-      // ─── Memory Operations ────────────────────────────────────────
-
-      _tool(
+      sdk.tool(
         'ReadMemory',
         'Read all stored memory entries. Memory contains user preferences, facts, and context that persists across conversations.',
         {},
@@ -98,7 +78,7 @@ export async function createMagicallyMcpServer(deps: MagicallyToolsDeps) {
         },
       ),
 
-      _tool(
+      sdk.tool(
         'WriteMemory',
         'Store a memory entry. Use this to remember user preferences, facts, or context for future conversations. Updates existing entries with the same key.',
         {
@@ -106,25 +86,23 @@ export async function createMagicallyMcpServer(deps: MagicallyToolsDeps) {
           value: z.string().describe('The value to store'),
           category: z.string().describe('Category: "user", "preference", "context", or "fact"'),
         },
-        async (args: { key: string; value: string; category: string }) => {
+        async (args) => {
           await deps.zeus.setMemory(args.key, args.value, args.category, 'zeus');
           return { content: [{ type: 'text' as const, text: `Stored memory: ${args.key} = ${args.value}` }] };
         },
       ),
 
-      _tool(
+      sdk.tool(
         'DeleteMemory',
         'Delete a memory entry by key.',
         { key: z.string().describe('The key to delete') },
-        async (args: { key: string }) => {
+        async (args) => {
           await deps.zeus.deleteMemory(args.key);
           return { content: [{ type: 'text' as const, text: `Deleted memory: ${args.key}` }] };
         },
       ),
 
-      // ─── Task Operations ──────────────────────────────────────────
-
-      _tool(
+      sdk.tool(
         'CreateTask',
         'Create a task for tracking work. Tasks can be assigned to agents or handled by Zeus.',
         {
@@ -132,17 +110,21 @@ export async function createMagicallyMcpServer(deps: MagicallyToolsDeps) {
           priority: z.string().optional().describe('"low", "normal", or "high"'),
           requesterId: z.string().optional().describe('Agent ID requesting the task, or "user"'),
         },
-        async (args: { goal: string; priority?: string; requesterId?: string }) => {
+        async (args) => {
+          const validPriorities = ['low', 'normal', 'high'] as const;
+          const priority = validPriorities.includes(args.priority as typeof validPriorities[number])
+            ? args.priority as typeof validPriorities[number]
+            : 'normal';
           const id = await deps.zeus.createTask({
             requesterId: args.requesterId ?? deps.userId,
             goal: args.goal,
-            priority: (args.priority as 'low' | 'normal' | 'high') ?? 'normal',
+            priority,
           });
           return { content: [{ type: 'text' as const, text: `Created task ${id}: ${args.goal}` }] };
         },
       ),
 
-      _tool(
+      sdk.tool(
         'ListTasks',
         'List all tasks sorted by most recent first.',
         {},

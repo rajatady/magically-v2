@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { eq, desc, gt, and } from 'drizzle-orm';
+import { eq, desc, gt, and, ilike } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { mkdir, access, writeFile } from 'fs/promises';
 import { existsSync } from 'fs';
@@ -10,7 +10,8 @@ import { InjectDB, type DrizzleDB } from '../db';
 import { zeusConversations, zeusMessages, zeusMemory, zeusTasks, agents, agentVersions } from '../db/schema';
 import { AgentsService } from '../agents/agents.service';
 import { EventsGateway } from '../events/events.gateway';
-import { executePrompt, type ExecutionCallbacks } from './executor';
+import type { FileAttachment } from '@magically/shared/types';
+import { executePrompt, type ExecutionCallbacks, type ContentBlock } from './executor';
 
 import { tmpdir, homedir } from 'os';
 
@@ -36,6 +37,13 @@ Key behaviors:
 
 You are NOT a chatbot. You are an operating system kernel that happens to speak.`;
 
+export interface ListConversationsOptions {
+  userId?: string;
+  limit?: number;
+  offset?: number;
+  search?: string;
+}
+
 @Injectable()
 export class ZeusService {
   private readonly logger = new Logger(ZeusService.name);
@@ -56,6 +64,7 @@ export class ZeusService {
     callbacks: ExecutionCallbacks,
     abortController?: AbortController,
     assistantMsgId?: string,
+    files?: FileAttachment[],
   ) {
     // Get conversation for resume + history context
     const conversation = await this.getConversation(sessionId);
@@ -83,6 +92,7 @@ export class ZeusService {
       callbacks,
       zeus: this,
       agents: this.agents,
+      files,
     });
   }
 
@@ -146,7 +156,13 @@ Do NOT create functions or triggers yet — just fill in the identity fields. Th
   private async syncWorkspaceDraft(userId: string, _dir: string, manifestPath: string): Promise<void> {
     try {
       const { readFileSync } = await import('fs');
-      const manifest = JSON.parse(readFileSync(manifestPath, 'utf-8')) as Record<string, unknown>;
+      interface ManifestJson {
+        name?: string;
+        description?: string;
+        icon?: string;
+        version?: string;
+      }
+      const manifest: ManifestJson = JSON.parse(readFileSync(manifestPath, 'utf-8'));
       const agentId = `workspace-${userId}`;
       const now = new Date();
 
@@ -154,11 +170,11 @@ Do NOT create functions or triggers yet — just fill in the identity fields. Th
         .insert(agents)
         .values({
           id: agentId,
-          name: (manifest.name as string) ?? 'My Agent',
-          description: (manifest.description as string) ?? null,
-          icon: (manifest.icon as string) ?? null,
+          name: manifest.name ?? 'My Agent',
+          description: manifest.description ?? null,
+          icon: manifest.icon ?? null,
           authorId: userId,
-          latestVersion: (manifest.version as string) ?? '0.1.0',
+          latestVersion: manifest.version ?? '0.1.0',
           status: 'draft',
           createdAt: now,
           updatedAt: now,
@@ -166,10 +182,10 @@ Do NOT create functions or triggers yet — just fill in the identity fields. Th
         .onConflictDoUpdate({
           target: agents.id,
           set: {
-            name: (manifest.name as string) ?? 'My Agent',
-            description: (manifest.description as string) ?? null,
-            icon: (manifest.icon as string) ?? null,
-            latestVersion: (manifest.version as string) ?? '0.1.0',
+            name: manifest.name ?? 'My Agent',
+            description: manifest.description ?? null,
+            icon: manifest.icon ?? null,
+            latestVersion: manifest.version ?? '0.1.0',
             updatedAt: now,
           },
         });
@@ -185,13 +201,14 @@ Do NOT create functions or triggers yet — just fill in the identity fields. Th
 
   // ─── Conversation Management ─────────────────────────────────────────
 
-  async createConversation(mode: 'chat' | 'build' | 'edit' | 'task' = 'chat', agentId?: string) {
+  async createConversation(mode: 'chat' | 'build' | 'edit' | 'task' = 'chat', agentId?: string, userId?: string) {
     const id = randomUUID();
     const now = new Date();
     await this.db.insert(zeusConversations).values({
       id,
       mode,
       agentId,
+      userId,
       createdAt: now,
       updatedAt: now,
     });
@@ -215,8 +232,21 @@ Do NOT create functions or triggers yet — just fill in the identity fields. Th
     return { ...conv, messages: msgs };
   }
 
-  async listConversations(limit = 50) {
-    return this.db
+  async updateConversationTitle(conversationId: string, title: string | null): Promise<void> {
+    await this.db
+      .update(zeusConversations)
+      .set({ title, updatedAt: new Date() })
+      .where(eq(zeusConversations.id, conversationId));
+  }
+
+  async listConversations(options: ListConversationsOptions = {}) {
+    const { userId, limit = 50, offset = 0, search } = options;
+
+    const conditions = [];
+    if (userId) conditions.push(eq(zeusConversations.userId, userId));
+    if (search) conditions.push(ilike(zeusConversations.title, `%${search}%`));
+
+    const query = this.db
       .select({
         id: zeusConversations.id,
         title: zeusConversations.title,
@@ -228,7 +258,13 @@ Do NOT create functions or triggers yet — just fill in the identity fields. Th
       })
       .from(zeusConversations)
       .orderBy(desc(zeusConversations.updatedAt))
-      .limit(limit);
+      .limit(limit)
+      .offset(offset);
+
+    if (conditions.length > 0) {
+      return query.where(and(...conditions));
+    }
+    return query;
   }
 
   // ─── Message CRUD (zeus_messages table) ─────────────────────────────
@@ -237,8 +273,9 @@ Do NOT create functions or triggers yet — just fill in the identity fields. Th
     conversationId: string,
     role: string,
     content: string,
-    blocks?: unknown[],
+    blocks?: ContentBlock[],
     sdkUuid?: string,
+    files?: FileAttachment[],
   ): Promise<{ id: string }> {
     const id = randomUUID();
     await this.db.insert(zeusMessages).values({
@@ -247,6 +284,7 @@ Do NOT create functions or triggers yet — just fill in the identity fields. Th
       role,
       content,
       blocks: blocks ? JSON.stringify(blocks) : null,
+      files: files && files.length > 0 ? JSON.stringify(files) : null,
       sdkUuid: sdkUuid ?? null,
     });
     // Touch conversation updatedAt
@@ -260,10 +298,10 @@ Do NOT create functions or triggers yet — just fill in the identity fields. Th
   async updateMessage(
     messageId: string,
     content: string,
-    blocks?: unknown[],
+    blocks?: ContentBlock[],
     sdkUuid?: string,
   ): Promise<void> {
-    const set: Record<string, unknown> = { content };
+    const set: Record<string, string> = { content };
     if (blocks) set.blocks = JSON.stringify(blocks);
     if (sdkUuid) set.sdkUuid = sdkUuid;
     await this.db
@@ -368,7 +406,7 @@ Do NOT create functions or triggers yet — just fill in the identity fields. Th
   async createTask(params: {
     requesterId: string;
     goal: string;
-    context?: unknown;
+    context?: Record<string, string>;
     deliverables?: string[];
     priority?: 'low' | 'normal' | 'high';
     requiresApproval?: boolean;

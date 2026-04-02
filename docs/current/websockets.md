@@ -84,13 +84,13 @@ On successful auth, the user ID (`payload.sub`) is stored on the socket object a
 A module-level `Map<string, AbortController>` named `activeExecutions` tracks one running execution per socket ID. This enables:
 
 - Interrupting a running prompt when a new one arrives on the same socket.
-- Aborting execution when the socket disconnects.
+- On disconnect: queries keep running (not aborted). Results are persisted to DB incrementally. Client can reconnect and fetch via API.
 
 ### Client -> Server Events
 
 | Event | Payload | Description |
 |---|---|---|
-| `prompt` | `{ prompt: string; sessionId?: string }` | Send a user prompt. If `sessionId` is omitted, a new conversation is created and its ID returned via `session` event. |
+| `prompt` | `{ prompt: string; sessionId?: string; files?: FileAttachment[] }` | Send a user prompt with optional file attachments. If `sessionId` is omitted, a new conversation is created and its ID returned via `session` event. Files must be pre-uploaded via `POST /api/uploads`. |
 | `interrupt` | (none) | Abort the currently running execution for this socket. |
 
 ### Server -> Client Events

@@ -10,6 +10,6 @@ import { RegistryController } from './registry.controller';
   ],
   providers: [RegistryService, StorageService],
   controllers: [RegistryController],
-  exports: [RegistryService],
+  exports: [RegistryService, StorageService],
 })
 export class RegistryModule {}

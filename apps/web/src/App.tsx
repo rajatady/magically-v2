@@ -11,6 +11,9 @@ import { FeedView } from './components/feed/FeedView';
 import { AgentView } from './components/agent/AgentView';
 import { GalleryView } from './components/gallery/GalleryView';
 import { GalleryDetailRoute } from './components/gallery/GalleryDetailRoute';
+import { ChatPage } from './pages/ChatPage';
+import { ChatsPage } from './pages/ChatsPage';
+import { NewChatPage } from './pages/NewChatPage';
 
 export default function App() {
   return (
@@ -37,6 +40,9 @@ export default function App() {
                 <Route path="agents/:agentId" element={<AgentView />} />
                 <Route path="zeus" element={<HomeView />} />
                 <Route path="zeus/:chatId" element={<HomeView />} />
+                <Route path="chats" element={<ChatsPage />} />
+                <Route path="chat/new" element={<NewChatPage />} />
+                <Route path="chat/:chatId" element={<ChatPage />} />
                 <Route path="settings" element={<PlaceholderView title="Settings" />} />
                 <Route path="build" element={<PlaceholderView title="Build" />} />
               </Route>

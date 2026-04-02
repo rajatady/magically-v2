@@ -202,3 +202,33 @@ export interface ZeusTask {
   priority: string;
   createdAt: string;
 }
+
+export interface FileAttachment {
+  name: string;
+  type: string;
+  url: string;
+  size: number;
+}
+
+export interface ConversationSummary {
+  id: string;
+  title: string | null;
+  mode: string;
+  agentId: string | null;
+  userId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ConversationMessage {
+  id: string;
+  role: string;
+  content: string;
+  blocks?: string;
+  sdkUuid?: string | null;
+  createdAt: string;
+}
+
+export interface ConversationWithMessages extends ConversationSummary {
+  messages: ConversationMessage[];
+}

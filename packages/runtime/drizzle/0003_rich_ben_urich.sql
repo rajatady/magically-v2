@@ -1,0 +1,1 @@
+ALTER TABLE "zeus_messages" ADD COLUMN "files" text;

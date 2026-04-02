@@ -8,6 +8,8 @@ import type {
   AppConfig,
   MemoryEntry,
   ZeusTask,
+  ConversationSummary,
+  ConversationWithMessages,
 } from './types';
 
 export interface ApiClientConfig {
@@ -105,14 +107,25 @@ export class ApiClient {
         body: JSON.stringify({ mode }),
       }),
     getConversation: (id: string) =>
-      this.req<{ id: string; messages: Array<{ role: string; content: string; blocks?: unknown[] }>; mode: string; createdAt: string }>(`/zeus/conversations/${id}`),
-    listConversations: () =>
-      this.req<Array<{ id: string; title: string | null; mode: string; createdAt: string; updatedAt: string }>>('/zeus/conversations'),
+      this.req<ConversationWithMessages>(`/zeus/conversations/${id}`),
+    listConversations: (params?: { limit?: number; offset?: number; search?: string }) => {
+      const query = new URLSearchParams();
+      if (params?.limit) query.set('limit', String(params.limit));
+      if (params?.offset) query.set('offset', String(params.offset));
+      if (params?.search) query.set('search', params.search);
+      const qs = query.toString();
+      return this.req<ConversationSummary[]>(`/zeus/conversations${qs ? `?${qs}` : ''}`);
+    },
+    updateConversation: (id: string, updates: { title?: string | null }) =>
+      this.req<ConversationSummary>(`/zeus/conversations/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(updates),
+      }),
     deleteConversation: (id: string) =>
       this.req<void>(`/zeus/conversations/${id}`, { method: 'DELETE' }),
     memory: () => this.req<MemoryEntry[]>('/zeus/memory'),
     tasks: () => this.req<ZeusTask[]>('/zeus/tasks'),
-    getWorkspace: () => this.req<{ agent: Record<string, unknown> | null }>('/zeus/workspace'),
+    getWorkspace: () => this.req<{ agent: Record<string, string> | null }>('/zeus/workspace'),
   };
 
   // ─── Config ────────────────────────────────────────────────────────────────

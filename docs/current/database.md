@@ -167,6 +167,7 @@ Individual messages in a Zeus conversation. Replaces the old JSONB blob. Support
 | role | text | NOT NULL | `'user'` \| `'assistant'` |
 | content | text | NOT NULL, default `''` | Plain text content |
 | blocks | text | nullable | JSON string of ContentBlock[] (tool_use + text blocks) |
+| files | text | nullable | JSON string of FileAttachment[] (uploaded file URLs, not base64) |
 | sdk_uuid | text | nullable | SDK message UUID for rewind/fork support |
 | created_at | timestamptz | NOT NULL, default now() | |
 
@@ -210,6 +211,7 @@ Individual messages in a Zeus conversation. Replaces the old JSONB blob. Support
 | 0000 | `0000_square_machine_man.sql` | Initial schema: all tables except zeus_messages |
 | 0001 | `0001_yummy_mole_man.sql` | Add title, agent_session_id, user_id to zeus_conversations |
 | 0002 | `0002_gorgeous_amazoness.sql` | Create zeus_messages table, make conversations.messages nullable, add rewind_to_sdk_uuid |
+| 0003 | `0003_rich_ben_urich.sql` | Add `files` column to zeus_messages |
 
 ## Test Database
 

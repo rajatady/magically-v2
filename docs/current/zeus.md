@@ -1,8 +1,17 @@
 # Zeus
 
-Last synced: 2026-03-28 | Commit: 97ab426 (development branch)
+Last synced: 2026-04-03
 
 Zeus is the AI kernel of Magically. It wraps the Claude Agent SDK `query()` function with multi-tenant workspace management, persistent conversations, MCP tools for OS operations, and WebSocket streaming.
+
+### 2026-04-03 Updates
+
+- **Persistence**: Messages persisted at SDK batch boundaries (assistant events, tool results), not per-delta. Errors logged instead of swallowed.
+- **ChatConfig**: `TOP_LEVEL_CHAT_CONFIG` (full tools, MCP, $1 budget, 30 turns) vs `AGENT_SCOPED_CHAT_CONFIG` (restricted tools, no MCP, $0.25, 10 turns). Passed via `ExecutionOptions.chatConfig`.
+- **Delegate interfaces**: `ExecutorZeusDelegate` and `ExecutorAgentsDelegate` — no `unknown`/`any` types. Tools and executor depend on interfaces, not concrete classes.
+- **File attachments**: `buildPromptWithFiles()` downloads from Tigris URLs, converts to base64, builds SDK content blocks (image/document/text). Applied before resume/fresh split so both paths include files.
+- **Conversation management**: `updateConversationTitle()`, `listConversations()` with userId filter + pagination + search.
+- **Disconnect behavior**: Queries keep running on disconnect (cc-harness pattern). Client reconnects and fetches persisted results.
 
 ---
 

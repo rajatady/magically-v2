@@ -83,6 +83,7 @@ export const zeusMessages = pgTable('zeus_messages', {
   role: text('role').notNull(),             // 'user' | 'assistant'
   content: text('content').notNull().default(''),
   blocks: text('blocks'),                   // JSON string of ContentBlock[]
+  files: text('files'),                     // JSON string of FileAttachment[]
   sdkUuid: text('sdk_uuid'),               // SDK message UUID for rewind/fork
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });

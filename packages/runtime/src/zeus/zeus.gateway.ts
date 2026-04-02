@@ -9,6 +9,7 @@ import {
 } from '@nestjs/websockets';
 import { Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
+import type { FileAttachment } from '@magically/shared/types';
 import { AuthService } from '../auth/auth.service';
 import { ZeusService } from './zeus.service';
 
@@ -55,19 +56,17 @@ export class ZeusGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   handleDisconnect(client: Socket) {
-    // Abort any running execution for this socket
-    const controller = activeExecutions.get(client.id);
-    if (controller) {
-      controller.abort();
-      activeExecutions.delete(client.id);
-    }
+    // DON'T abort active queries — let them run to completion.
+    // Results are persisted to DB incrementally. Client can reconnect and fetch via API.
+    // Only clean up the tracking map.
+    activeExecutions.delete(client.id);
     this.logger.log(`Zeus client disconnected: ${client.id}`);
   }
 
   @SubscribeMessage('prompt')
   async handlePrompt(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { prompt: string; sessionId?: string },
+    @MessageBody() payload: { prompt: string; sessionId?: string; files?: FileAttachment[] },
   ) {
     const userId = (client as unknown as { userId: string }).userId;
     if (!userId) {
@@ -83,7 +82,7 @@ export class ZeusGateway implements OnGatewayConnection, OnGatewayDisconnect {
     // Create conversation if none provided
     let sessionId = payload.sessionId;
     if (!sessionId) {
-      const conv = await this.zeus.createConversation();
+      const conv = await this.zeus.createConversation('chat', undefined, userId);
       sessionId = conv.id;
       client.emit('session', { sessionId });
     }
@@ -96,8 +95,8 @@ export class ZeusGateway implements OnGatewayConnection, OnGatewayDisconnect {
     activeExecutions.set(client.id, abortController);
 
     try {
-      // Persist user message BEFORE execution
-      await this.zeus.saveMessage(sessionId, 'user', payload.prompt);
+      // Persist user message BEFORE execution (with files if attached)
+      await this.zeus.saveMessage(sessionId, 'user', payload.prompt, undefined, undefined, payload.files);
 
       // Create empty assistant message for incremental updates
       const { id: assistantMsgId } = await this.zeus.saveMessage(sessionId, 'assistant', '');
@@ -110,7 +109,7 @@ export class ZeusGateway implements OnGatewayConnection, OnGatewayDisconnect {
         onResult: (result) => client.emit('result', result),
         onError: (message) => client.emit('error', { message }),
         onDone: () => client.emit('done', { sessionId }),
-      }, abortController, assistantMsgId);
+      }, abortController, assistantMsgId, payload.files);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
       if (message !== 'aborted') {

@@ -1,6 +1,6 @@
 # @magically/shared Package
 
-Last synced: 2026-03-28 | Commit: 97ab426 (development branch)
+Last synced: 2026-04-03
 
 ## Package
 
@@ -113,6 +113,10 @@ Every export uses the `"default"` condition only (no `"import"` / `"require"` sp
 |------|------|--------|
 | `MemoryEntry` | interface | `id`, `key`, `value`, `category`, `source` |
 | `ZeusTask` | interface | `id`, `requesterId`, `goal`, `status`, `priority`, `createdAt` |
+| `FileAttachment` | interface | `name`, `type` (MIME), `url` (Tigris), `size` (bytes) |
+| `ConversationSummary` | interface | `id`, `title`, `mode`, `agentId`, `userId`, `createdAt`, `updatedAt` |
+| `ConversationMessage` | interface | `id`, `role`, `content`, `blocks?`, `sdkUuid?`, `createdAt` |
+| `ConversationWithMessages` | interface | extends `ConversationSummary` + `messages: ConversationMessage[]` |
 
 ## ApiClient Class (`./api-client`)
 
@@ -178,12 +182,13 @@ class ApiClient {
 | Method | HTTP | Path | Return Type |
 |--------|------|------|-------------|
 | `createConversation(mode?)` | POST | `/zeus/conversations` | `{ id: string; mode: string }` |
-| `getConversation(id)` | GET | `/zeus/conversations/<id>` | `{ id, messages, mode, createdAt }` |
-| `listConversations()` | GET | `/zeus/conversations` | `Array<{ id, title, mode, createdAt, updatedAt }>` |
+| `getConversation(id)` | GET | `/zeus/conversations/<id>` | `ConversationWithMessages` |
+| `listConversations(params?)` | GET | `/zeus/conversations?limit=&offset=&search=` | `ConversationSummary[]` |
+| `updateConversation(id, { title })` | PATCH | `/zeus/conversations/<id>` | `ConversationSummary` |
 | `deleteConversation(id)` | DELETE | `/zeus/conversations/<id>` | `void` |
 | `memory()` | GET | `/zeus/memory` | `MemoryEntry[]` |
 | `tasks()` | GET | `/zeus/tasks` | `ZeusTask[]` |
-| `getWorkspace()` | GET | `/zeus/workspace` | `{ agent: Record<string, unknown> \| null }` |
+| `getWorkspace()` | GET | `/zeus/workspace` | `{ agent: Record<string, string> \| null }` |
 
 #### `config`
 

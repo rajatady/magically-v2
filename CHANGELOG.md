@@ -4,6 +4,28 @@ All notable changes to this project are documented here. Format: date, git hash,
 
 ---
 
+## 2026-04-03 | Central chat system + file attachments + API enhancements
+
+- Central chat routes: `/chats` (conversation list), `/chat/new` (create + redirect), `/chat/:id` (full-page chat)
+- Page components: `ChatPage`, `ChatsPage`, `NewChatPage` — handle document title/metadata, delegate to client components
+- Shared chat components: `ChatHeader` (configurable title/icon/connection dot), `ChatInput` (with file attachments), `ChatMessages`, `ChatView` — used by both Zeus panel and full-page chat
+- Zeus panel (`ZeusChat`) now delegates to shared `ChatView` with zeus-specific props
+- File attachments: drag & drop, paste images, file picker, XHR upload with progress, file chips with cancel
+- File upload backend: `POST /api/uploads` → Tigris S3 (`magically-v2-uploads` bucket, separate from registry)
+- File processing: `downloadToBase64()` → SDK content blocks (image/document/text) — ported from cc-harness
+- `files` column added to `zeus_messages` table (migration 0003)
+- Incremental persistence at SDK batch boundaries (assistant events, tool results) — not per-delta. Logged errors instead of `.catch(() => {})`
+- `PATCH /api/zeus/conversations/:id` — update conversation title
+- `GET /api/zeus/conversations` — now accepts `?limit=&offset=&search=` query params, filtered by userId
+- Conversations now store `userId` on creation (multi-tenant)
+- `ChatConfig` interface: `TOP_LEVEL_CHAT_CONFIG` (full tools, MCP, $1 budget) vs `AGENT_SCOPED_CHAT_CONFIG` (restricted, no MCP, $0.25)
+- Executor refactored: `ExecutorZeusDelegate` and `ExecutorAgentsDelegate` interfaces, zero `unknown`/`any`
+- Reconnecting indicator: yellow pulsing dot when socket reconnecting
+- Error retry button in chat messages
+- Shared types: `FileAttachment`, `ConversationSummary`, `ConversationMessage`, `ConversationWithMessages`
+- ApiClient: `listConversations()` accepts `{ limit, offset, search }`, added `updateConversation()`
+- Tests: 67 runtime (13 new executor + 6 new service), 79 web (17 new chat components + pages)
+
 ## 2026-03-28 | `e0e5cb4` | Documentation overhaul + gallery redesign + zeus messages table
 
 - Created 12 comprehensive docs in `docs/current/` covering architecture, database, API, WebSockets, auth, Zeus, agents, frontend, CLI, shared package, testing, deployment

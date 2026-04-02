@@ -4,6 +4,7 @@
  */
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { io, type Socket } from 'socket.io-client';
+import type { FileAttachment } from '@magically/shared/types';
 import { useAuthStore } from '../lib/auth';
 import { zeus } from '../lib/api';
 import {
@@ -23,10 +24,11 @@ export interface UseZeusSocketOptions {
 
 export interface UseZeusSocketReturn {
   connected: boolean;
+  reconnecting: boolean;
   streaming: boolean;
   messages: ZeusMessage[];
   stream: StreamState | null;
-  sendMessage: (text: string) => void;
+  sendMessage: (text: string, files?: FileAttachment[]) => void;
   interrupt: () => void;
   setMessages: React.Dispatch<React.SetStateAction<ZeusMessage[]>>;
 }
@@ -35,6 +37,7 @@ export function useZeusSocket({ sessionId, onSessionCreated }: UseZeusSocketOpti
   const socketRef = useRef<Socket | null>(null);
   const stateRef = useRef<StreamState>(createEmptyStreamState());
   const [connected, setConnected] = useState(false);
+  const [reconnecting, setReconnecting] = useState(false);
   const [streaming, setStreaming] = useState(false);
   const [stream, setStream] = useState<StreamState | null>(null);
   const [messages, setMessages] = useState<ZeusMessage[]>([]);
@@ -75,8 +78,10 @@ export function useZeusSocket({ sessionId, onSessionCreated }: UseZeusSocketOpti
       transports: ['websocket', 'polling'],
     });
 
-    socket.on('connect', () => setConnected(true));
-    socket.on('disconnect', () => setConnected(false));
+    socket.on('connect', () => { setConnected(true); setReconnecting(false); });
+    socket.on('disconnect', () => { setConnected(false); });
+    socket.io.on('reconnect_attempt', () => setReconnecting(true));
+    socket.io.on('reconnect_failed', () => setReconnecting(false));
 
     socket.on('session', (msg: { sessionId: string }) => {
       onSessionCreated?.(msg.sessionId);
@@ -149,7 +154,7 @@ export function useZeusSocket({ sessionId, onSessionCreated }: UseZeusSocketOpti
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const sendMessage = useCallback(
-    (text: string) => {
+    (text: string, files?: FileAttachment[]) => {
       // Add optimistic user message
       setMessages((prev) => [
         ...prev,
@@ -157,6 +162,7 @@ export function useZeusSocket({ sessionId, onSessionCreated }: UseZeusSocketOpti
           id: crypto.randomUUID(),
           role: 'user',
           content: text,
+          files,
           createdAt: new Date().toISOString(),
         },
       ]);
@@ -166,7 +172,7 @@ export function useZeusSocket({ sessionId, onSessionCreated }: UseZeusSocketOpti
       setStream(null);
       setStreaming(true);
 
-      socketRef.current?.emit('prompt', { prompt: text, sessionId });
+      socketRef.current?.emit('prompt', { prompt: text, sessionId, files });
     },
     [sessionId],
   );
@@ -175,5 +181,5 @@ export function useZeusSocket({ sessionId, onSessionCreated }: UseZeusSocketOpti
     socketRef.current?.emit('interrupt');
   }, []);
 
-  return { connected, streaming, messages, stream, sendMessage, interrupt, setMessages };
+  return { connected, reconnecting, streaming, messages, stream, sendMessage, interrupt, setMessages };
 }

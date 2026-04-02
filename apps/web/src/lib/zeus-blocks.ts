@@ -21,6 +21,7 @@ export interface ZeusMessage {
   role: 'user' | 'assistant';
   content: string;
   blocks?: ZeusBlock[];
+  files?: Array<{ name: string; type: string; url: string; size: number }>;
   createdAt: string;
 }
 

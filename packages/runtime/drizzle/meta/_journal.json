@@ -22,6 +22,13 @@
       "when": 1774672895659,
       "tag": "0002_gorgeous_amazoness",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1775161758138,
+      "tag": "0003_rich_ben_urich",
+      "breakpoints": true
     }
   ]
 }

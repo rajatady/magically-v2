@@ -3,8 +3,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { sql } from 'drizzle-orm';
-import type { LanguageModelV3StreamResult } from '@ai-sdk/provider';
-import { MockLanguageModelV3, convertArrayToReadableStream } from 'ai/test';
+// AI SDK test imports removed — streamChat was replaced by Agent SDK runPrompt
 import { ZeusService } from '../src/zeus/zeus.service';
 import { LlmService } from '../src/llm/llm.service';
 import { AgentsService } from '../src/agents/agents.service';
@@ -87,64 +86,8 @@ describe('ZeusService', () => {
     });
   });
 
-  describe('streamChat', () => {
-    function makeMockModel(textDelta = 'Hello world') {
-      const streamResult: LanguageModelV3StreamResult = {
-        stream: convertArrayToReadableStream([
-          { type: 'text-delta', textDelta },
-          { type: 'finish', finishReason: 'stop', usage: { inputTokens: 10, outputTokens: 5 } },
-        ]) as unknown as ReadableStream<import('@ai-sdk/provider').LanguageModelV3StreamPart>,
-      };
-      return new MockLanguageModelV3({ doStream: streamResult });
-    }
-
-    it('returns a ReadableStream', async () => {
-      (llm.getModel as jest.Mock).mockReturnValue(makeMockModel());
-      const stream = await service.streamChat([
-        { id: 'msg-1', role: 'user' as const, parts: [{ type: 'text' as const, text: 'Hello' }] },
-      ]);
-      expect(stream).toBeInstanceOf(ReadableStream);
-    });
-
-    it('persists assistant response to conversation when conversationId is provided', async () => {
-      (llm.getModel as jest.Mock).mockReturnValue(makeMockModel('Zeus response'));
-
-      const { id: conversationId } = await service.createConversation();
-      const stream = await service.streamChat(
-        [{ id: 'msg-1', role: 'user' as const, parts: [{ type: 'text' as const, text: 'Hello' }] }],
-        conversationId,
-      );
-
-      // Drain the stream to trigger onFinish
-      const reader = stream.getReader();
-      while (true) {
-        const { done } = await reader.read();
-        if (done) break;
-      }
-
-      // Give onFinish a tick to complete async DB write
-      await new Promise((r) => setTimeout(r, 100));
-
-      const conv = await service.getConversation(conversationId);
-      const messages = conv!.messages as Array<{ role: string; content: string }>;
-      expect(messages.length).toBeGreaterThan(0);
-      const assistantMsg = messages.find((m) => m.role === 'assistant');
-      expect(assistantMsg).toBeDefined();
-    });
-
-    it('streams without error when no conversationId provided', async () => {
-      (llm.getModel as jest.Mock).mockReturnValue(makeMockModel());
-      const stream = await service.streamChat([
-        { id: 'msg-1', role: 'user' as const, parts: [{ type: 'text' as const, text: 'Hello' }] },
-      ]);
-      const reader = stream.getReader();
-      while (true) {
-        const { done } = await reader.read();
-        if (done) break;
-      }
-      // Reaching here means the stream completed without throwing
-    });
-  });
+  // streamChat tests removed — method was replaced by Agent SDK runPrompt.
+  // See executor.spec.ts for runPrompt tests.
 
   describe('memory', () => {
     it('stores and retrieves a memory entry', async () => {
@@ -209,6 +152,72 @@ describe('ZeusService', () => {
       const tasks = await service.getTasks();
       expect(tasks[0].goal).toBe('Second task');
       expect(tasks[1].goal).toBe('First task');
+    });
+  });
+
+  // ─── Ticket #3: Chat API enhancements ────────────────────────────────
+
+  describe('updateConversationTitle', () => {
+    it('updates the title of a conversation', async () => {
+      const { id } = await service.createConversation();
+      await service.updateConversationTitle(id, 'My first chat');
+
+      const conv = await service.getConversation(id);
+      expect(conv!.title).toBe('My first chat');
+    });
+
+    it('clears title when set to null', async () => {
+      const { id } = await service.createConversation();
+      await service.updateConversationTitle(id, 'Temp title');
+      await service.updateConversationTitle(id, null);
+
+      const conv = await service.getConversation(id);
+      expect(conv!.title).toBeNull();
+    });
+  });
+
+  describe('createConversation with userId', () => {
+    it('stores userId when provided', async () => {
+      const { id } = await service.createConversation('chat', undefined, 'user-abc');
+      const conv = await service.getConversation(id);
+      expect(conv!.userId).toBe('user-abc');
+    });
+  });
+
+  describe('listConversations with filters', () => {
+    it('filters by userId', async () => {
+      await service.createConversation('chat', undefined, 'user-A');
+      await service.createConversation('chat', undefined, 'user-A');
+      await service.createConversation('chat', undefined, 'user-B');
+
+      const listA = await service.listConversations({ userId: 'user-A' });
+      expect(listA).toHaveLength(2);
+
+      const listB = await service.listConversations({ userId: 'user-B' });
+      expect(listB).toHaveLength(1);
+    });
+
+    it('supports offset and limit', async () => {
+      await service.createConversation('chat', undefined, 'paginate-user');
+      await service.createConversation('chat', undefined, 'paginate-user');
+      await service.createConversation('chat', undefined, 'paginate-user');
+
+      const page1 = await service.listConversations({ userId: 'paginate-user', limit: 2 });
+      expect(page1).toHaveLength(2);
+
+      const page2 = await service.listConversations({ userId: 'paginate-user', limit: 2, offset: 2 });
+      expect(page2).toHaveLength(1);
+    });
+
+    it('searches by title', async () => {
+      const { id: id1 } = await service.createConversation('chat', undefined, 'search-user');
+      await service.updateConversationTitle(id1, 'Debugging the API');
+      const { id: id2 } = await service.createConversation('chat', undefined, 'search-user');
+      await service.updateConversationTitle(id2, 'Planning sprint');
+
+      const results = await service.listConversations({ userId: 'search-user', search: 'debug' });
+      expect(results).toHaveLength(1);
+      expect(results[0].title).toBe('Debugging the API');
     });
   });
 });
