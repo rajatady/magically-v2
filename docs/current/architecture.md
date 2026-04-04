@@ -106,10 +106,28 @@ App startup (AuthenticatedApp.tsx):
       ])
 
 Per-page:
-  /gallery       → agents.mine()              — user's agents (draft + live)
+  /gallery       → agents.mine()              — user's agents (draft + live) + all local agents
   /zeus/:chatId  → zeus.getConversation(id)   — past messages
   /agents/:id    → iframes to /api/agents/:id/ui
 ```
+
+### Local Agent Discovery on Boot (2026-04-04)
+
+```
+Runtime starts (NestJS OnApplicationBootstrap)
+  └─► LocalDiscoveryService.onApplicationBootstrap()
+      └─► Scan agents/ directory for manifest.json files
+          └─► For each valid manifest:
+              ├── Upsert row in agents table (source: 'local', status: 'live')
+              └── If agent already existed as source: 'remote' → update source to 'local'
+
+No agent_versions rows are created for local agents.
+Functions are read at request time from filesystem via LocalRunnerService.loadManifest().
+```
+
+Local agents are immediately available via `GET /api/agents/me` after startup — no publish pipeline required.
+
+---
 
 ### Agent Data Flow (2026-04-04)
 

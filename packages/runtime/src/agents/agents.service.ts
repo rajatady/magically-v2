@@ -3,7 +3,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, or } from 'drizzle-orm';
 import { InjectDB, type DrizzleDB } from '../db';
 import { agents, agentVersions } from '../db/schema';
 
@@ -15,6 +15,7 @@ export interface AgentWithManifest {
   icon: string | null;
   color: string | null;
   category: string | null;
+  source: string;
   status: string;
   enabled: boolean;
   manifest: Record<string, unknown>;
@@ -35,7 +36,8 @@ export class AgentsService {
     const result: AgentWithManifest[] = [];
     for (const agent of rows) {
       const version = await this.getLatestVersion(agent.id);
-      if (!version) continue;
+      // Local agents have no agent_versions — include them with empty manifest
+      if (!version && agent.source !== 'local') continue;
       result.push({
         id: agent.id,
         name: agent.name,
@@ -44,25 +46,28 @@ export class AgentsService {
         icon: agent.icon,
         color: agent.color,
         category: agent.category,
+        source: agent.source,
         status: agent.status,
         enabled: agent.enabled,
-        manifest: version.manifest as Record<string, unknown>,
+        manifest: (version?.manifest ?? {}) as Record<string, unknown>,
       });
     }
     return result;
   }
 
-  /** All agents authored by a user — drafts, building, live */
+  /** All agents authored by a user + all local agents */
   async findByAuthor(userId: string): Promise<AgentWithManifest[]> {
     const rows = await this.db
       .select()
       .from(agents)
-      .where(eq(agents.authorId, userId))
+      .where(or(
+        eq(agents.authorId, userId),
+        eq(agents.source, 'local'),
+      ))
       .orderBy(desc(agents.updatedAt));
 
     const result: AgentWithManifest[] = [];
     for (const agent of rows) {
-      // For drafts/processing, there may be no live version yet — use latest of any status
       const version = await this.getAnyLatestVersion(agent.id);
       result.push({
         id: agent.id,
@@ -72,6 +77,7 @@ export class AgentsService {
         icon: agent.icon,
         color: agent.color,
         category: agent.category,
+        source: agent.source,
         status: agent.status,
         enabled: agent.enabled,
         manifest: (version?.manifest ?? {}) as Record<string, unknown>,
@@ -91,7 +97,9 @@ export class AgentsService {
 
     const agent = rows[0];
     const version = await this.getLatestVersion(id);
-    if (!version) throw new NotFoundException(`Agent '${id}' has no published version`);
+    if (!version && agent.source !== 'local') {
+      throw new NotFoundException(`Agent '${id}' has no published version`);
+    }
 
     return {
       id: agent.id,
@@ -101,9 +109,10 @@ export class AgentsService {
       icon: agent.icon,
       color: agent.color,
       category: agent.category,
+      source: agent.source,
       status: agent.status,
       enabled: agent.enabled,
-      manifest: version.manifest as Record<string, unknown>,
+      manifest: (version?.manifest ?? {}) as Record<string, unknown>,
     };
   }
 

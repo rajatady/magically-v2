@@ -22,10 +22,13 @@ All agents — published, draft, building, failed. Single source of truth. No se
 | tags | jsonb | default `[]` | String array of tags |
 | latest_version | text | NOT NULL | Current version string (e.g., "1.0.0") |
 | status | text | NOT NULL, default `'live'` | `'draft'` \| `'processing'` \| `'building'` \| `'live'` \| `'failed'` |
+| source | text | NOT NULL, default `'remote'` | `'local'` \| `'remote'` — added migration 0006 |
 | installs | integer | NOT NULL, default 0 | Install count |
 | enabled | boolean | NOT NULL, default true | Whether agent is active |
 | created_at | timestamp | NOT NULL | Creation time |
 | updated_at | timestamp | NOT NULL | Last update time |
+
+**`source` column** (migration 0006): Tracks where an agent originates. `'local'` agents are discovered from the `agents/` directory at runtime startup by `LocalDiscoveryService` and have no `agent_versions` rows. `'remote'` agents are published through the registry pipeline. If a previously `'remote'` agent is found on the local filesystem, `LocalDiscoveryService` updates its `source` to `'local'`.
 
 ### agent_versions
 
@@ -233,6 +236,8 @@ Controller: `packages/runtime/src/events/widget.controller.ts` — `GET /api/wid
 | 0002 | `0002_gorgeous_amazoness.sql` | Create zeus_messages table, make conversations.messages nullable, add rewind_to_sdk_uuid |
 | 0003 | `0003_rich_ben_urich.sql` | Add `files` column to zeus_messages |
 | 0004 | *(migration 0004)* | Create `user_widgets` table (id, userId, agentId, size, html, position, updatedAt) |
+| 0005 | *(migration 0005)* | *(see git history)* |
+| 0006 | *(migration 0006)* | Add `source` column to `agents` table (`'local'` \| `'remote'`, default `'remote'`) |
 
 ## Test Database
 

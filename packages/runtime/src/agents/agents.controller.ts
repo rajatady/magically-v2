@@ -51,19 +51,35 @@ export class AgentsController {
     @Get('me')
     async findMine(@Req() req: Request) {
         const myAgents = await this.agentsService.findByAuthor(req.user!.sub);
-        return myAgents.map((agent) => ({
-            id: agent.id,
-            name: agent.name,
-            version: agent.latestVersion,
-            description: agent.description,
-            icon: agent.icon,
-            color: agent.color,
-            category: agent.category,
-            status: agent.status,
-            enabled: agent.enabled,
-            hasWidget: false,
-            functions: (agent.manifest as AgentManifest)?.functions ?? [],
-        }));
+        return myAgents.map((agent) => {
+            // Local agents: read functions from filesystem manifest
+            let functions = (agent.manifest as AgentManifest)?.functions ?? [];
+            if (agent.source === 'local' && functions.length === 0) {
+                try {
+                    const localManifest = this.localRunner.loadManifest(agent.id);
+                    functions = (localManifest.functions ?? []).map(f => ({
+                        name: f.name,
+                        description: f.description ?? '',
+                        run: f.run,
+                        parameters: f.parameters,
+                    }));
+                } catch { /* agent dir may not exist */ }
+            }
+            return {
+                id: agent.id,
+                name: agent.name,
+                version: agent.latestVersion,
+                description: agent.description,
+                icon: agent.icon,
+                color: agent.color,
+                category: agent.category,
+                source: agent.source,
+                status: agent.status,
+                enabled: agent.enabled,
+                hasWidget: agent.source === 'local',
+                functions,
+            };
+        });
     }
 
     @Get(':id/widget')

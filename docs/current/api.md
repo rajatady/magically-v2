@@ -95,9 +95,31 @@ Returns all agents where `status = 'live'`, with latest version manifest joined.
 
 ### GET /api/agents/me
 
-Returns all agents where `author_id = authenticated userId`, regardless of status. Includes drafts, building, failed.
+Returns all agents where `author_id = authenticated userId`, regardless of status, **plus all local agents** (source = `'local'`). Includes drafts, building, and failed agents.
 
-**Response** `200`: Same shape as `/api/agents` but adds `"status": "draft" | "live" | "building" | ...` and `"hasWidget": boolean`.
+**Response** `200`:
+```json
+[
+  {
+    "id": "hello-world",
+    "name": "Hello World",
+    "version": "1.0.0",
+    "description": "A greeting agent",
+    "icon": "👋",
+    "color": "#3b82f6",
+    "category": "Productivity",
+    "status": "live",
+    "source": "local",
+    "hasWidget": true,
+    "functions": [{ "name": "greet", "description": "Say hello" }]
+  }
+]
+```
+
+Key fields added/changed (2026-04-04):
+- **`source`**: `'local'` or `'remote'`. Present on every agent in the response.
+- **`hasWidget`**: Always `true` for `source: 'local'` agents. For remote agents, determined by manifest `ui` field as before.
+- **`functions`**: For local agents (no `agent_versions` row), functions are read directly from the filesystem manifest via `LocalRunnerService.loadManifest()` rather than from the DB.
 
 ### POST /api/agents/:id/run/:functionName
 

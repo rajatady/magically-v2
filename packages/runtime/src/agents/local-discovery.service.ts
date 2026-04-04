@@ -73,8 +73,8 @@ export class LocalDiscoveryService implements OnModuleInit {
           updatedAt: now,
         });
         created++;
-      } else if (existing[0].source === 'local') {
-        // Update metadata from manifest — only for local agents
+      } else {
+        // Agent exists — update metadata from local manifest and mark as local
         await this.db
           .update(agents)
           .set({
@@ -85,12 +85,12 @@ export class LocalDiscoveryService implements OnModuleInit {
             category: manifest.category,
             tags: manifest.tags ?? [],
             latestVersion: manifest.version,
+            source: 'local',
             updatedAt: now,
           })
           .where(eq(agents.id, agentId));
         updated++;
       }
-      // If source is 'remote', don't touch it — published agent takes precedence
     }
 
     this.logger.log(`Local discovery: ${localIds.length} found, ${created} registered, ${updated} updated`);

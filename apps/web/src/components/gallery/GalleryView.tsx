@@ -91,7 +91,7 @@ export const GalleryView = memo(function GalleryView() {
 
   const filteredMy = useMemo(() => myAgents.filter((a) =>
     !search || a.name.toLowerCase().includes(search.toLowerCase()),
-  ), [search]);
+  ), [search, myAgents]);
 
   // Group explore by category
   const exploreByCategory = useMemo(() => {

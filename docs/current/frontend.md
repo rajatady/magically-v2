@@ -259,10 +259,11 @@ Blocks arrive flat and are assembled into a tree via `parentToolUseId`. Text blo
 
 ### My Agents Tab (`/gallery`)
 
-- Loads agents from `agentsApi.mine()` (includes drafts + live, authored by current user)
+- Loads agents from `agentsApi.mine()` (includes drafts + live, authored by current user, plus all local agents)
 - Falls back to `storeAgents` (live only) if endpoint fails
 - Renders as `MyAgentRow` list with status badges
 - Draft agents navigate to `/zeus`, live agents to `/gallery/:id`
+- **Bug fix (2026-04-04)**: `filteredMy` was computed in a `useMemo` that did not list `myAgents` as a dependency. This caused the filtered list to remain empty even after the API call resolved. Fixed by adding `myAgents` to the `useMemo` dependency array.
 
 ### Explore Tab (`/gallery/explore`)
 
@@ -321,3 +322,7 @@ Blocks arrive flat and are assembled into a tree via `parentToolUseId`. Text blo
 5. **Agent UI endpoint returns 501**: `AgentsController.getUi()` returns a 501 status. Agent iframes will fail to load.
 
 6. **Store messages unused by Zeus**: The Zustand store has `messages`, `conversationId`, `zeusTyping`, `addMessage`, `appendToLastMessage`, `setZeusTyping` -- but `ZeusChat` uses the `useZeusSocket` hook with its own local state instead. The store fields are only updated by the global socket events.
+
+### Fixed Issues
+
+- ~~**Gallery My Agents tab showed empty list after API load**~~ (fixed 2026-04-04): `GalleryView.tsx` had a `useMemo` where `filteredMy` did not include `myAgents` in its dependency array. The filtered list never recomputed after the async `agentsApi.mine()` call resolved, so the tab appeared empty even with agents present. Fix: added `myAgents` to the `useMemo` deps.

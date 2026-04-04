@@ -4,6 +4,15 @@ All notable changes to this project are documented here. Format: date, git hash,
 
 ---
 
+## 2026-04-04 (4) | Local agents visible in gallery + discovery fixes
+
+- LocalDiscoveryService updates existing remote agents to `source: 'local'` when found on filesystem
+- `AgentWithManifest` includes `source` field, propagated through all service methods
+- `findAll`/`findByAuthor`/`findOne` handle local agents without `agent_versions` rows
+- `GET /api/agents/me` returns local agents with functions read from filesystem manifest
+- Gallery "My Agents" tab now renders local agents (fixed `useMemo` dependency)
+- `hasWidget: true` for all local agents
+
 ## 2026-04-04 (3) | New agents: runway monitor, research pulse
 
 - Runway Monitor agent: calculates weeks remaining, progress bar, milestone tracker, urgency levels (normal/warning/critical)
