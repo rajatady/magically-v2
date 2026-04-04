@@ -22,6 +22,7 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
+      webSecurity: false,  // Allow file:// to fetch from localhost API
     },
   });
 

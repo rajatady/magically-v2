@@ -18,7 +18,9 @@
     "db:generate": "cd packages/runtime && bun run db:generate",
     "db:migrate": "cd packages/runtime && bun run db:migrate",
     "db:push": "cd packages/runtime && bun run db:push",
-    "db:studio": "cd packages/runtime && bun run db:studio"
+    "db:studio": "cd packages/runtime && bun run db:studio",
+    "desktop": "cd packages/shared && bun run build && cd ../../apps/web && VITE_API_URL=http://localhost:4321 npx vite build --base './' && rm -rf ../desktop/web-dist && cp -r dist ../desktop/web-dist && cd ../desktop && npx electron .",
+    "desktop:dev": "cd apps/desktop && npx electron ."
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
@@ -34,7 +36,8 @@
     "node": ">=22.0.0"
   },
   "trustedDependencies": [
-    "@nestjs/core"
+    "@nestjs/core",
+    "electron"
   ],
   "overrides": {
     "yallist": "4.0.0"

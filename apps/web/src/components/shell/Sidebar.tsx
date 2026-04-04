@@ -12,6 +12,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { path: '/',         icon: '⌂',  label: 'Home' },
   { path: '/feed',     icon: '◎',  label: 'Feed' },
+  { path: '/chats',    icon: '◈',  label: 'Chats' },
   { path: '/gallery',  icon: '⊞',  label: 'Gallery' },
   { path: '/build',    icon: '+',  label: 'Build' },
   { path: '/settings', icon: '⚙', label: 'Settings' },

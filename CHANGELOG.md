@@ -4,6 +4,12 @@ All notable changes to this project are documented here. Format: date, git hash,
 
 ---
 
+## 2026-04-04 (6) | Desktop polish + sidebar chats link
+
+- Added `/chats` nav item to sidebar
+- `bun run desktop` — one command: builds shared, web, copies, launches Electron
+- `bun run desktop:dev` — quick launch with existing web-dist
+
 ## 2026-04-04 (5) | Electron desktop app
 
 - Electron shell wrapping the bundled React app + NestJS backend
