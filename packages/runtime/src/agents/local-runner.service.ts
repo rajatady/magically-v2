@@ -97,107 +97,87 @@ export class LocalRunnerService {
       throw new NotFoundException(`Function '${functionName}' not declared in ${agentId}. Available: ${available}`);
     }
 
-    this.logger.log(`Running ${agentId}/${functionName} (local)`);
+    this.logger.log(`Running ${agentId}/${functionName} (local, worker thread)`);
 
-    // Load secrets from process env (same as CLI)
+    // Load secrets from process env
     const secrets: Record<string, string> = {};
     for (const key of manifest.secrets ?? []) {
       const val = process.env[key];
       if (val) secrets[key] = val;
     }
 
-    // Build context
-    const ctx = this.buildContext(agentId, agentDir, secrets, userId, payload);
-
-    // Load and run function
     const functionPath = join(agentDir, 'functions', `${functionName}.js`);
     if (!existsSync(functionPath)) {
       throw new NotFoundException(`Function file not found: functions/${functionName}.js`);
     }
 
-    const resolved = require.resolve(functionPath);
-    delete require.cache[resolved];
-    const mod = require(functionPath);
-
-    const handler = typeof mod === 'function' ? mod
-      : typeof mod.default === 'function' ? mod.default
-      : typeof mod[functionName] === 'function' ? mod[functionName]
-      : null;
-
-    if (!handler) {
-      throw new Error(`${functionPath} does not export a callable function`);
-    }
-
     const startedAt = Date.now();
-    try {
-      const result = await handler(ctx, payload);
-      const durationMs = Date.now() - startedAt;
-      this.logger.log(`${agentId}/${functionName} OK (${durationMs}ms)`);
-      return { agentId, functionName, status: 'success', result, durationMs };
-    } catch (err: unknown) {
-      const durationMs = Date.now() - startedAt;
-      const message = err instanceof Error ? err.message : String(err);
-      this.logger.error(`${agentId}/${functionName} FAILED (${durationMs}ms): ${message}`);
-      return { agentId, functionName, status: 'error', error: message, durationMs };
-    }
-  }
+    const { Worker } = require('worker_threads');
+    // Worker is plain JS — resolve from src/ since ts-node/bun runs from there,
+    // and from dist/ in production. Check src first.
+    const srcWorker = join(__dirname, '..', '..', 'src', 'agents', 'agent-worker.js');
+    const distWorker = join(__dirname, 'agent-worker.js');
+    const workerPath = existsSync(srcWorker) ? srcWorker : distWorker;
 
-  private buildContext(agentId: string, agentDir: string, secrets: Record<string, string>, userId: string, payload?: Record<string, unknown>) {
-    const feedService = this.feedService;
-    const widgetService = this.widgetService;
+    return new Promise<LocalRunResult>((resolvePromise) => {
+      const worker = new Worker(workerPath, {
+        workerData: { agentDir, functionName, functionPath, agentId, secrets, payload },
+      });
 
-    return {
-      agentId,
-      agentDir,
-      trigger: { type: 'manual' as const, payload },
-      config: {},
-      secrets,
-      log: {
-        info: (message: string, data?: Record<string, unknown>) => {
-          this.logger.log(`[${agentId}] ${message} ${data ? JSON.stringify(data) : ''}`);
-        },
-        warn: (message: string, data?: Record<string, unknown>) => {
-          this.logger.warn(`[${agentId}] ${message} ${data ? JSON.stringify(data) : ''}`);
-        },
-        error: (message: string, data?: Record<string, unknown>) => {
-          this.logger.error(`[${agentId}] ${message} ${data ? JSON.stringify(data) : ''}`);
-        },
-      },
-      emit: (event: string, data?: unknown) => {
-        const feedData = data as Record<string, unknown> | undefined;
+      worker.on('message', (msg: { type: string; level?: string; message?: string; data?: unknown; event?: string }) => {
+        switch (msg.type) {
+          case 'log':
+            this.logger.log(`[${agentId}] ${msg.message} ${msg.data ? JSON.stringify(msg.data) : ''}`);
+            break;
 
-        if (event === 'widget') {
-          const widgetData = data as { size?: string; html: string } | undefined;
-          if (widgetData?.html) {
-            widgetService.upsert({
-              userId,
-              agentId,
-              size: widgetData.size ?? 'medium',
-              html: widgetData.html,
-            }).catch((err) => {
-              this.logger.error(`Widget emit failed: ${err instanceof Error ? err.message : String(err)}`);
-            });
+          case 'emit':
+            if (msg.event === 'widget') {
+              const widgetData = msg.data as { size?: string; html: string } | undefined;
+              if (widgetData?.html) {
+                this.widgetService.upsert({ userId, agentId, size: widgetData.size ?? 'medium', html: widgetData.html })
+                  .catch((err) => this.logger.error(`Widget emit failed: ${err instanceof Error ? err.message : String(err)}`));
+              }
+            } else {
+              const feedData = msg.data as Record<string, unknown> | undefined;
+              this.feedService.create({
+                agentId,
+                type: ((feedData?.type as string) ?? msg.event ?? 'info') as FeedItemType,
+                title: (feedData?.title as string) ?? msg.event ?? 'event',
+                body: feedData?.body as string | undefined,
+                data: feedData,
+              }).catch((err) => this.logger.error(`Feed emit failed: ${err instanceof Error ? err.message : String(err)}`));
+            }
+            break;
+
+          case 'result': {
+            const durationMs = Date.now() - startedAt;
+            this.logger.log(`${agentId}/${functionName} OK (${durationMs}ms)`);
+            resolvePromise({ agentId, functionName, status: 'success', result: msg.data, durationMs });
+            break;
           }
-        } else {
-          feedService.create({
-            agentId,
-            type: ((feedData?.type as string) ?? event) as FeedItemType,
-            title: (feedData?.title as string) ?? event,
-            body: feedData?.body as string | undefined,
-            data: feedData,
-          }).catch((err) => {
-            this.logger.error(`Feed emit failed: ${err instanceof Error ? err.message : String(err)}`);
-          });
+
+          case 'error': {
+            const durationMs = Date.now() - startedAt;
+            this.logger.error(`${agentId}/${functionName} FAILED (${durationMs}ms): ${msg.message}`);
+            resolvePromise({ agentId, functionName, status: 'error', error: msg.message, durationMs });
+            break;
+          }
         }
-      },
-      llm: {
-        ask: async (_prompt: string): Promise<string> => {
-          throw new Error('LLM not available in local run mode');
-        },
-        askWithSystem: async (_system: string, _user: string): Promise<string> => {
-          throw new Error('LLM not available in local run mode');
-        },
-      },
-    };
+      });
+
+      worker.on('error', (err: Error) => {
+        const durationMs = Date.now() - startedAt;
+        this.logger.error(`${agentId}/${functionName} WORKER ERROR (${durationMs}ms): ${err.message}`);
+        resolvePromise({ agentId, functionName, status: 'error', error: err.message, durationMs });
+      });
+
+      worker.on('exit', (code: number) => {
+        if (code !== 0) {
+          const durationMs = Date.now() - startedAt;
+          resolvePromise({ agentId, functionName, status: 'error', error: `Worker exited with code ${code}`, durationMs });
+        }
+      });
+    });
   }
+
 }

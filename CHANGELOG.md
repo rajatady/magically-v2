@@ -4,6 +4,15 @@ All notable changes to this project are documented here. Format: date, git hash,
 
 ---
 
+## 2026-04-05 | Worker thread agent execution
+
+- Agent functions now run in `worker_threads` instead of in-process
+- `agent-worker.js` — standalone worker script that loads and runs agent functions
+- Main NestJS event loop stays unblocked during long-running agents (e.g. 14s Python pipelines)
+- WebSocket connections, API requests, and other agents continue working during execution
+- Emit/log messages passed from worker to main thread via `postMessage`
+- Removed old `buildContext()` from LocalRunnerService — context built in worker
+
 ## 2026-04-04 (9) | Agent registration gate + RegisterAgent tool
 
 - LocalRunnerService.run() checks agent is registered in DB before executing (prevents FK violations)
