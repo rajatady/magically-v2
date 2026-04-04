@@ -1,4 +1,7 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, HashRouter, Routes, Route } from 'react-router-dom';
+
+const isElectron = typeof window !== 'undefined' && window.location.protocol === 'file:';
+const Router = isElectron ? HashRouter : BrowserRouter;
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -18,7 +21,7 @@ import { NewChatPage } from './pages/NewChatPage';
 export default function App() {
   return (
     <ErrorBoundary>
-      <BrowserRouter>
+      <Router>
         <TooltipProvider>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
@@ -49,7 +52,7 @@ export default function App() {
             </Route>
           </Routes>
         </TooltipProvider>
-      </BrowserRouter>
+      </Router>
     </ErrorBoundary>
   );
 }

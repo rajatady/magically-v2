@@ -4,6 +4,14 @@ All notable changes to this project are documented here. Format: date, git hash,
 
 ---
 
+## 2026-04-04 (5) | Electron desktop app
+
+- Electron shell wrapping the bundled React app + NestJS backend
+- Backend starts as child process, skips if already running on port 4321
+- Hidden title bar (macOS native), system tray for background operation
+- HashRouter for file:// protocol, relative asset paths via `--base './'`
+- `apps/desktop/` — main.js, package.json, .gitignore
+
 ## 2026-04-04 (4) | Local agents visible in gallery + discovery fixes
 
 - LocalDiscoveryService updates existing remote agents to `source: 'local'` when found on filesystem
