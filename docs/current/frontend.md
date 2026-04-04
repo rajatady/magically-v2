@@ -1,6 +1,6 @@
 # Frontend Architecture
 
-Last synced: 2026-04-03 | Commit: ea00cd7
+Last synced: 2026-04-04 | Commit: 93e7bdc
 
 ## Tech Stack
 
@@ -183,6 +183,7 @@ Fixed 64px wide column. Items defined in `Sidebar.tsx`:
 | `⌂` | Home | `/` |
 | `◎` | Feed | `/feed` |
 | `⊞` | Gallery | `/gallery` |
+| `◈` | Chats | `/chats` |
 | `+` | Build | `/build` |
 | `⚙` | Settings | `/settings` |
 
@@ -308,6 +309,30 @@ Blocks arrive flat and are assembled into a tree via `parentToolUseId`. Text blo
 - If agent has functions or UI, renders an iframe: `{BASE_URL}/agents/{id}/ui?token={jwt}`
 - Iframe sandboxed: `allow-scripts allow-forms allow-same-origin`
 - If no UI, shows placeholder with agent icon/name/description
+
+## Electron Desktop App Support (2026-04-04)
+
+The web app detects whether it is running inside Electron and adapts accordingly:
+
+### Router
+
+```typescript
+const isElectron = typeof navigator !== 'undefined' && navigator.userAgent.includes('Electron');
+const Router = isElectron ? HashRouter : BrowserRouter;
+```
+
+- **`BrowserRouter`** is used for the Vite dev server and Vercel deployment (supports pushState)
+- **`HashRouter`** is used in Electron because `file://` protocol does not support pushState routing
+
+### Socket URL
+
+The Zeus WebSocket hook (`use-zeus-socket.ts`) reads `VITE_API_URL` for the socket base URL instead of using a relative `/zeus` path. This is required because Electron loads from `file://`, and relative paths would not resolve to the localhost API.
+
+```typescript
+const baseUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:4321';
+```
+
+---
 
 ## Known Issues
 

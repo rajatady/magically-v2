@@ -1,6 +1,6 @@
 # @magically/shared Package
 
-Last synced: 2026-04-03
+Last synced: 2026-04-04
 
 ## Package
 

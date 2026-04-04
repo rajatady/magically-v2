@@ -1,6 +1,6 @@
 # Database Schema
 
-> **Last synced**: 2026-03-28 | **Commit**: `97ab426` (development branch)
+> **Last synced**: 2026-04-04 | **Commit**: `93e7bdc` (development branch)
 
 PostgreSQL. Local Postgres for dev, Neon for production. ORM: Drizzle. Schema defined in `packages/runtime/src/db/schema.ts`. Migrations in `packages/runtime/drizzle/`.
 
@@ -207,6 +207,30 @@ Individual messages in a Zeus conversation. Replaces the old JSONB blob. Support
 | created_at | timestamp | NOT NULL | |
 | updated_at | timestamp | NOT NULL | |
 
+### user_schedules
+
+*Added 2026-04-04 (migration 0005)*
+
+Per-user cron schedules. Users control when agent functions run automatically. The `TriggerSchedulerService` reads from this table (user-controlled), not from agent manifests.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | text | PK | Schedule record ID (UUID) |
+| user_id | text | NOT NULL, FK → users.id CASCADE | Owner |
+| agent_id | text | NOT NULL | Target agent |
+| function_name | text | NOT NULL | Function to execute |
+| cron | text | NOT NULL | Cron expression (e.g., `"0 */6 * * *"`) |
+| enabled | boolean | NOT NULL, default true | Whether the schedule is active |
+| last_run_at | timestamp | nullable | Last execution time |
+| created_at | timestamp | NOT NULL | |
+| updated_at | timestamp | NOT NULL | |
+
+Service: `packages/runtime/src/agents/schedule.service.ts` — `create(dto)`, `findByUser(userId)`, `findAllEnabled()`, `toggle(id, enabled)`, `updateCron(id, cron)`, `updateLastRun(id)`, `remove(id)`
+
+Controller: `packages/runtime/src/agents/schedule.controller.ts` — `GET /api/schedules`, `POST /api/schedules`, `PUT /api/schedules/:id/toggle`, `PUT /api/schedules/:id/cron`, `DELETE /api/schedules/:id`
+
+Scheduler: `packages/runtime/src/agents/trigger-scheduler.service.ts` — reads `findAllEnabled()` on module init and after every CRUD operation (`refresh()`). Registers `CronJob` instances via NestJS `SchedulerRegistry`.
+
 ### user_widgets
 
 *Added 2026-04-04 (migration 0004)*
@@ -236,7 +260,7 @@ Controller: `packages/runtime/src/events/widget.controller.ts` — `GET /api/wid
 | 0002 | `0002_gorgeous_amazoness.sql` | Create zeus_messages table, make conversations.messages nullable, add rewind_to_sdk_uuid |
 | 0003 | `0003_rich_ben_urich.sql` | Add `files` column to zeus_messages |
 | 0004 | *(migration 0004)* | Create `user_widgets` table (id, userId, agentId, size, html, position, updatedAt) |
-| 0005 | *(migration 0005)* | *(see git history)* |
+| 0005 | *(migration 0005)* | Create `user_schedules` table (userId, agentId, functionName, cron, enabled, lastRunAt) |
 | 0006 | *(migration 0006)* | Add `source` column to `agents` table (`'local'` \| `'remote'`, default `'remote'`) |
 
 ## Test Database

@@ -1,6 +1,6 @@
 # WebSockets
 
-Last synced: 2026-03-28 | Commit: 97ab426 (development branch)
+Last synced: 2026-04-04 | Commit: 93e7bdc (development branch)
 
 Magically uses two Socket.IO gateways: a general-purpose events gateway on the root namespace and a dedicated Zeus gateway on `/zeus`. The frontend maintains two independent socket connections to match.
 
@@ -271,9 +271,13 @@ interface ZeusMessage {
 |---|---|
 | Disconnect aborts execution | When a Zeus socket disconnects, the `AbortController` is called, which terminates any in-progress Agent SDK `query()`. If the user closes a tab or loses connectivity briefly, the entire execution is lost. There is no resume-on-reconnect. |
 | Dual socket duplication | The frontend connects two separate sockets: the global socket (`/`) and the Zeus socket (`/zeus`). The global socket still has `zeus:typing`, `zeus:chunk`, `zeus:done` listeners, but no server-side code emits those events on the root namespace anymore. This is dead code. |
-| Hardcoded global socket URL | `socket.ts` connects to `http://localhost:4321` with no environment variable. Only works in local dev. |
+| Hardcoded global socket URL | `socket.ts` connects to `http://localhost:4321` with no environment variable. Only works in local dev. (Note: The Zeus socket was fixed in 2026-04-04 to use `VITE_API_URL` — see below.) |
 | No reconnection strategy on Zeus socket | The hook creates the socket once on mount. If the connection drops, Socket.IO's default reconnection applies, but no re-authentication or stream recovery occurs. |
 | Chunk sends accumulated text | The `chunk` event sends the full accumulated response text each time, not just the delta. The client must diff to find the new content. This is bandwidth-inefficient for long responses. |
 | Tool result truncation | Tool results are truncated to 2000 characters server-side before being sent to the client. Long results (e.g., file contents) are silently cut off in the UI. |
 | No room-based routing | The root EventsGateway broadcasts to all connected clients. There is no per-user or per-conversation room scoping. Every connected client receives every `feed:new` and `agent:update` event. |
 | Blocks stored as JSON string | The `zeus_messages.blocks` column stores blocks as a JSON string. The frontend must handle both string and parsed array formats when loading history. |
+
+### Fixed Issues (2026-04-04)
+
+- **Zeus socket URL fix**: The Zeus socket hook (`use-zeus-socket.ts`) now reads `import.meta.env.VITE_API_URL` (default `http://localhost:4321`) for the socket base URL instead of using a relative `/zeus` path. This fixes WebSocket connections in the Electron desktop app, where `file://` protocol cannot resolve relative Socket.IO paths. The global socket in `socket.ts` still uses a hardcoded URL.

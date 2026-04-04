@@ -1,6 +1,6 @@
 # Deployment
 
-Last synced: 2026-03-28 | Commit: 97ab426 (development branch)
+Last synced: 2026-04-04 | Commit: 93e7bdc (development branch)
 
 ## Overview
 
@@ -286,6 +286,70 @@ The web app is a static SPA. It connects to the runtime API at a configured base
 ```
 
 Uses `@nestjs/schematics` with `deleteOutDir: true` (cleans `dist/` before each build).
+
+## Desktop App (Electron)
+
+*Added 2026-04-04*
+
+### Package
+
+| Field | Value |
+|-------|-------|
+| Name | `@magically/desktop` |
+| Location | `apps/desktop/` |
+| Entry | `src/main.js` |
+| Framework | Electron 33 |
+| Packager | electron-builder |
+
+### Architecture
+
+The desktop app is an Electron shell wrapping the bundled React SPA. The NestJS backend starts as a child process (or reuses an existing one if port 4321 is already in use).
+
+### Window Configuration
+
+```javascript
+{
+  titleBarStyle: 'hidden',              // Custom title bar
+  trafficLightPosition: { x: 12, y: 12 },  // macOS traffic lights position
+  backgroundColor: '#0a0a0b',           // Matches app background
+  webPreferences: {
+    webSecurity: false,                 // Allow file:// to fetch from localhost API
+    partition: 'persist:magically',     // Persistent localStorage across launches
+  }
+}
+```
+
+**Note:** Uses `titleBarStyle: 'hidden'` with explicit `trafficLightPosition`, NOT `hiddenInset` (which causes focus bugs on macOS).
+
+### Backend Process Management
+
+1. On app ready, checks if port 4321 is already in use
+2. If already running: skips backend startup, uses existing server
+3. If not running: spawns `bun run start:dev` in `packages/runtime/` as a child process
+4. Waits up to 30s for the port to become available (`waitForPort()` with TCP socket check)
+5. On `before-quit`: kills the child process
+
+### System Tray
+
+Creates a menu bar tray icon with "Open Magically" and "Quit" options. Closing the window hides it to the tray instead of quitting (macOS pattern).
+
+### Router Adaptation
+
+The web app uses `HashRouter` when running in Electron (detected via `navigator.userAgent.includes('Electron')`) because `file://` protocol does not support HTML5 pushState routing. See [frontend.md](frontend.md).
+
+### Build & Run Commands
+
+```bash
+# Full build + launch (builds web, copies to desktop, starts Electron)
+bun run desktop
+
+# Quick launch with existing web build
+bun run desktop:dev
+```
+
+The `web-dist/` directory contains the bundled React app copied from `apps/web/dist/`.
+
+---
 
 ## Known Issues
 

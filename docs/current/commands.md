@@ -60,6 +60,19 @@ Credentials stored at `~/.magically/credentials.json`.
 | `magically dev <fn> [dir]` | Run locally (preferred for development) |
 | `magically run <agentId> <fn>` | Run via runtime API (requires published agent) |
 
+## Desktop App
+
+*Added 2026-04-04*
+
+| Command | Description |
+|---------|-------------|
+| `bun run desktop` | Build shared + web (with `--base './'`), copy to desktop/web-dist, launch Electron |
+| `bun run desktop:dev` | Quick launch Electron with existing web build (no rebuild) |
+
+The desktop app starts the NestJS backend as a child process if port 4321 is not already in use. See [deployment.md](deployment.md) for architecture details.
+
+---
+
 ## Quick Start
 
 ```bash

@@ -1,6 +1,6 @@
 # Zeus
 
-Last synced: 2026-04-03
+Last synced: 2026-04-04
 
 Zeus is the AI kernel of Magically. It wraps the Claude Agent SDK `query()` function with multi-tenant workspace management, persistent conversations, MCP tools for OS operations, and WebSocket streaming.
 
@@ -208,15 +208,44 @@ The MCP server is created via `createSdkMcpServer` from the Agent SDK. It expose
 
 Implemented in `ZeusService` via `FeedService` and `WidgetService`.
 
+### Agent Execution Tools (2026-04-04)
+
+| Tool | Parameters | Description |
+|---|---|---|
+| `RunAgent` | `agentId: string, functionName: string, payload?: Record<string, unknown>` | Runs a local agent function in-process via `LocalRunnerService`. Returns OK/FAILED with duration and result JSON. |
+| `ListLocalAgents` | (none) | Lists all agents on the filesystem (`agents/` directory). Returns ID, name, and function names for each. |
+
+### Schedule Management Tools (2026-04-04)
+
+| Tool | Parameters | Description |
+|---|---|---|
+| `ListSchedules` | (none) | Lists all cron schedules for the current user. Shows agent/function, cron expression, enabled status, and last run time. |
+| `CreateSchedule` | `agentId: string, functionName: string, cron: string` | Creates a cron schedule for an agent function. Returns schedule ID. |
+| `ToggleSchedule` | `scheduleId: string, enabled: boolean` | Enables or disables an existing schedule. |
+| `DeleteSchedule` | `scheduleId: string` | Permanently removes a schedule. |
+
+### Delegate Interface Extensions (2026-04-04, updated)
+
+`RunAgent` and `ListLocalAgents` are backed by `LocalRunnerService` passed as `deps.localRunner`. Schedule tools are backed by new methods on `ExecutorZeusDelegate`:
+
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `getSchedules` | `(userId: string) => Promise<UserSchedule[]>` | Returns user's cron schedules |
+| `createSchedule` | `(userId, agentId, functionName, cron) => Promise<{ id: string }>` | Creates a new schedule |
+| `toggleSchedule` | `(scheduleId, enabled) => Promise<void>` | Toggles schedule enabled state |
+| `deleteSchedule` | `(scheduleId) => Promise<void>` | Deletes a schedule |
+
 ### MCP Server Configuration
 
 ```typescript
 {
   name: 'magically',
   version: '1.0.0',
-  tools: [ /* 9 tools above */ ]
+  tools: [ /* 15 tools */ ]
 }
 ```
+
+**Total tools: 15** — ListAgents, GetAgent, ReadMemory, WriteMemory, DeleteMemory, CreateTask, ListTasks, ReadFeed, ReadWidgets, RunAgent, ListLocalAgents, ListSchedules, CreateSchedule, ToggleSchedule, DeleteSchedule.
 
 Registered on the `query()` call as `mcpServers: { magically: <server> }`. Tools appear to the model as `mcp__magically__<ToolName>`.
 
@@ -540,7 +569,7 @@ ZeusGateway emits 'done' to client
 | maxBudgetUsd hardcoded | The `$1.00` budget cap per execution is hardcoded in the executor. Not configurable per user or per conversation. |
 | maxTurns hardcoded | The 30-turn limit is hardcoded. Long multi-step tasks may hit this ceiling. |
 | Model hardcoded | `claude-sonnet-4-6` is hardcoded in the executor. Not configurable. |
-| No task update/delete | The MCP tools expose `CreateTask` and `ListTasks` but no `UpdateTask` or `DeleteTask`. Tasks cannot be completed, cancelled, or removed via the model. |
+| No task update/delete | The MCP tools expose `CreateTask` and `ListTasks` but no `UpdateTask` or `DeleteTask`. Tasks cannot be completed, cancelled, or removed via the model. (Note: Schedule CRUD is fully covered — CreateSchedule, ListSchedules, ToggleSchedule, DeleteSchedule.) |
 | Workspace is single-agent | Each user gets one workspace with one `manifest.json`. The workspace agent ID is always `workspace-{userId}`. There is no multi-agent workspace support. |
 | Onboarding is file-based | The onboarding check (`isOnboarded`) looks for `.magically/onboarded` file in the workspace. If the file is deleted, Zeus re-prompts for onboarding. The file must be created by the model itself as instructed in the system prompt. |
 | Conversation mode unused | `createConversation` accepts a `mode` parameter (`'chat' | 'build' | 'edit' | 'task'`) but nothing reads or acts on this field downstream. |

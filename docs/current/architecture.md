@@ -1,6 +1,6 @@
 # Architecture
 
-> **Last synced**: 2026-03-28 | **Commit**: `97ab426` (development branch)
+> **Last synced**: 2026-04-04 | **Commit**: `93e7bdc` (development branch)
 
 ## System Overview
 
@@ -8,19 +8,23 @@ Magically is an operating system for AI agents. The system is a monorepo with fi
 
 ```
 Browser ──► Vite React SPA (apps/web)
-               │
-               ├── REST API ──► NestJS Runtime (packages/runtime)
-               │                     │
-               │                     ├── PostgreSQL (Neon prod / local dev)
-               │                     ├── BullMQ + Redis (async build jobs)
-               │                     ├── Tigris S3 (agent bundle storage)
-               │                     └── Agent SDK (Zeus brain — Claude Code tools)
-               │
-               └── Socket.IO ──► NestJS Gateways
-                                   ├── / namespace (feed, agent events)
-                                   └── /zeus namespace (chat streaming)
+   │             │
+   │             ├── REST API ──► NestJS Runtime (packages/runtime)
+   │             │                     │
+   │             │                     ├── PostgreSQL (Neon prod / local dev)
+   │             │                     ├── BullMQ + Redis (async build jobs)
+   │             │                     ├── Tigris S3 (agent bundle storage)
+   │             │                     ├── Agent SDK (Zeus brain — Claude Code tools)
+   │             │                     └── LocalRunnerService (in-process agent execution)
+   │             │
+   │             └── Socket.IO ──► NestJS Gateways
+   │                                 ├── / namespace (feed, agent events)
+   │                                 └── /zeus namespace (chat streaming)
+   │
+Electron ──► Bundled React SPA (apps/desktop wraps apps/web)
+               └── Spawns NestJS as child process on port 4321
 
-CLI (packages/cli) ──► REST API (publish, run, status, login)
+CLI (packages/cli) ──► REST API (publish, run, status, login, dev)
 ```
 
 ## Monorepo Packages
@@ -28,7 +32,7 @@ CLI (packages/cli) ──► REST API (publish, run, status, login)
 ```
 packages/
   runtime/     NestJS backend. All API endpoints, DB, Zeus, agent execution.
-  cli/         Commander.js CLI. publish, run, status, login, init.
+  cli/         Commander.js CLI. publish, run, status, login, init, dev.
   shared/      Types, ApiClient, validation pipeline, errors, scaffold, Dockerfile generator.
                 Plain tsc -b, CJS output. Consumed by runtime, web, and CLI.
   agent-sdk/   SDK for agent UIs (planned, not built).
@@ -36,8 +40,10 @@ packages/
 
 apps/
   web/         Vite + React 19. Tailwind v4 + shadcn/ui. The user-facing SPA.
+  desktop/     Electron shell wrapping the bundled React app (added 2026-04-04).
 
-agents/        Example agents (hello-world, instagram-auto-poster).
+agents/        Example agents (hello-world, instagram-auto-poster, job-search-tracker,
+               runway-monitor, research-pulse, ask-llm, clock-widget, reel-intel).
 builders/      Git submodule (rajatady/magically-builders). GitHub Actions for remote Docker builds.
 ```
 
@@ -156,6 +162,47 @@ Agent function runs (via `magically dev` or container execution)
 The agent owns presentation entirely: widget HTML includes inline CSS, inline SVG charts, and any visual content. The home screen renders widgets via `dangerouslySetInnerHTML` in a responsive grid (small=4col, medium=6col, large=8col).
 
 Zeus can read both feed events and widgets via MCP tools (`ReadFeed`, `ReadWidgets`), giving it awareness of what agents have reported and what the user sees on their home screen.
+
+### Scheduling Data Flow (2026-04-04)
+
+```
+User creates schedule (via Zeus MCP tool or POST /api/schedules)
+  └─► ScheduleService.create() → user_schedules table
+        └─► TriggerSchedulerService.refresh()
+              └─► Re-register all enabled CronJobs via NestJS SchedulerRegistry
+                    └─► On cron fire:
+                          ├── FunctionRunnerService.run() (local-first, then container)
+                          └── ScheduleService.updateLastRun()
+```
+
+Zeus has full schedule CRUD via MCP tools: `ListSchedules`, `CreateSchedule`, `ToggleSchedule`, `DeleteSchedule`.
+
+### Local Agent Execution Flow (2026-04-04)
+
+```
+POST /api/agents/:id/run/:fn  (or Zeus RunAgent MCP tool)
+  └─► FunctionRunnerService.run()
+        ├── Check: localRunner.listAgents().includes(agentId)?
+        │     YES → LocalRunnerService.run() [in-process, ~150ms]
+        │             ├── Load function JS from agents/<id>/functions/<fn>.js
+        │             ├── Build ctx with log, secrets, emit(feed/widget)
+        │             └── Call handler(ctx, payload)
+        │     NO  → Container path (Docker/Fly/Daytona) [~26s on Fly]
+        └── Return RunResult
+```
+
+### Desktop App Architecture (2026-04-04)
+
+```
+Electron main process (apps/desktop/src/main.js)
+  ├── Check port 4321 — skip if runtime already running
+  ├── Spawn NestJS as child process (bun run start:dev)
+  ├── Wait for port (TCP socket probe, 30s timeout)
+  └── BrowserWindow loads file://web-dist/index.html
+        ├── HashRouter (not BrowserRouter — file:// can't pushState)
+        ├── webSecurity: false (file:// → localhost API)
+        └── persist:magically partition (localStorage survives restarts)
+```
 
 ---
 

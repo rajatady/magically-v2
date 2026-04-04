@@ -1,6 +1,6 @@
 # API Reference
 
-> **Last synced**: 2026-03-28 | **Commit**: `97ab426` (development branch)
+> **Last synced**: 2026-04-04 | **Commit**: `93e7bdc` (development branch)
 
 Base URL: `http://localhost:4321` (dev), configured via `VITE_API_URL` on frontend. All endpoints prefixed with `/api/`. Protected endpoints require `Authorization: Bearer <jwt>` or `X-API-Key: mg_...` header.
 
@@ -323,6 +323,69 @@ Upserts a widget. If a widget already exists for the same userId + agentId, it i
 Removes the widget for the specified agent belonging to the authenticated user.
 
 **Response** `204`
+
+---
+
+## Schedules (`/api/schedules`)
+
+*Added 2026-04-04*
+
+Controller: `packages/runtime/src/agents/schedule.controller.ts`
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/schedules` | Required | List current user's cron schedules |
+| POST | `/api/schedules` | Required | Create a new schedule |
+| PUT | `/api/schedules/:id/toggle` | Required | Enable or disable a schedule |
+| PUT | `/api/schedules/:id/cron` | Required | Update schedule cron expression |
+| DELETE | `/api/schedules/:id` | Required | Delete a schedule |
+
+### GET /api/schedules
+
+Returns all schedules for the authenticated user.
+
+**Response** `200`:
+```json
+[
+  {
+    "id": "...",
+    "userId": "...",
+    "agentId": "hello-world",
+    "functionName": "greet",
+    "cron": "0 */6 * * *",
+    "enabled": true,
+    "lastRunAt": null,
+    "createdAt": "2026-04-04T10:00:00Z",
+    "updatedAt": "2026-04-04T10:00:00Z"
+  }
+]
+```
+
+### POST /api/schedules
+
+Creates a cron schedule. After creation, `TriggerSchedulerService.refresh()` is called to immediately register the new cron job.
+
+**Body**: `{ agentId: string, functionName: string, cron: string }`
+
+**Response** `201`: The created schedule object.
+
+### PUT /api/schedules/:id/toggle
+
+**Body**: `{ enabled: boolean }`
+
+**Response** `200`
+
+### PUT /api/schedules/:id/cron
+
+**Body**: `{ cron: string }`
+
+**Response** `200`
+
+### DELETE /api/schedules/:id
+
+**Response** `204`
+
+All write operations call `TriggerSchedulerService.refresh()` to re-register active cron jobs.
 
 ---
 
