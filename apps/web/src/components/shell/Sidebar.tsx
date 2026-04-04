@@ -2,20 +2,31 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useStore } from '../../lib/store';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
+import {
+  Home,
+  Rss,
+  MessageSquare,
+  LayoutGrid,
+  Plus,
+  Settings,
+  Sparkles,
+  Zap,
+  type LucideIcon,
+} from 'lucide-react';
 
 interface NavItem {
   path: string;
-  icon: string;
+  icon: LucideIcon;
   label: string;
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { path: '/',         icon: '⌂',  label: 'Home' },
-  { path: '/feed',     icon: '◎',  label: 'Feed' },
-  { path: '/chats',    icon: '◈',  label: 'Chats' },
-  { path: '/gallery',  icon: '⊞',  label: 'Gallery' },
-  { path: '/build',    icon: '+',  label: 'Build' },
-  { path: '/settings', icon: '⚙', label: 'Settings' },
+  { path: '/',         icon: Home,          label: 'Home' },
+  { path: '/feed',     icon: Rss,           label: 'Feed' },
+  { path: '/chats',    icon: MessageSquare, label: 'Chats' },
+  { path: '/gallery',  icon: LayoutGrid,    label: 'Gallery' },
+  { path: '/build',    icon: Plus,          label: 'Build' },
+  { path: '/settings', icon: Settings,      label: 'Settings' },
 ];
 
 export function Sidebar({ onZeusClick }: { onZeusClick?: () => void }) {
@@ -34,10 +45,12 @@ export function Sidebar({ onZeusClick }: { onZeusClick?: () => void }) {
       className="flex w-16 shrink-0 flex-col items-center gap-1 border-r border-border bg-bg-panel py-4"
     >
       {/* Logo */}
-      <div className="mb-3 text-[22px]">✨</div>
+      <div className="mb-3">
+        <Sparkles size={22} className="text-accent" />
+      </div>
 
       {/* Zeus button */}
-      <SidebarButton icon="◈" label="Zeus" active={zeusOpen} onClick={onZeusClick ?? toggleZeus} />
+      <SidebarButton Icon={Zap} label="Zeus" active={zeusOpen} onClick={onZeusClick ?? toggleZeus} />
 
       <Separator className="my-2 w-8" />
 
@@ -45,7 +58,7 @@ export function Sidebar({ onZeusClick }: { onZeusClick?: () => void }) {
       {NAV_ITEMS.map((item) => (
         <SidebarButton
           key={item.path}
-          icon={item.icon}
+          Icon={item.icon}
           label={item.label}
           active={isActive(item.path)}
           onClick={() => navigate(item.path)}
@@ -58,7 +71,7 @@ export function Sidebar({ onZeusClick }: { onZeusClick?: () => void }) {
       {agents.slice(0, 8).map((agent) => (
         <SidebarButton
           key={agent.id}
-          icon={agent.icon ?? '◇'}
+          emoji={agent.icon ?? '◇'}
           label={agent.name}
           active={location.pathname === `/agents/${agent.id}`}
           onClick={() => navigate(`/agents/${agent.id}`)}
@@ -69,12 +82,14 @@ export function Sidebar({ onZeusClick }: { onZeusClick?: () => void }) {
 }
 
 function SidebarButton({
-  icon,
+  Icon,
+  emoji,
   label,
   active,
   onClick,
 }: {
-  icon: string;
+  Icon?: LucideIcon;
+  emoji?: string;
   label: string;
   active: boolean;
   onClick: () => void;
@@ -84,13 +99,13 @@ function SidebarButton({
       title={label}
       onClick={onClick}
       className={cn(
-        'flex size-10 items-center justify-center rounded-md text-base transition-all cursor-pointer',
+        'flex size-10 items-center justify-center rounded-md transition-all cursor-pointer',
         active
           ? 'bg-accent-dim text-accent'
           : 'bg-transparent text-text-2 hover:bg-bg-hover',
       )}
     >
-      {icon}
+      {Icon ? <Icon size={18} strokeWidth={active ? 2.2 : 1.8} /> : <span className="text-base">{emoji}</span>}
     </button>
   );
 }

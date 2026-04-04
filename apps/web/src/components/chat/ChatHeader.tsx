@@ -6,7 +6,7 @@ type ConnectionState = 'connected' | 'disconnected' | 'reconnecting';
 
 interface ChatHeaderProps {
   title: string;
-  icon: string;
+  icon: React.ReactNode;
   connected: boolean;
   reconnecting?: boolean;
   onClose?: () => void;
@@ -18,7 +18,7 @@ export const ChatHeader = memo(function ChatHeader({ title, icon, connected, rec
   return (
     <div className="flex shrink-0 items-center justify-between border-b border-border px-5 py-4">
       <div className="flex items-center gap-2">
-        <span className="text-base text-accent">{icon}</span>
+        <span className="text-accent">{icon}</span>
         <span className="text-sm font-semibold text-text-1">{title}</span>
         <span className={cn(
           'size-2 rounded-full',

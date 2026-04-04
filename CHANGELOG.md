@@ -4,6 +4,17 @@ All notable changes to this project are documented here. Format: date, git hash,
 
 ---
 
+## 2026-04-05 (2) | Theme system, Settings page, Lucide icons
+
+- Dark/light/system theme switching via ThemeProvider + localStorage persistence
+- Consolidated global.css: removed duplicate CSS vars, proper `:root` (light) + `.dark` blocks
+- Accent color changed from orange (#f97316) to violet (#8b5cf6 light / #a78bfa dark)
+- Settings page: Apple-style sidebar/detail layout, responsive, theme switcher with live previews
+- Replaced all emoji nav icons with Lucide React icons (Sidebar, ChatHeader, ZeusHeader, FeedView, Settings, HomeView)
+- Chat bubble redesign: removed border/box from AI messages, user messages use subtle accent-dim background
+- HomeView: replaced hardcoded dark-only inline styles with CSS var references (works in both themes)
+- ChatHeader `icon` prop changed from `string` to `React.ReactNode` for component icons
+
 ## 2026-04-05 | Worker thread agent execution
 
 - Agent functions now run in `worker_threads` instead of in-process

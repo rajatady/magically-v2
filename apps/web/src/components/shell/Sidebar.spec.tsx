@@ -38,9 +38,9 @@ function renderWithRouter(ui: React.ReactElement, initialEntries = ['/']) {
 }
 
 maybeDescribe('Sidebar', () => {
-  it('renders the logo', () => {
+  it('renders the sidebar', () => {
     renderWithRouter(<Sidebar />);
-    expect(screen.getByText('✨')).toBeInTheDocument();
+    expect(screen.getByTestId('sidebar')).toBeInTheDocument();
   });
 
   it('renders all nav items', () => {

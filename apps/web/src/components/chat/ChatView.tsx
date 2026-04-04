@@ -10,7 +10,7 @@ interface ChatViewProps {
   chatId: string | null;
   routePrefix: string;
   headerTitle: string;
-  headerIcon: string;
+  headerIcon: React.ReactNode;
   placeholder?: string;
   onClose?: () => void;
 }

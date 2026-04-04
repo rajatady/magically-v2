@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { MessageSquare } from 'lucide-react';
 import { ChatView } from '@/components/chat/ChatView';
 import { ChatList } from '@/components/chat/ChatList';
 
@@ -20,7 +21,7 @@ export function ChatPage() {
           chatId={chatId ?? null}
           routePrefix="/chat"
           headerTitle="Chat"
-          headerIcon="💬"
+          headerIcon={<MessageSquare size={16} />}
           placeholder="Message…"
         />
       </div>

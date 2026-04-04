@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import { useLocation } from 'react-router-dom';
+import { Zap } from 'lucide-react';
 import { ChatView } from '@/components/chat/ChatView';
 
 interface Props {
@@ -20,7 +21,7 @@ export const ZeusChat = memo(function ZeusChat({ onClose }: Props) {
       chatId={chatId}
       routePrefix="/zeus"
       headerTitle="Zeus"
-      headerIcon="◈"
+      headerIcon={<Zap size={16} />}
       placeholder="Ask Zeus anything…"
       onClose={onClose}
     />

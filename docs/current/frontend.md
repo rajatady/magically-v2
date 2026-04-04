@@ -1,6 +1,6 @@
 # Frontend Architecture
 
-Last synced: 2026-04-04 | Commit: 93e7bdc
+Last synced: 2026-04-05
 
 ## Tech Stack
 
@@ -9,7 +9,8 @@ Last synced: 2026-04-04 | Commit: 93e7bdc
 | Framework | React 19 (Vite) |
 | Routing | react-router-dom v6 |
 | State | Zustand |
-| Styling | Tailwind CSS v4 + shadcn/ui |
+| Styling | Tailwind CSS v4 + shadcn/ui (dark/light/system) |
+| Icons | Lucide React |
 | Markdown | Streamdown |
 | Realtime | Socket.IO (two separate connections) |
 | API Client | `@magically/shared/api-client` |
@@ -32,13 +33,14 @@ Last synced: 2026-04-04 | Commit: 93e7bdc
 | `/chats` | `ChatsPage` → `ChatList` | Yes | Conversation history list |
 | `/chat/new` | `NewChatPage` | Yes | Creates conversation, redirects to `/chat/:id` |
 | `/chat/:id` | `ChatPage` → `ChatList` + `ChatView` | Yes | Full-page chat with sidebar |
-| `/settings` | `PlaceholderView("Settings")` | Yes | Placeholder |
+| `/settings` | `SettingsView` | Yes | Settings with theme switcher |
 | `/build` | `PlaceholderView("Build")` | Yes | Placeholder |
 
 ## Component Hierarchy
 
 ```
 ErrorBoundary
+  ThemeProvider (dark/light/system, localStorage)
   BrowserRouter
     TooltipProvider
       Routes

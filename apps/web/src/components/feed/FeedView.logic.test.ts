@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getFeedItemColor, getFeedItemIcon } from './FeedView.logic';
+import { getFeedItemColor, getFeedItemIconName } from './FeedView.logic';
 
 describe('getFeedItemColor', () => {
   it('returns correct color for known types', () => {
@@ -15,16 +15,16 @@ describe('getFeedItemColor', () => {
   });
 });
 
-describe('getFeedItemIcon', () => {
-  it('returns correct icon for known types', () => {
-    expect(getFeedItemIcon('success')).toBe('✓');
-    expect(getFeedItemIcon('warning')).toBe('⚠');
-    expect(getFeedItemIcon('error')).toBe('✕');
-    expect(getFeedItemIcon('info')).toBe('◎');
-    expect(getFeedItemIcon('audio')).toBe('♪');
+describe('getFeedItemIconName', () => {
+  it('returns correct icon name for known types', () => {
+    expect(getFeedItemIconName('success')).toBe('check-circle');
+    expect(getFeedItemIconName('warning')).toBe('alert-triangle');
+    expect(getFeedItemIconName('error')).toBe('x-circle');
+    expect(getFeedItemIconName('info')).toBe('info');
+    expect(getFeedItemIconName('audio')).toBe('music');
   });
 
   it('returns fallback for unknown type', () => {
-    expect(getFeedItemIcon('unknown')).toBe('◎');
+    expect(getFeedItemIconName('unknown')).toBe('info');
   });
 });

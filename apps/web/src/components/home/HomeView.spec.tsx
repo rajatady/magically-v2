@@ -18,13 +18,16 @@ vi.mock('react-router-dom', async () => {
 });
 
 const mockWidgetsList = vi.fn();
+const mockFeedList = vi.fn();
 vi.mock('../../lib/api.js', () => ({
   widgets: { list: (...args: unknown[]) => mockWidgetsList(...args) },
+  feed: { list: (...args: unknown[]) => mockFeedList(...args) },
 }));
 
 beforeEach(() => {
   mockNavigate.mockClear();
   mockWidgetsList.mockReset();
+  mockFeedList.mockReset().mockResolvedValue([]);
 });
 
 function renderWithRouter(ui: React.ReactElement) {

@@ -26,7 +26,7 @@ export const ChatMessages = memo(function ChatMessages({ messages, stream, strea
 
         {streaming && (!stream || stream.blocks.length === 0) && !stream?.error && (
           <div className="flex justify-start">
-            <div className="rounded-2xl rounded-bl-sm border border-border bg-bg-card px-4 py-3">
+            <div className="rounded-2xl rounded-bl-sm px-4 py-3">
               <div className="flex gap-1.5">
                 <span className="size-2 animate-bounce rounded-full bg-text-3 [animation-delay:0ms]" />
                 <span className="size-2 animate-bounce rounded-full bg-text-3 [animation-delay:150ms]" />
@@ -78,8 +78,8 @@ const MessageBubble = memo(function MessageBubble({ message }: { message: ZeusMe
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
       <div className={`max-w-[85%] rounded-2xl px-4 py-3 ${
         isUser
-          ? 'rounded-br-sm bg-accent text-white'
-          : 'rounded-bl-sm border border-border bg-bg-card text-text-1'
+          ? 'rounded-br-sm bg-accent-dim text-text-1'
+          : 'text-text-1'
       }`}>
         {/* File attachments */}
         {message.files && message.files.length > 0 && (
@@ -103,7 +103,7 @@ const MessageBubble = memo(function MessageBubble({ message }: { message: ZeusMe
             )}
           </div>
         )}
-        <div className={`mt-1.5 text-[10px] ${isUser ? 'text-white/40' : 'text-text-3'}`}>
+        <div className={`mt-1.5 text-[10px] text-text-3`}>
           {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </div>
       </div>
@@ -116,7 +116,7 @@ const StreamingBubble = memo(function StreamingBubble({ stream }: { stream: Stre
 
   return (
     <div className="flex justify-start">
-      <div className="max-w-[85%] rounded-2xl rounded-bl-sm border border-border bg-bg-card px-4 py-3">
+      <div className="max-w-[85%] rounded-2xl rounded-bl-sm px-4 py-3">
         {stream.status && (
           <div className="mb-2 flex items-center gap-2 rounded-md bg-bg-panel px-2 py-1 font-mono text-xs text-yellow-500">
             <span className="size-1.5 animate-pulse rounded-full bg-yellow-500" />

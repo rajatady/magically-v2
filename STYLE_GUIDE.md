@@ -89,7 +89,8 @@ Only agents with a `runtime` block in their manifest use compute/build providers
 
 ## Frontend
 
-- Vite + React 19. Tailwind v4 + shadcn/ui for styling. CSS variables for theming tokens (defined in `@theme` block of `global.css`).
+- Vite + React 19. Tailwind v4 + shadcn/ui for styling. Dark/light/system theme via `ThemeProvider` + CSS variables in `global.css` (`:root` for light, `.dark` for dark). Accent: violet (#8b5cf6 / #a78bfa).
+- Lucide React for all structural UI icons. Agent icons may use emoji (declared in manifests).
 - Use `cn()` from `@/lib/utils` for conditional class merging.
 - Extract component logic to `.logic.ts` files with corresponding `.logic.test.ts` tests.
 - Use shadcn UI primitives (`Button`, `Input`, `Badge`, `Skeleton`, `Spinner`, `Tabs`, `Card`, `Avatar`, `ScrollArea`, etc.) instead of custom elements.

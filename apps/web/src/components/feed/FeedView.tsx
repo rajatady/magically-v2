@@ -2,7 +2,16 @@ import { useStore } from '../../lib/store';
 import { feed as feedApi } from '../../lib/api';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { getFeedItemColor, getFeedItemIcon } from './FeedView.logic';
+import { getFeedItemColor, getFeedItemIconName } from './FeedView.logic';
+import { Info, CheckCircle, AlertTriangle, XCircle, Music, X } from 'lucide-react';
+
+const ICON_MAP: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
+  'info':           Info,
+  'check-circle':   CheckCircle,
+  'alert-triangle': AlertTriangle,
+  'x-circle':       XCircle,
+  'music':          Music,
+};
 
 export function FeedView() {
   const { feed, markFeedRead, dismissFeedItem } = useStore();
@@ -53,7 +62,8 @@ function FeedItem({
   onDismiss: () => void;
 }) {
   const color = getFeedItemColor(item.type);
-  const icon = getFeedItemIcon(item.type);
+  const iconName = getFeedItemIconName(item.type);
+  const IconComponent = ICON_MAP[iconName] ?? Info;
 
   return (
     <div
@@ -66,7 +76,9 @@ function FeedItem({
           : 'cursor-pointer border-accent-dim bg-bg-card',
       )}
     >
-      <span className="shrink-0 pt-px text-base" style={{ color }}>{icon}</span>
+      <span className="shrink-0 pt-px" style={{ color }}>
+        <IconComponent size={16} />
+      </span>
 
       <div className="min-w-0 flex-1">
         <div className={cn('font-medium', item.body && 'mb-1')}>
@@ -87,7 +99,7 @@ function FeedItem({
         title="Dismiss"
         className="shrink-0 text-text-3"
       >
-        ×
+        <X size={14} />
       </Button>
     </div>
   );

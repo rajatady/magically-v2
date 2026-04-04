@@ -11,45 +11,83 @@
 
 /* ─── Tailwind static tokens ─────────────────────────────────────────────── */
 @theme {
-  /* Magically palette — overrides shadcn's accent/border in Tailwind utilities */
-  --color-bg-shell:   #0a0a0b;
-  --color-bg-panel:   #141416;
-  --color-bg-card:    #1c1c20;
-  --color-bg-hover:   #26262c;
-  --color-accent:     #f97316;
-  --color-accent-dim: rgba(249,115,22,0.15);
-  --color-text-1:     #f4f4f5;
-  --color-text-2:     #a1a1aa;
-  --color-text-3:     #71717a;
+  --color-bg-shell:   var(--bg-shell);
+  --color-bg-panel:   var(--bg-panel);
+  --color-bg-card:    var(--bg-card);
+  --color-bg-hover:   var(--bg-hover);
+  --color-accent:     var(--accent);
+  --color-accent-dim: var(--accent-dim);
+  --color-text-1:     var(--text-1);
+  --color-text-2:     var(--text-2);
+  --color-text-3:     var(--text-3);
 
   --font-body:  'DM Sans', system-ui, sans-serif;
   --font-serif: 'Instrument Serif', Georgia, serif;
   --font-mono:  'JetBrains Mono', monospace;
 }
 
-/* ─── CSS custom properties ──────────────────────────────────────────────── */
-/*
- * Magically is dark-only. Dark shadcn values live directly in :root so
- * shadcn components inherit them without needing any runtime theme switching.
- * The html.dark class on index.html activates dark: variants in component code.
- */
+/* ─── Light theme (default) ──────────────────────────────────────────────── */
 :root {
-  /* Legacy CSS var names used by existing shell/sidebar/home components */
+  --accent:     #8b5cf6;
+  --accent-dim: rgba(139,92,246,0.10);
+
+  --bg-shell:   #fafafa;
+  --bg-panel:   #f4f4f5;
+  --bg-card:    #ffffff;
+  --bg-hover:   #e4e4e7;
+  --border:     rgba(0,0,0,0.08);
+  --text-1:     #18181b;
+  --text-2:     #52525b;
+  --text-3:     #a1a1aa;
+
+  --font-body:  'DM Sans', system-ui, sans-serif;
+  --font-serif: 'Instrument Serif', Georgia, serif;
+  --font-mono:  'JetBrains Mono', monospace;
+
+  /* shadcn semantic tokens — light */
+  --background:                 oklch(1 0 0);
+  --foreground:                 oklch(0.145 0 0);
+  --card:                       oklch(1 0 0);
+  --card-foreground:            oklch(0.145 0 0);
+  --popover:                    oklch(1 0 0);
+  --popover-foreground:         oklch(0.145 0 0);
+  --primary:                    oklch(0.205 0 0);
+  --primary-foreground:         oklch(0.985 0 0);
+  --secondary:                  oklch(0.97 0 0);
+  --secondary-foreground:       oklch(0.205 0 0);
+  --muted:                      oklch(0.97 0 0);
+  --muted-foreground:           oklch(0.556 0 0);
+  --accent-foreground:          oklch(0.205 0 0);
+  --destructive:                oklch(0.577 0.245 27.325);
+  --input:                      oklch(0.922 0 0);
+  --ring:                       oklch(0.708 0 0);
+  --border:                     oklch(0.922 0 0);
+  --radius:                     0.625rem;
+  --sidebar:                    oklch(0.985 0 0);
+  --sidebar-foreground:         oklch(0.145 0 0);
+  --sidebar-primary:            oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent:             oklch(0.97 0 0);
+  --sidebar-accent-foreground:  oklch(0.205 0 0);
+  --sidebar-border:             oklch(0.922 0 0);
+  --sidebar-ring:               oklch(0.708 0 0);
+}
+
+/* ─── Dark theme ─────────────────────────────────────────────────────────── */
+.dark {
+  --accent:     #a78bfa;
+  --accent-dim: rgba(167,139,250,0.12);
+
   --bg-shell:   #0a0a0b;
   --bg-panel:   #141416;
   --bg-card:    #1c1c20;
   --bg-hover:   #26262c;
   --border:     rgba(255,255,255,0.07);
-  --accent:     #f97316;
-  --accent-dim: rgba(249,115,22,0.15);
   --text-1:     #f4f4f5;
   --text-2:     #a1a1aa;
   --text-3:     #71717a;
-  --font-body:  'DM Sans', system-ui, sans-serif;
-  --font-serif: 'Instrument Serif', Georgia, serif;
-  --font-mono:  'JetBrains Mono', monospace;
 
-  /* shadcn semantic tokens — dark values promoted to :root (dark-only app) */
+  /* shadcn semantic tokens — dark */
   --background:                 oklch(0.145 0 0);
   --foreground:                 oklch(0.985 0 0);
   --card:                       oklch(0.205 0 0);
@@ -66,7 +104,7 @@
   --destructive:                oklch(0.704 0.191 22.216);
   --input:                      oklch(1 0 0 / 15%);
   --ring:                       oklch(0.556 0 0);
-  --radius:                     0.625rem;
+  --border:                     oklch(1 0 0 / 10%);
   --sidebar:                    oklch(0.205 0 0);
   --sidebar-foreground:         oklch(0.985 0 0);
   --sidebar-primary:            oklch(0.488 0.243 264.376);
@@ -78,8 +116,6 @@
 }
 
 /* ─── App shell ──────────────────────────────────────────────────────────── */
-/* Tailwind v4 Preflight handles box-sizing, margin reset, etc.
- * Do NOT add unlayered *, margin:0, padding:0 — it overrides @layer utilities. */
 html, body, #root {
   height: 100%;
   width: 100%;
@@ -87,7 +123,6 @@ html, body, #root {
   background: var(--bg-shell);
   color: var(--text-1);
   font-family: var(--font-body);
-  font-size: 14px;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -95,7 +130,7 @@ html, body, #root {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--bg-hover); border-radius: 99px; }
 
-/* ─── shadcn @theme inline + @layer base (generated, do not edit) ────────── */
+/* ─── shadcn @theme inline (generated, do not edit) ──────────────────────── */
 @theme inline {
   --font-heading:                     var(--font-sans);
   --font-sans:                        'Geist Variable', sans-serif;

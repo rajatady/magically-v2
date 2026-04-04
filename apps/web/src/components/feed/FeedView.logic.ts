@@ -6,21 +6,21 @@ export const TYPE_COLORS: Record<string, string> = {
   audio:   'var(--accent)',
 };
 
-export const TYPE_ICONS: Record<string, string> = {
-  info:    '◎',
-  success: '✓',
-  warning: '⚠',
-  error:   '✕',
-  audio:   '♪',
+export const TYPE_ICON_NAMES: Record<string, string> = {
+  info:    'info',
+  success: 'check-circle',
+  warning: 'alert-triangle',
+  error:   'x-circle',
+  audio:   'music',
 };
 
 const FALLBACK_COLOR = 'var(--text-3)';
-const FALLBACK_ICON = '◎';
+const FALLBACK_ICON_NAME = 'info';
 
 export function getFeedItemColor(type: string): string {
   return TYPE_COLORS[type] ?? FALLBACK_COLOR;
 }
 
-export function getFeedItemIcon(type: string): string {
-  return TYPE_ICONS[type] ?? FALLBACK_ICON;
+export function getFeedItemIconName(type: string): string {
+  return TYPE_ICON_NAMES[type] ?? FALLBACK_ICON_NAME;
 }

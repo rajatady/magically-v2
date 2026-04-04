@@ -3,6 +3,7 @@ import { BrowserRouter, HashRouter, Routes, Route } from 'react-router-dom';
 const isElectron = typeof window !== 'undefined' && window.location.protocol === 'file:';
 const Router = isElectron ? HashRouter : BrowserRouter;
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { ThemeProvider } from '@/components/theme-provider';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AuthenticatedApp } from './components/AuthenticatedApp';
@@ -17,10 +18,12 @@ import { GalleryDetailRoute } from './components/gallery/GalleryDetailRoute';
 import { ChatPage } from './pages/ChatPage';
 import { ChatsPage } from './pages/ChatsPage';
 import { NewChatPage } from './pages/NewChatPage';
+import { SettingsView } from './components/settings/SettingsView';
 
 export default function App() {
   return (
     <ErrorBoundary>
+      <ThemeProvider defaultTheme="dark" storageKey="magically-theme">
       <Router>
         <TooltipProvider>
           <Routes>
@@ -46,13 +49,14 @@ export default function App() {
                 <Route path="chats" element={<ChatsPage />} />
                 <Route path="chat/new" element={<NewChatPage />} />
                 <Route path="chat/:chatId" element={<ChatPage />} />
-                <Route path="settings" element={<PlaceholderView title="Settings" />} />
+                <Route path="settings" element={<SettingsView />} />
                 <Route path="build" element={<PlaceholderView title="Build" />} />
               </Route>
             </Route>
           </Routes>
         </TooltipProvider>
       </Router>
+      </ThemeProvider>
     </ErrorBoundary>
   );
 }
