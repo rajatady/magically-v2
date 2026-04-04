@@ -1,0 +1,1 @@
+ALTER TABLE "agents" ADD COLUMN "source" text DEFAULT 'remote' NOT NULL;

@@ -15,6 +15,7 @@ import {Request, Response} from 'express';
 import {AgentsService} from './agents.service';
 import {AgentUiService} from './agent-ui.service';
 import {FunctionRunnerService} from './function-runner.service';
+import {LocalRunnerService} from './local-runner.service';
 import {AgentActionDto} from './dto/agent-action.dto';
 import {Public} from '../auth';
 import {readFileSync, existsSync} from 'fs';
@@ -27,6 +28,7 @@ export class AgentsController {
         private readonly agentsService: AgentsService,
         private readonly agentUiService: AgentUiService,
         private readonly functionRunner: FunctionRunnerService,
+        private readonly localRunner: LocalRunnerService,
     ) {
     }
 
@@ -93,11 +95,12 @@ export class AgentsController {
         @Param('id') id: string,
         @Param('functionName') functionName: string,
         @Body() body: Record<string, unknown>,
+        @Req() req: Request,
     ) {
         return this.functionRunner.run(id, functionName, {
             type: 'manual',
             payload: body,
-        });
+        }, req.user!.sub);
     }
 
     @Put(':id/enable')

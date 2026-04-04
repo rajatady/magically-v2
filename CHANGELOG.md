@@ -4,6 +4,17 @@ All notable changes to this project are documented here. Format: date, git hash,
 
 ---
 
+## 2026-04-04 (2) | Local execution, scheduling, Zeus agent tools
+
+- `LocalRunnerService`: run agent functions in-process from filesystem (150ms vs 26s Fly)
+- `LocalDiscoveryService`: auto-register local agents in DB on boot (`source: 'local'` column)
+- Unified `POST /api/agents/:id/run/:fn` — local agents run in-process, published agents run in containers
+- `user_schedules` table (migration 0005): per-user cron schedules with enable/disable/CRUD
+- `agents.source` column (migration 0006): distinguish `'local'` vs `'remote'` agent origin
+- Schedule API: `GET/POST /api/schedules`, `PUT /:id/toggle`, `PUT /:id/cron`, `DELETE /:id`
+- Scheduler reads from `user_schedules` table (user-controlled), not from manifests (auto)
+- Zeus tools: `RunAgent`, `ListLocalAgents`, `ListSchedules`, `CreateSchedule`, `ToggleSchedule`, `DeleteSchedule`
+
 ## 2026-04-04 | Local agent runtime, widgets, home screen
 
 - `magically dev <fn> [dir]` — run agent functions locally, no Docker/server/publish needed

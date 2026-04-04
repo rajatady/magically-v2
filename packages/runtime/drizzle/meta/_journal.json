@@ -36,6 +36,20 @@
       "when": 1775252423126,
       "tag": "0004_lush_thunderbird",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1775292629265,
+      "tag": "0005_needy_stature",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1775293797196,
+      "tag": "0006_serious_avengers",
+      "breakpoints": true
     }
   ]
 }

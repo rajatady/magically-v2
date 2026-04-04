@@ -13,6 +13,7 @@ import { FlyProvider } from './compute/fly-provider';
 import { DaytonaProvider } from './compute/daytona-provider';
 import type { AgentContext } from './agent-context';
 import type { AgentManifest } from '@magically/shared/validation';
+import { LocalRunnerService } from './local-runner.service';
 
 export interface RunLog {
   level: 'info' | 'warn' | 'error';
@@ -44,6 +45,7 @@ export class FunctionRunnerService implements OnModuleInit {
     @InjectDB() private readonly db: DrizzleDB,
     private readonly llmService: LlmService,
     private readonly nestConfig: NestConfigService,
+    private readonly localRunner: LocalRunnerService,
   ) {}
 
   onModuleInit() {
@@ -155,7 +157,15 @@ export class FunctionRunnerService implements OnModuleInit {
     agentId: string,
     functionName: string,
     trigger: AgentContext['trigger'],
+    userId?: string,
   ): Promise<RunResult> {
+    // Local agent? Run in-process directly.
+    if (this.localRunner.listAgents().includes(agentId)) {
+      if (!userId) throw new Error('userId is required for local agent execution');
+      const result = await this.localRunner.run(agentId, functionName, userId, trigger.payload);
+      return { ...result, startedAt: Date.now(), logs: [] };
+    }
+
     const agent = await this.agents.findOne(agentId);
     const manifest = agent.manifest as AgentManifest;
 

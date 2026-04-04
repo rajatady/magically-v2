@@ -12,6 +12,9 @@ import { AgentsService } from '../agents/agents.service';
 import { EventsGateway } from '../events/events.gateway';
 import { FeedService } from '../events/feed.service';
 import { WidgetService } from '../events/widget.service';
+import { LocalRunnerService } from '../agents/local-runner.service';
+import { ScheduleService } from '../agents/schedule.service';
+import { TriggerSchedulerService } from '../agents/trigger-scheduler.service';
 import type { FileAttachment } from '@magically/shared/types';
 import { executePrompt, type ExecutionCallbacks, type ContentBlock } from './executor';
 
@@ -57,6 +60,9 @@ export class ZeusService {
     private readonly emitter: EventEmitter2,
     private readonly feedService: FeedService,
     private readonly widgetService: WidgetService,
+    private readonly localRunner: LocalRunnerService,
+    private readonly scheduleService: ScheduleService,
+    private readonly triggerScheduler: TriggerSchedulerService,
   ) {}
 
   // ─── Execution ──────────────────────────────────────────────────────
@@ -97,6 +103,7 @@ export class ZeusService {
       zeus: this,
       agents: this.agents,
       files,
+      localRunner: this.localRunner,
     });
   }
 
@@ -445,5 +452,25 @@ Do NOT create functions or triggers yet — just fill in the identity fields. Th
 
   async getWidgets(userId: string) {
     return this.widgetService.findByUser(userId);
+  }
+
+  async getSchedules(userId: string) {
+    return this.scheduleService.findByUser(userId);
+  }
+
+  async createSchedule(userId: string, agentId: string, functionName: string, cron: string) {
+    const schedule = await this.scheduleService.create({ userId, agentId, functionName, cron });
+    await this.triggerScheduler.refresh();
+    return { id: schedule.id };
+  }
+
+  async toggleSchedule(id: string, enabled: boolean) {
+    await this.scheduleService.toggle(id, enabled);
+    await this.triggerScheduler.refresh();
+  }
+
+  async deleteSchedule(id: string) {
+    await this.scheduleService.remove(id);
+    await this.triggerScheduler.refresh();
   }
 }

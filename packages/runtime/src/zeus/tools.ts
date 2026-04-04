@@ -4,10 +4,12 @@
  * top-level import issues.
  */
 import type { ExecutorAgentsDelegate, ExecutorZeusDelegate } from './executor';
+import type { LocalRunnerService } from '../agents/local-runner.service';
 
 export interface MagicallyToolsDeps {
   agents: ExecutorAgentsDelegate;
   zeus: ExecutorZeusDelegate;
+  localRunner: LocalRunnerService | null;
   userId: string;
 }
 
@@ -173,6 +175,106 @@ export async function createMagicallyMcpServer(deps: MagicallyToolsDeps) {
             `[${w.agentId}] size=${w.size} updated=${w.updatedAt}\n${w.html}`,
           );
           return { content: [{ type: 'text' as const, text: lines.join('\n\n---\n\n') }] };
+        },
+      ),
+
+      sdk.tool(
+        'ListLocalAgents',
+        'List all local agents available on the filesystem. These can be run directly without publishing.',
+        {},
+        async () => {
+          const runner = deps.localRunner;
+          if (!runner) return { content: [{ type: 'text' as const, text: 'Local runner not available.' }] };
+          const agentIds = runner.listAgents();
+          if (agentIds.length === 0) {
+            return { content: [{ type: 'text' as const, text: 'No local agents found.' }] };
+          }
+          const lines = agentIds.map((id) => {
+            const manifest = runner.loadManifest(id);
+            const fns = manifest.functions.map((f) => f.name).join(', ');
+            return `- ${id}: ${manifest.name} — functions: [${fns}]`;
+          });
+          return { content: [{ type: 'text' as const, text: lines.join('\n') }] };
+        },
+      ),
+
+      sdk.tool(
+        'RunAgent',
+        'Run a local agent function. The agent runs in-process, emits feed events and widgets, and returns the result. Use this to trigger agent work on behalf of the user.',
+        {
+          agentId: z.string().describe('Agent ID (directory name in agents/)'),
+          functionName: z.string().describe('Function to run (declared in manifest)'),
+          payload: z.record(z.unknown()).optional().describe('Optional JSON payload to pass to the function'),
+        },
+        async (args) => {
+          const runner = deps.localRunner;
+          if (!runner) return { content: [{ type: 'text' as const, text: 'Local runner not available.' }] };
+          try {
+            const result = await runner.run(args.agentId, args.functionName, deps.userId, args.payload);
+            const summary = result.status === 'success'
+              ? `OK (${result.durationMs}ms)${result.result ? '\n' + JSON.stringify(result.result, null, 2) : ''}`
+              : `FAILED (${result.durationMs}ms): ${result.error}`;
+            return { content: [{ type: 'text' as const, text: summary }] };
+          } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : String(err);
+            return { content: [{ type: 'text' as const, text: `Error: ${message}` }] };
+          }
+        },
+      ),
+      sdk.tool(
+        'ListSchedules',
+        'List all cron schedules for the current user. Shows which agent functions run automatically and when.',
+        {},
+        async () => {
+          const schedules = await deps.zeus.getSchedules(deps.userId);
+          if (schedules.length === 0) {
+            return { content: [{ type: 'text' as const, text: 'No schedules configured.' }] };
+          }
+          const lines = schedules.map((s) => {
+            const status = s.enabled ? '✓' : '✗';
+            const lastRun = s.lastRunAt ? ` (last: ${s.lastRunAt})` : '';
+            return `[${status}] ${s.agentId}/${s.functionName} — "${s.cron}"${lastRun} (id: ${s.id})`;
+          });
+          return { content: [{ type: 'text' as const, text: lines.join('\n') }] };
+        },
+      ),
+
+      sdk.tool(
+        'CreateSchedule',
+        'Create a cron schedule for an agent function. The function will run automatically on the specified cron schedule for this user.',
+        {
+          agentId: z.string().describe('Agent ID'),
+          functionName: z.string().describe('Function to schedule'),
+          cron: z.string().describe('Cron expression (e.g., "0 */6 * * *" for every 6 hours)'),
+        },
+        async (args) => {
+          const result = await deps.zeus.createSchedule(deps.userId, args.agentId, args.functionName, args.cron);
+          return { content: [{ type: 'text' as const, text: `Schedule created (${result.id}): ${args.agentId}/${args.functionName} "${args.cron}"` }] };
+        },
+      ),
+
+      sdk.tool(
+        'ToggleSchedule',
+        'Enable or disable an existing schedule.',
+        {
+          scheduleId: z.string().describe('Schedule ID'),
+          enabled: z.boolean().describe('true to enable, false to disable'),
+        },
+        async (args) => {
+          await deps.zeus.toggleSchedule(args.scheduleId, args.enabled);
+          return { content: [{ type: 'text' as const, text: `Schedule ${args.scheduleId} ${args.enabled ? 'enabled' : 'disabled'}.` }] };
+        },
+      ),
+
+      sdk.tool(
+        'DeleteSchedule',
+        'Permanently delete a schedule.',
+        {
+          scheduleId: z.string().describe('Schedule ID'),
+        },
+        async (args) => {
+          await deps.zeus.deleteSchedule(args.scheduleId);
+          return { content: [{ type: 'text' as const, text: `Schedule ${args.scheduleId} deleted.` }] };
         },
       ),
     ],

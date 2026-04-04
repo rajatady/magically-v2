@@ -21,6 +21,7 @@ import type { FileAttachment } from '@magically/shared/types';
 import { createMagicallyMcpServer } from './tools';
 import { buildPromptWithFiles } from './file-processor';
 import type { AgentWithManifest } from '../agents/agents.service';
+import type { LocalRunnerService } from '../agents/local-runner.service';
 
 const logger = new Logger('ZeusExecutor');
 
@@ -171,6 +172,10 @@ export interface ExecutorZeusDelegate {
   getTasks(): Promise<Array<{ id: string; status: string; goal: string; priority: string; requesterId: string }>>;
   getFeed(limit?: number): Promise<Array<{ id: string; agentId: string | null; type: string; title: string; body: string | null; data: unknown; createdAt: Date }>>;
   getWidgets(userId: string): Promise<Array<{ agentId: string; size: string; html: string; updatedAt: Date }>>;
+  getSchedules(userId: string): Promise<Array<{ id: string; agentId: string; functionName: string; cron: string; enabled: boolean; lastRunAt: Date | null }>>;
+  createSchedule(userId: string, agentId: string, functionName: string, cron: string): Promise<{ id: string }>;
+  toggleSchedule(id: string, enabled: boolean): Promise<void>;
+  deleteSchedule(id: string): Promise<void>;
 }
 
 /** Interface the executor + tools need from AgentsService */
@@ -197,6 +202,8 @@ export interface ExecutionOptions {
   chatConfig?: ChatConfig;
   /** File attachments to include in the prompt */
   files?: FileAttachment[];
+  /** Local agent runner for RunAgent tool */
+  localRunner?: LocalRunnerService;
 }
 
 // ─── SDK loader ───────────────────────────────────────────────────────────────
@@ -373,14 +380,14 @@ async function persistMessageAwait(
 export async function executePrompt(options: ExecutionOptions) {
   const {
     sessionId, prompt, userId, assistantMsgId, agentSessionIds, conversationHistory,
-    abortController, callbacks, zeus, agents, chatConfig, files,
+    abortController, callbacks, zeus, agents, chatConfig, files, localRunner,
   } = options;
 
   const config = chatConfig ?? TOP_LEVEL_CHAT_CONFIG;
 
   const sdk = await loadSdk();
   const workspaceDir = await zeus.ensureWorkspace(userId);
-  const mcpServer = await createMagicallyMcpServer({ agents, zeus, userId });
+  const mcpServer = await createMagicallyMcpServer({ agents, zeus, userId, localRunner: localRunner ?? null });
   const zeusContext = await zeus.buildZeusContext(workspaceDir);
 
   const queryArgs = { workspaceDir, zeusContext, mcpServer, config };

@@ -13,6 +13,7 @@ export const agents = pgTable('agents', {
   category: text('category'),
   tags: jsonb('tags').$type<string[]>().default([]),
   latestVersion: text('latest_version').notNull(),
+  source: text('source').notNull().default('remote'),   // 'local' | 'remote'
   status: text('status').notNull().default('live'),
   installs: integer('installs').notNull().default(0),
   enabled: boolean('enabled').default(true).notNull(),
@@ -214,6 +215,24 @@ export const userAgentInstalls = pgTable('user_agent_installs', {
 
 export type UserAgentInstallRow = typeof userAgentInstalls.$inferSelect;
 export type NewUserAgentInstall = typeof userAgentInstalls.$inferInsert;
+
+// ─── User Schedules ─────────────────────────────────────────────────────────
+// Per-user cron schedules. Users enable/disable and configure when agent functions run.
+
+export const userSchedules = pgTable('user_schedules', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  agentId: text('agent_id').notNull(),
+  functionName: text('function_name').notNull(),
+  cron: text('cron').notNull(),
+  enabled: boolean('enabled').notNull().default(true),
+  lastRunAt: timestamp('last_run_at'),
+  createdAt: timestamp('created_at').notNull(),
+  updatedAt: timestamp('updated_at').notNull(),
+});
+
+export type UserSchedule = typeof userSchedules.$inferSelect;
+export type NewUserSchedule = typeof userSchedules.$inferInsert;
 
 // ─── User Widgets ───────────────────────────────────────────────────────────
 // Per-user widget state. Each agent emits its latest widget HTML + metadata.
