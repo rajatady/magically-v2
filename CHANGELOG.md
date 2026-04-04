@@ -4,6 +4,15 @@ All notable changes to this project are documented here. Format: date, git hash,
 
 ---
 
+## 2026-04-04 (9) | Agent registration gate + RegisterAgent tool
+
+- LocalRunnerService.run() checks agent is registered in DB before executing (prevents FK violations)
+- POST /api/agents/register/:id — register a local agent on demand
+- CLI: `magically register <agentId>` — register via API
+- Zeus tool: RegisterAgent — register agents from conversation
+- LocalDiscoveryService.register() — single-agent registration method
+- Clear error message when agent not registered: "Run 'magically register' first"
+
 ## 2026-04-04 (8) | Zeus user context injection
 
 - Zeus system prompt now includes user context files (profile, career history, research interests, job search strategy)

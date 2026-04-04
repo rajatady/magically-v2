@@ -5,11 +5,13 @@
  */
 import type { ExecutorAgentsDelegate, ExecutorZeusDelegate } from './executor';
 import type { LocalRunnerService } from '../agents/local-runner.service';
+import type { LocalDiscoveryService } from '../agents/local-discovery.service';
 
 export interface MagicallyToolsDeps {
   agents: ExecutorAgentsDelegate;
   zeus: ExecutorZeusDelegate;
   localRunner: LocalRunnerService | null;
+  localDiscovery: LocalDiscoveryService | null;
   userId: string;
 }
 
@@ -275,6 +277,23 @@ export async function createMagicallyMcpServer(deps: MagicallyToolsDeps) {
         async (args) => {
           await deps.zeus.deleteSchedule(args.scheduleId);
           return { content: [{ type: 'text' as const, text: `Schedule ${args.scheduleId} deleted.` }] };
+        },
+      ),
+
+      sdk.tool(
+        'RegisterAgent',
+        'Register a local agent from the filesystem into the database. Must be called before RunAgent for new agents. Reads the manifest.json from the agents directory.',
+        {
+          agentId: z.string().describe('Agent ID (directory name in agents/)'),
+        },
+        async (args) => {
+          const discovery = deps.localDiscovery;
+          if (!discovery) return { content: [{ type: 'text' as const, text: 'Local discovery not available.' }] };
+          const registered = await discovery.register(args.agentId);
+          if (!registered) {
+            return { content: [{ type: 'text' as const, text: `Agent '${args.agentId}' not found on filesystem or manifest invalid.` }] };
+          }
+          return { content: [{ type: 'text' as const, text: `Agent '${args.agentId}' registered.` }] };
         },
       ),
     ],

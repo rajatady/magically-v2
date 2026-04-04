@@ -16,6 +16,7 @@ import {AgentsService} from './agents.service';
 import {AgentUiService} from './agent-ui.service';
 import {FunctionRunnerService} from './function-runner.service';
 import {LocalRunnerService} from './local-runner.service';
+import {LocalDiscoveryService} from './local-discovery.service';
 import {AgentActionDto} from './dto/agent-action.dto';
 import {Public} from '../auth';
 import {readFileSync, existsSync} from 'fs';
@@ -29,6 +30,7 @@ export class AgentsController {
         private readonly agentUiService: AgentUiService,
         private readonly functionRunner: FunctionRunnerService,
         private readonly localRunner: LocalRunnerService,
+        private readonly localDiscovery: LocalDiscoveryService,
     ) {
     }
 
@@ -80,6 +82,15 @@ export class AgentsController {
                 functions,
             };
         });
+    }
+
+    @Post('register/:id')
+    async register(@Param('id') id: string) {
+        const registered = await this.localDiscovery.register(id);
+        if (!registered) {
+            throw new NotFoundException(`Agent '${id}' not found on filesystem or manifest invalid`);
+        }
+        return { registered: true, agentId: id };
     }
 
     @Get(':id/widget')

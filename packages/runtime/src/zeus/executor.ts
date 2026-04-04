@@ -22,6 +22,7 @@ import { createMagicallyMcpServer } from './tools';
 import { buildPromptWithFiles } from './file-processor';
 import type { AgentWithManifest } from '../agents/agents.service';
 import type { LocalRunnerService } from '../agents/local-runner.service';
+import type { LocalDiscoveryService } from '../agents/local-discovery.service';
 
 const logger = new Logger('ZeusExecutor');
 
@@ -204,6 +205,8 @@ export interface ExecutionOptions {
   files?: FileAttachment[];
   /** Local agent runner for RunAgent tool */
   localRunner?: LocalRunnerService;
+  /** Local agent discovery for RegisterAgent tool */
+  localDiscovery?: LocalDiscoveryService;
 }
 
 // ─── SDK loader ───────────────────────────────────────────────────────────────
@@ -380,14 +383,14 @@ async function persistMessageAwait(
 export async function executePrompt(options: ExecutionOptions) {
   const {
     sessionId, prompt, userId, assistantMsgId, agentSessionIds, conversationHistory,
-    abortController, callbacks, zeus, agents, chatConfig, files, localRunner,
+    abortController, callbacks, zeus, agents, chatConfig, files, localRunner, localDiscovery,
   } = options;
 
   const config = chatConfig ?? TOP_LEVEL_CHAT_CONFIG;
 
   const sdk = await loadSdk();
   const workspaceDir = await zeus.ensureWorkspace(userId);
-  const mcpServer = await createMagicallyMcpServer({ agents, zeus, userId, localRunner: localRunner ?? null });
+  const mcpServer = await createMagicallyMcpServer({ agents, zeus, userId, localRunner: localRunner ?? null, localDiscovery: localDiscovery ?? null });
   const zeusContext = await zeus.buildZeusContext(workspaceDir);
 
   const queryArgs = { workspaceDir, zeusContext, mcpServer, config };

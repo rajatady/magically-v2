@@ -150,6 +150,31 @@ program
   });
 
 program
+  .command('register <agentId>')
+  .description('Register a local agent in the runtime database')
+  .option('--base <url>', 'Runtime base URL', 'http://localhost:4321')
+  .action(async (agentId: string, opts: { base: string }) => {
+    const token = authCommand.loadToken();
+    if (!token) { console.error('Not logged in. Run: magically login'); process.exit(1); }
+    try {
+      const res = await fetch(`${opts.base}/api/agents/register/${agentId}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        console.error(`Failed (${res.status}): ${text}`);
+        process.exit(1);
+      }
+      console.log(`Registered: ${agentId}`);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(`Error: ${message}`);
+      process.exit(1);
+    }
+  });
+
+program
   .command('dev <functionName> [dir]')
   .description('Run an agent function locally — no server, no Docker, no publish')
   .option('--base <url>', 'Runtime base URL (for feed events)', 'http://localhost:4321')

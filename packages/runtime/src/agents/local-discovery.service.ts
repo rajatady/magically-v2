@@ -96,6 +96,57 @@ export class LocalDiscoveryService implements OnModuleInit {
     this.logger.log(`Local discovery: ${localIds.length} found, ${created} registered, ${updated} updated`);
   }
 
+  /** Register a single agent by ID. Returns true if registered/updated, false if manifest not found. */
+  async register(agentId: string): Promise<boolean> {
+    const manifest = this.loadManifest(agentId);
+    if (!manifest) return false;
+
+    const existing = await this.db
+      .select()
+      .from(agents)
+      .where(eq(agents.id, agentId))
+      .limit(1);
+
+    const now = new Date();
+
+    if (existing.length === 0) {
+      await this.db.insert(agents).values({
+        id: manifest.id,
+        name: manifest.name,
+        description: manifest.description,
+        icon: manifest.icon,
+        color: manifest.color,
+        category: manifest.category,
+        tags: manifest.tags ?? [],
+        latestVersion: manifest.version,
+        source: 'local',
+        status: 'live',
+        installs: 0,
+        enabled: true,
+        createdAt: now,
+        updatedAt: now,
+      });
+    } else {
+      await this.db
+        .update(agents)
+        .set({
+          name: manifest.name,
+          description: manifest.description,
+          icon: manifest.icon,
+          color: manifest.color,
+          category: manifest.category,
+          tags: manifest.tags ?? [],
+          latestVersion: manifest.version,
+          source: 'local',
+          updatedAt: now,
+        })
+        .where(eq(agents.id, agentId));
+    }
+
+    this.logger.log(`Registered agent: ${agentId}`);
+    return true;
+  }
+
   private scanFilesystem(): string[] {
     try {
       return readdirSync(this.agentsDir)

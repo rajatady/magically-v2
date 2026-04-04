@@ -1,8 +1,11 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { eq } from 'drizzle-orm';
 import type { FeedItemType } from '../events/feed.service';
 import { readFileSync, existsSync } from 'fs';
 import { join, resolve } from 'path';
+import { InjectDB, type DrizzleDB } from '../db';
+import { agents } from '../db/schema';
 import { FeedService } from '../events/feed.service';
 import { WidgetService } from '../events/widget.service';
 
@@ -39,6 +42,7 @@ export class LocalRunnerService {
 
   constructor(
     private readonly config: ConfigService,
+    @InjectDB() private readonly db: DrizzleDB,
     private readonly feedService: FeedService,
     private readonly widgetService: WidgetService,
   ) {
@@ -67,7 +71,23 @@ export class LocalRunnerService {
     return JSON.parse(readFileSync(manifestPath, 'utf-8'));
   }
 
+  async isRegistered(agentId: string): Promise<boolean> {
+    const rows = await this.db
+      .select({ id: agents.id })
+      .from(agents)
+      .where(eq(agents.id, agentId))
+      .limit(1);
+    return rows.length > 0;
+  }
+
   async run(agentId: string, functionName: string, userId: string, payload?: Record<string, unknown>): Promise<LocalRunResult> {
+    // Agent must be registered in DB before running (for feed FK constraints)
+    if (!(await this.isRegistered(agentId))) {
+      throw new BadRequestException(
+        `Agent '${agentId}' is not registered. Run 'magically register ${agentId}' or POST /api/agents/register first.`,
+      );
+    }
+
     const agentDir = resolve(join(this.agentsDir, agentId));
     const manifest = this.loadManifest(agentId);
 

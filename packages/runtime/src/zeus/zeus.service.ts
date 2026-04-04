@@ -13,6 +13,7 @@ import { EventsGateway } from '../events/events.gateway';
 import { FeedService } from '../events/feed.service';
 import { WidgetService } from '../events/widget.service';
 import { LocalRunnerService } from '../agents/local-runner.service';
+import { LocalDiscoveryService } from '../agents/local-discovery.service';
 import { ScheduleService } from '../agents/schedule.service';
 import { TriggerSchedulerService } from '../agents/trigger-scheduler.service';
 import type { FileAttachment } from '@magically/shared/types';
@@ -61,6 +62,7 @@ export class ZeusService {
     private readonly feedService: FeedService,
     private readonly widgetService: WidgetService,
     private readonly localRunner: LocalRunnerService,
+    private readonly localDiscovery: LocalDiscoveryService,
     private readonly scheduleService: ScheduleService,
     private readonly triggerScheduler: TriggerSchedulerService,
   ) {}
@@ -104,6 +106,7 @@ export class ZeusService {
       agents: this.agents,
       files,
       localRunner: this.localRunner,
+      localDiscovery: this.localDiscovery,
     });
   }
 

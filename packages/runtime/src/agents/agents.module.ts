@@ -15,6 +15,6 @@ import { LlmModule } from '../llm/llm.module';
   imports: [EventsModule, LlmModule],
   providers: [AgentsService, AgentUiService, FunctionRunnerService, LocalRunnerService, LocalDiscoveryService, ScheduleService, TriggerSchedulerService],
   controllers: [AgentsController, ScheduleController],
-  exports: [AgentsService, FunctionRunnerService, LocalRunnerService, ScheduleService, TriggerSchedulerService],
+  exports: [AgentsService, FunctionRunnerService, LocalRunnerService, LocalDiscoveryService, ScheduleService, TriggerSchedulerService],
 })
 export class AgentsModule {}
