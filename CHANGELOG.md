@@ -4,6 +4,11 @@ All notable changes to this project are documented here. Format: date, git hash,
 
 ---
 
+## 2026-04-04 (3) | New agents: runway monitor, research pulse
+
+- Runway Monitor agent: calculates weeks remaining, progress bar, milestone tracker, urgency levels (normal/warning/critical)
+- Research Pulse agent: reads research context files, shows experiment count, publications, research tracks (Neural Genome, Spatial Intelligence, Interpretability), strengths/gaps
+
 ## 2026-04-04 (2) | Local execution, scheduling, Zeus agent tools
 
 - `LocalRunnerService`: run agent functions in-process from filesystem (150ms vs 26s Fly)

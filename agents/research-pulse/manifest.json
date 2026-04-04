@@ -1,0 +1,20 @@
+{
+  "id": "research-pulse",
+  "name": "Research Pulse",
+  "version": "1.0.0",
+  "description": "Tracks research interests — Neural Genome, spatial intelligence, interpretability",
+  "icon": "🔬",
+  "color": "#8b5cf6",
+  "author": "kumar",
+
+  "secrets": [],
+
+  "functions": [
+    {
+      "name": "status",
+      "description": "Read research context and emit a widget showing current research state, experiments, and next steps"
+    }
+  ],
+
+  "triggers": []
+}

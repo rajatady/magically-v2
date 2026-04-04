@@ -1,0 +1,20 @@
+{
+  "id": "runway-monitor",
+  "name": "Runway Monitor",
+  "version": "1.0.0",
+  "description": "Tracks financial runway — weeks remaining, burn rate, milestones",
+  "icon": "⏳",
+  "color": "#ef4444",
+  "author": "kumar",
+
+  "secrets": [],
+
+  "functions": [
+    {
+      "name": "check",
+      "description": "Calculate remaining runway and emit a widget showing weeks left, key dates, and urgency level"
+    }
+  ],
+
+  "triggers": []
+}

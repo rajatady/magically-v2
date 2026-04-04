@@ -6,9 +6,9 @@ import type { UserWidget, FeedItem } from '../../lib/api';
 import { getGreeting } from './HomeView.logic';
 
 const SIZE_SPANS: Record<string, string> = {
-  small: 'col-span-4',
-  medium: 'col-span-6',
-  large: 'col-span-8',
+  small: 'col-span-4 md:col-span-4',
+  medium: 'col-span-6 md:col-span-6',
+  large: 'col-span-8 md:col-span-8',
 };
 
 export function HomeView() {
