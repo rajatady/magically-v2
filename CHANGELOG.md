@@ -4,6 +4,12 @@ All notable changes to this project are documented here. Format: date, git hash,
 
 ---
 
+## 2026-04-04 (7) | Electron fixes: auth persistence, chat input, socket
+
+- `persist:magically` partition — localStorage survives app restarts
+- Zeus WebSocket uses `VITE_API_URL` instead of relative `/zeus` (fixes `file://` protocol)
+- `titleBarStyle: 'hidden'` with `trafficLightPosition` (fixes `hiddenInset` focus bug)
+
 ## 2026-04-04 (6) | Desktop polish + sidebar chats link
 
 - Added `/chats` nav item to sidebar

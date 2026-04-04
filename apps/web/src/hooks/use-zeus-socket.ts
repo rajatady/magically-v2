@@ -73,7 +73,8 @@ export function useZeusSocket({ sessionId, onSessionCreated }: UseZeusSocketOpti
     const token = useAuthStore.getState().token;
     if (!token) return;
 
-    const socket = io('/zeus', {
+    const baseUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:4321';
+    const socket = io(`${baseUrl}/zeus`, {
       auth: { token },
       transports: ['websocket', 'polling'],
     });

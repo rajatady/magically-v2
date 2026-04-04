@@ -17,12 +17,14 @@ function createWindow() {
     height: 820,
     minWidth: 900,
     minHeight: 600,
-    titleBarStyle: 'hiddenInset',
+    titleBarStyle: 'hidden',
+    trafficLightPosition: { x: 12, y: 12 },
     backgroundColor: '#0a0a0b',
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
       webSecurity: false,  // Allow file:// to fetch from localhost API
+      partition: 'persist:magically',  // Persistent localStorage across launches
     },
   });
 
