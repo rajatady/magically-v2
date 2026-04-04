@@ -85,6 +85,10 @@ User sends message via WebSocket (/zeus namespace)
           ├── getMessages() — load conversation history from zeus_messages
           └── executePrompt() — runs Agent SDK query()
               ├── System prompt: claude_code preset + Zeus context
+              │   ├── User context files (kumar-profile.md, career-history.md, etc.)
+              │   ├── Installed agents list
+              │   ├── User memory entries
+              │   └── Onboarding instructions (if needed)
               ├── Tools: Read, Write, Edit, Bash, Glob, Grep, WebFetch, WebSearch
               ├── MCP: magically tools (ListAgents, WriteMemory, CreateTask, etc.)
               ├── stream_event → text deltas → onChunk callback → WS 'chunk' event
@@ -93,6 +97,8 @@ User sends message via WebSocket (/zeus namespace)
               ├── result → cost/turns → onResult → WS 'result'
               └── Each step: incremental updateMessage() to zeus_messages table
 ```
+
+**System prompt composition:** Zeus appends user context files to the `claude_code` preset via `systemPrompt.append`. This personalizes Zeus responses without requiring memory entries or configuration changes. Context files are loaded on every `runPrompt()` call, allowing for dynamic updates.
 
 ### Frontend Data Loading
 

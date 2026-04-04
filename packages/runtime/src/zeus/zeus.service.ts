@@ -3,7 +3,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { eq, desc, gt, and, ilike } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { mkdir, access, writeFile } from 'fs/promises';
-import { existsSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { scaffoldAgent } from '@magically/shared/scaffold';
 import { InjectDB, type DrizzleDB } from '../db';
@@ -107,6 +107,23 @@ export class ZeusService {
     });
   }
 
+  private loadUserContext(): string {
+    const contextDir = '/Users/kumardivyarajat/WebstormProjects/job-search/context';
+    const files = ['kumar-profile.md', 'career-history.md', 'research-interests.md', 'strategy.md'];
+    const parts: string[] = [];
+
+    for (const file of files) {
+      try {
+        const content = readFileSync(join(contextDir, file), 'utf-8');
+        parts.push(`--- ${file} ---\n${content}`);
+      } catch {
+        // File not found, skip
+      }
+    }
+
+    return parts.length > 0 ? `\nUser context:\n${parts.join('\n\n')}` : '';
+  }
+
   async buildZeusContext(workspaceDir?: string): Promise<string> {
     const allAgents = await this.agents.findAll();
     const agentList = allAgents
@@ -118,6 +135,8 @@ export class ZeusService {
       .map((m) => `- [${m.category}] ${m.key}: ${m.value}`)
       .join('\n');
 
+    const userContext = this.loadUserContext();
+
     const needsOnboarding = workspaceDir && !this.isOnboarded(workspaceDir);
 
     const parts = [
@@ -126,6 +145,7 @@ export class ZeusService {
       `Installed agents:\n${agentList || 'None yet.'}`,
       '',
       memoryList ? `User memory:\n${memoryList}` : '',
+      userContext,
     ];
 
     if (needsOnboarding) {

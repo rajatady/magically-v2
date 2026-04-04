@@ -4,6 +4,13 @@ All notable changes to this project are documented here. Format: date, git hash,
 
 ---
 
+## 2026-04-04 (8) | Zeus user context injection
+
+- Zeus system prompt now includes user context files (profile, career history, research interests, job search strategy)
+- Files read from `/Users/kumardivyarajat/WebstormProjects/job-search/context/` on every conversation
+- `buildZeusContext()` includes `loadUserContext()` — reads 4 markdown files inline
+- Zeus now knows who the user is, their goals, constraints, and timeline
+
 ## 2026-04-04 (7) | Electron fixes: auth persistence, chat input, socket
 
 - `persist:magically` partition — localStorage survives app restarts

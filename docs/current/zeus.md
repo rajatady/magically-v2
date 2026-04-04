@@ -37,6 +37,15 @@ File: `packages/runtime/src/zeus/executor.ts`
 
 The `@anthropic-ai/claude-agent-sdk` package is loaded lazily via dynamic `import()` to avoid CJS/ESM mismatch issues at compile time. A module-level `_sdk` variable caches the import.
 
+### System Prompt Modes
+
+The Agent SDK supports two system prompt configurations:
+
+1. **String mode** — fully custom prompt
+2. **Preset mode** — Claude Code default prompt with optional appended text
+
+No other presets exist. Zeus uses preset mode.
+
 ### `query()` Configuration
 
 ```typescript
@@ -44,8 +53,8 @@ The `@anthropic-ai/claude-agent-sdk` package is loaded lazily via dynamic `impor
   cwd: workspaceDir,                          // per-user workspace path
   systemPrompt: {
     type: 'preset',
-    preset: 'claude_code',
-    append: zeusContext,                       // ZEUS_SYSTEM_CONTEXT + agents + memory + onboarding
+    preset: 'claude_code',                    // Only preset available
+    append: zeusContext + userContext,        // ZEUS_SYSTEM_CONTEXT + user files + agents + memory + onboarding
   },
   tools: ['Read', 'Write', 'Edit', 'Bash', 'Glob', 'Grep', 'WebFetch', 'WebSearch'],
   allowedTools: ['Read', 'Write', 'Edit', 'Bash', 'Glob', 'Grep', 'WebFetch', 'WebSearch'],
@@ -241,10 +250,38 @@ DATA_DIR = process.env.DATA_DIR
 
 ```
 1. ZEUS_SYSTEM_CONTEXT (static preamble)
-2. Installed agents list (from agents.findAll())
-3. User memory entries (from zeus_memory table)
-4. [Conditional] Onboarding instructions (if workspace not onboarded)
+2. [Conditional] User context files (loaded via loadUserContext())
+3. Installed agents list (from agents.findAll())
+4. User memory entries (from zeus_memory table)
+5. [Conditional] Onboarding instructions (if workspace not onboarded)
 ```
+
+### User Context Injection
+
+`buildZeusContext()` calls `loadUserContext()` to load optional markdown files from the user's context directory (e.g., `/Users/kumardivyarajat/WebstormProjects/job-search/context/`). These files are injected directly into the system prompt to personalize Zeus's responses.
+
+**Supported context files:**
+
+| File | Purpose | Example |
+|------|---------|---------|
+| `kumar-profile.md` | Identity, ambitions, constraints, communication style | "I'm a full-stack engineer focused on AI infra. I prefer async communication." |
+| `career-history.md` | Full career timeline and progression | "Google (2020-2023, SWE L4), startup (2023-present, founding engineer)" |
+| `research-interests.md` | Research areas and intellectual focus | "Neural Genome hypothesis, spatial intelligence, embodied cognition" |
+| `strategy.md` | Job search tiers, timeline, key differentiators | "Tier 1: AI infra companies. Timeline: 3-6 months. Differentiator: Agent SDK contributions" |
+
+These files are loaded on every `runPrompt()` call. If a file does not exist, it is silently skipped.
+
+**Injection location:** Context is appended to the `claude_code` preset via the `append` field of `systemPrompt`:
+
+```typescript
+systemPrompt: {
+  type: 'preset',
+  preset: 'claude_code',
+  append: zeusContext + loadedUserContext,  // user files concat with Zeus context
+}
+```
+
+This allows Zeus to make personalized decisions (e.g., recommending agents aligned with the user's career strategy) without requiring memory entries or manual configuration.
 
 ### ZEUS_SYSTEM_CONTEXT
 
