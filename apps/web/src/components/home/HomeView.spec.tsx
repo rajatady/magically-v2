@@ -4,10 +4,9 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 const hasDom = typeof globalThis.document !== 'undefined';
 const maybeDescribe = hasDom ? describe : describe.skip;
 
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { HomeView } from './HomeView.js';
-import { useStore } from '../../lib/store.js';
 
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async () => {
@@ -18,15 +17,14 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-const mockAgents = [
-  { id: 'calendar-hero', name: 'Calendar Hero', icon: '📅', color: '#3b82f6', enabled: true, version: '1.0.0', hasWidget: true, functions: [] },
-  { id: 'superdo', name: 'SuperDo', icon: '✅', enabled: true, version: '1.0.0', hasWidget: true, functions: [] },
-  { id: 'no-widget', name: 'No Widget', icon: '◇', enabled: true, version: '1.0.0', hasWidget: false, functions: [] },
-];
+const mockWidgetsList = vi.fn();
+vi.mock('../../lib/api.js', () => ({
+  widgets: { list: (...args: unknown[]) => mockWidgetsList(...args) },
+}));
 
 beforeEach(() => {
   mockNavigate.mockClear();
-  useStore.setState({ agents: [], view: 'home', zeusOpen: false });
+  mockWidgetsList.mockReset();
 });
 
 function renderWithRouter(ui: React.ReactElement) {
@@ -34,39 +32,50 @@ function renderWithRouter(ui: React.ReactElement) {
 }
 
 maybeDescribe('HomeView', () => {
-  it('shows empty state when no agents have widgets', () => {
-    renderWithRouter(<HomeView />);
-    expect(screen.getByText(/Your home screen is empty/i)).toBeInTheDocument();
-  });
-
-  it('shows widget cards for agents that have widgets', () => {
-    useStore.setState({ agents: mockAgents });
+  it('shows empty state when no widgets exist', async () => {
+    mockWidgetsList.mockResolvedValue([]);
     renderWithRouter(<HomeView />);
 
-    expect(screen.getByTestId('widget-calendar-hero')).toBeInTheDocument();
-    expect(screen.getByTestId('widget-superdo')).toBeInTheDocument();
-    // no-widget agent should NOT appear
-    expect(screen.queryByTestId('widget-no-widget')).not.toBeInTheDocument();
-  });
-
-  it('clicking a widget navigates to /agents/:agentId', () => {
-    useStore.setState({ agents: mockAgents });
-    renderWithRouter(<HomeView />);
-
-    fireEvent.click(screen.getByTestId('widget-calendar-hero'));
-    expect(mockNavigate).toHaveBeenCalledWith('/agents/calendar-hero');
-  });
-
-  it('does not show disabled agents in home grid', () => {
-    useStore.setState({
-      agents: [{ ...mockAgents[0], enabled: false }],
+    await waitFor(() => {
+      expect(screen.getByText(/Your home screen is empty/i)).toBeInTheDocument();
     });
-    renderWithRouter(<HomeView />);
-    expect(screen.queryByTestId('widget-calendar-hero')).not.toBeInTheDocument();
   });
 
-  it('empty state button navigates to /zeus', () => {
+  it('renders widget HTML from API', async () => {
+    mockWidgetsList.mockResolvedValue([
+      {
+        id: 'w1',
+        userId: 'u1',
+        agentId: 'hello-world',
+        size: 'small',
+        html: '<div data-testid="widget-hello">Hello!</div>',
+        position: 0,
+        updatedAt: '2026-04-03T00:00:00Z',
+      },
+    ]);
+
     renderWithRouter(<HomeView />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('widget-hello')).toBeInTheDocument();
+    });
+  });
+
+  it('shows loading skeleton before widgets load', () => {
+    mockWidgetsList.mockReturnValue(new Promise(() => {})); // never resolves
+    renderWithRouter(<HomeView />);
+
+    expect(screen.getByTestId('home-view')).toBeInTheDocument();
+  });
+
+  it('empty state button navigates to /zeus', async () => {
+    mockWidgetsList.mockResolvedValue([]);
+    renderWithRouter(<HomeView />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Ask Zeus')).toBeInTheDocument();
+    });
+
     fireEvent.click(screen.getByText('Ask Zeus'));
     expect(mockNavigate).toHaveBeenCalledWith('/zeus');
   });

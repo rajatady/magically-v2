@@ -79,6 +79,15 @@ The shared package (`@magically/shared`) uses **plain `tsc -b`** with CJS output
 
 If a new subpath export is added to shared, update: `package.json` exports, rebuild shared (`tsc -b`), and verify both `npx tsc --noEmit` in runtime AND `vite build` in web still work.
 
+## Dev Credentials
+
+Local dev user for testing authenticated API calls:
+
+- **Email:** dev@magically.dev
+- **Password:** dev12345
+
+Login: `POST /api/auth/login` with `{"email":"dev@magically.dev","password":"dev12345"}`
+
 ## Test Architecture
 
 - **Unit tests** (`src/**/*.spec.ts`): run in parallel via `jest`. No DB access, mock everything.
@@ -142,3 +151,5 @@ builders/      — Git submodule (rajatady/magically-builders). GitHub Actions w
 - `TODO.md` — Prioritized task list with completion status.
 - `README.md` — Non-technical overview for end users.
 - `docs/architecture/` — Phase-by-phase architecture plans (some outdated, being updated).
+- `docs/current/` — Living docs: architecture, API, CLI, database, frontend, Zeus, agents, shared, testing, deployment, websockets.
+- `docs/current/commands.md` — CLI quick reference (all commands, options, examples).

@@ -101,6 +101,14 @@ Every export uses the `"default"` condition only (no `"import"` / `"require"` sp
 | `VersionStatus` | interface | `status: RegistryVersionStatus`, `buildError?: string \| null`, `imageRef?: string \| null` |
 | `UserAgentInstall` | interface | `id`, `userId`, `agentId`, `version`, `config: Record<string, unknown>`, `enabled: boolean`, `installedAt: string` |
 
+### Widgets
+
+*Added 2026-04-04*
+
+| Type | Kind | Fields |
+|------|------|--------|
+| `UserWidget` | interface | `id: string`, `userId: string`, `agentId: string`, `size: 'small' \| 'medium' \| 'large'`, `html: string`, `position: number`, `updatedAt: string` |
+
 ### Config
 
 | Type | Kind | Fields |
@@ -176,6 +184,13 @@ class ApiClient {
 | `list(limit?)` | GET | `/feed?limit=<limit>` | `FeedItem[]` |
 | `markRead(id)` | POST | `/feed/<id>/read` | `void` |
 | `dismiss(id)` | POST | `/feed/<id>/dismiss` | `void` |
+
+#### `widgets` *(added 2026-04-04)*
+
+| Method | HTTP | Path | Return Type |
+|--------|------|------|-------------|
+| `list()` | GET | `/widgets` | `UserWidget[]` |
+| `remove(agentId)` | DELETE | `/widgets/<agentId>` | `void` |
 
 #### `zeus`
 

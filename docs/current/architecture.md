@@ -111,6 +111,30 @@ Per-page:
   /agents/:id    → iframes to /api/agents/:id/ui
 ```
 
+### Agent Data Flow (2026-04-04)
+
+```
+Agent function runs (via `magically dev` or container execution)
+  └─► ctx.emit('feed', { type, title, body })
+  │     └─► POST /api/feed
+  │           └─► feed_events table
+  │                 ├─► Home screen live ticker (latest event, pulsing dot)
+  │                 ├─► Feed view (/feed)
+  │                 └─► Zeus ReadFeed MCP tool
+  │
+  └─► ctx.emit('widget', { size, html })
+        └─► POST /api/widgets (upsert by userId + agentId)
+              └─► user_widgets table
+                    ├─► Home screen widget grid (12-col, renders raw HTML)
+                    └─► Zeus ReadWidgets MCP tool
+```
+
+The agent owns presentation entirely: widget HTML includes inline CSS, inline SVG charts, and any visual content. The home screen renders widgets via `dangerouslySetInnerHTML` in a responsive grid (small=4col, medium=6col, large=8col).
+
+Zeus can read both feed events and widgets via MCP tools (`ReadFeed`, `ReadWidgets`), giving it awareness of what agents have reported and what the user sees on their home screen.
+
+---
+
 ## Key Architectural Decisions
 
 | Decision | Choice | Why |

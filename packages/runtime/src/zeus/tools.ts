@@ -139,6 +139,42 @@ export async function createMagicallyMcpServer(deps: MagicallyToolsDeps) {
           return { content: [{ type: 'text' as const, text: lines.join('\n') }] };
         },
       ),
+
+      sdk.tool(
+        'ReadFeed',
+        'Read recent feed events from all agents. Feed events include alerts, status updates, analytics, and errors emitted by agents during execution. Use this to understand what agents have been doing and surface insights to the user.',
+        {
+          limit: z.number().optional().describe('Number of events to fetch (default 20)'),
+        },
+        async (args) => {
+          const events = await deps.zeus.getFeed(args.limit ?? 20);
+          if (events.length === 0) {
+            return { content: [{ type: 'text' as const, text: 'No feed events yet.' }] };
+          }
+          const lines = events.map((e) => {
+            const agent = e.agentId ?? 'system';
+            const data = e.data ? ` | data: ${JSON.stringify(e.data)}` : '';
+            return `[${e.type}] ${agent}: ${e.title}${e.body ? ' — ' + e.body : ''}${data} (${e.createdAt})`;
+          });
+          return { content: [{ type: 'text' as const, text: lines.join('\n') }] };
+        },
+      ),
+
+      sdk.tool(
+        'ReadWidgets',
+        'Read all active widgets on the user\'s home screen. Each widget contains HTML rendered by an agent showing its current state — analytics, status, alerts. Use this to understand what the user sees and reason about cross-agent insights.',
+        {},
+        async () => {
+          const widgets = await deps.zeus.getWidgets(deps.userId);
+          if (widgets.length === 0) {
+            return { content: [{ type: 'text' as const, text: 'No widgets on home screen.' }] };
+          }
+          const lines = widgets.map((w) =>
+            `[${w.agentId}] size=${w.size} updated=${w.updatedAt}\n${w.html}`,
+          );
+          return { content: [{ type: 'text' as const, text: lines.join('\n\n---\n\n') }] };
+        },
+      ),
     ],
   });
 }

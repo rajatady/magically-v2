@@ -4,6 +4,21 @@ All notable changes to this project are documented here. Format: date, git hash,
 
 ---
 
+## 2026-04-04 | Local agent runtime, widgets, home screen
+
+- `magically dev <fn> [dir]` — run agent functions locally, no Docker/server/publish needed
+- Agents emit widgets via `ctx.emit('widget', { size, html })` — agent owns presentation, emits raw HTML with data baked in
+- Agents emit feed events via `ctx.emit('feed', { type, title, body })` — persisted to `feed_events` table
+- `user_widgets` table (migration 0004) — per-user widget state, upserted by agentId
+- Widget API: `GET /api/widgets`, `POST /api/widgets`, `DELETE /api/widgets/:agentId`
+- Home screen rewrite: 12-column grid, mesh gradient background, live feed ticker, personalized greeting, staggered animations
+- Zeus MCP tools: `ReadFeed` (read agent events), `ReadWidgets` (read user's home screen)
+- New agent: `job-search-tracker` — reads jobs.tsv, emits donut chart widget with pipeline status
+- Updated agent: `instagram-auto-poster/fetchInsights` — parses insights, emits sparkline chart widget with follower/engagement data
+- Updated agent: `hello-world/greet` — emits small greeting widget
+- Shared: `UserWidget` type, `widgets.list()`/`widgets.remove()` in ApiClient
+- Fixed instagram manifest secret mismatch (`IG_ACCESS_TOKEN` → `IG_CT_ACCESS_TOKEN`)
+
 ## 2026-04-03 | Central chat system + file attachments + API enhancements
 
 - Central chat routes: `/chats` (conversation list), `/chat/new` (create + redirect), `/chat/:id` (full-page chat)

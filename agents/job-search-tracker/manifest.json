@@ -1,0 +1,24 @@
+{
+  "id": "job-search-tracker",
+  "name": "Job Search Tracker",
+  "version": "1.0.0",
+  "description": "Tracks job applications, monitors new roles, surfaces deadlines and actions",
+  "icon": "🎯",
+  "color": "#3b82f6",
+  "author": "kumar",
+
+  "secrets": [],
+
+  "functions": [
+    {
+      "name": "status",
+      "description": "Parse jobs.tsv and emit a widget showing application pipeline status, deadlines, and next actions"
+    },
+    {
+      "name": "scan",
+      "description": "Scan raw job data for new roles matching profile criteria and surface recommendations"
+    }
+  ],
+
+  "triggers": []
+}

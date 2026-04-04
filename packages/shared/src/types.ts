@@ -109,6 +109,18 @@ export interface FeedItem {
   createdAt: string;
 }
 
+// ─── Widgets ─────────────────────────────────────────────────────────────────
+
+export interface UserWidget {
+  id: string;
+  userId: string;
+  agentId: string;
+  size: string;
+  html: string;
+  position: number;
+  updatedAt: string;
+}
+
 // ─── Registry ───────────────────────────────────────────────────────────────
 
 export type RegistryAgentStatus = 'draft' | 'live' | 'deprecated' | 'yanked';

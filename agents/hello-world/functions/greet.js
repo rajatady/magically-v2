@@ -27,6 +27,18 @@ if (require.main === module) {
     const result = JSON.parse(output.trim());
     ctx.log.info('Greeting complete', result);
     ctx.emit('feed', { type: 'success', title: result.message });
+
+    ctx.emit('widget', {
+      size: 'small',
+      html: `
+        <div style="padding:20px;background:#0a0a0b;color:#f4f4f5;border-radius:16px;font-family:system-ui;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:8px">
+          <div style="font-size:48px">👋</div>
+          <div style="font-size:18px;font-weight:500">${result.message}</div>
+          <div style="font-size:12px;color:#71717a">${result.python_version.split(' ')[0]}</div>
+        </div>
+      `,
+    });
+
     return result;
   };
 }

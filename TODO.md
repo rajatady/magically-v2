@@ -31,7 +31,7 @@
 | Done | Task | Description |
 |------|------|-------------|
 | [x] | Agent SDK integration | Zeus uses `@anthropic-ai/claude-agent-sdk` query() with full Claude Code tools. |
-| [x] | MCP tools | ListAgents, GetAgent, ReadMemory, WriteMemory, DeleteMemory, CreateTask, ListTasks. |
+| [x] | MCP tools | ListAgents, GetAgent, ReadMemory, WriteMemory, DeleteMemory, CreateTask, ListTasks, ReadFeed, ReadWidgets. |
 | [x] | WebSocket gateway | Socket.IO `/zeus` namespace. JWT auth, streaming events, interrupt support. |
 | [x] | Session persistence | agentSessionId stored, resume on reconnect, conversation history fallback. |
 | [x] | Agent template scaffold | `packages/shared/templates/agent/` — 17 real files. `scaffoldAgent()` utility. |
@@ -59,7 +59,7 @@
 | [x] | Agent gallery | Dreamer-inspired. My Agents + Explore tabs. Gradient icon cards. 50 dummy agents. |
 | [x] | Agent detail page | Apple App Store style. Gradient hero, stats ribbon, features, functions, info table. |
 | [x] | Socket lifecycle | disconnectSocket on logout + unmount. |
-| [ ] | Home grid | Show agent widgets. Fetch widget data, render via DSL renderer. |
+| [x] | Home screen | 12-col grid, mesh gradient, live feed ticker, personalized greeting. Renders agent-emitted HTML widgets from `user_widgets` table. |
 | [ ] | Feed view | Show live feed events from agents (basic view exists, not wired to real data). |
 | [ ] | Settings page | API keys, agent config, secrets management. |
 | [ ] | Notifications | Agent feed posts trigger notifications. |
@@ -79,8 +79,8 @@
 | [ ] | CLI: `magically install` | Install agent from registry. |
 | [ ] | CLI: `magically logs` | View run logs for an agent. |
 | [ ] | CLI: `magically secrets` | Set/get/delete secrets per agent. |
-| [ ] | CLI: `magically dev` | Run runtime locally with file watching. |
-| [ ] | Widget DSL React renderer | Types + template + validation exist. No renderer. |
+| [x] | CLI: `magically dev` | Run agent functions locally — no Docker, no server, no publish. Secrets from env vars. Emits feed + widgets to runtime API. |
+| [x] | Widget system | Agents emit raw HTML widgets via `ctx.emit('widget', { size, html })`. Home screen renders via `user_widgets` table. No DSL — agent owns presentation. |
 | [ ] | Agent SDK React hooks | `useAgentData`, `useTool`, `useMemory`, `useTask` for iframe UIs. |
 
 ## Infrastructure

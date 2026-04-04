@@ -215,6 +215,23 @@ export const userAgentInstalls = pgTable('user_agent_installs', {
 export type UserAgentInstallRow = typeof userAgentInstalls.$inferSelect;
 export type NewUserAgentInstall = typeof userAgentInstalls.$inferInsert;
 
+// ─── User Widgets ───────────────────────────────────────────────────────────
+// Per-user widget state. Each agent emits its latest widget HTML + metadata.
+// The home screen fetches all active widgets for a user and renders them.
+
+export const userWidgets = pgTable('user_widgets', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  agentId: text('agent_id').notNull(),
+  size: text('size').notNull().default('medium'),   // 'small' | 'medium' | 'large'
+  html: text('html').notNull(),
+  position: integer('position').notNull().default(0),
+  updatedAt: timestamp('updated_at').notNull(),
+});
+
+export type UserWidget = typeof userWidgets.$inferSelect;
+export type NewUserWidget = typeof userWidgets.$inferInsert;
+
 // ─── User Config ─────────────────────────────────────────────────────────────
 
 export const userConfig = pgTable('user_config', {

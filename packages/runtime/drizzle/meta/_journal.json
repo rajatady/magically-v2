@@ -29,6 +29,13 @@
       "when": 1775161758138,
       "tag": "0003_rich_ben_urich",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1775252423126,
+      "tag": "0004_lush_thunderbird",
+      "breakpoints": true
     }
   ]
 }

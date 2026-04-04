@@ -185,6 +185,19 @@ The MCP server is created via `createSdkMcpServer` from the Agent SDK. It expose
 | `DeleteMemory` | `key: string` | Deletes a memory entry by key. |
 | `CreateTask` | `goal: string, priority?: string, requesterId?: string` | Creates a task. Priority: `"low"`, `"normal"` (default), `"high"`. `requesterId` defaults to the current `userId`. |
 | `ListTasks` | (none) | Lists all tasks ordered by most recent first. Format: `[status] goal (priority: X, from: Y)`. |
+| `ReadFeed` | `limit?: number` | Reads recent feed events from all agents. Returns type, title, body, data, timestamp. *(Added 2026-04-04)* |
+| `ReadWidgets` | (none) | Reads all active widgets on the user's home screen. Returns agentId, size, html, updatedAt. *(Added 2026-04-04)* |
+
+### Delegate Interface Extensions (2026-04-04)
+
+`ReadFeed` and `ReadWidgets` are backed by new methods on the `ExecutorZeusDelegate` interface:
+
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `getFeed` | `(limit?: number) => Promise<FeedEvent[]>` | Returns recent feed events |
+| `getWidgets` | `(userId: string) => Promise<UserWidget[]>` | Returns user's active widgets |
+
+Implemented in `ZeusService` via `FeedService` and `WidgetService`.
 
 ### MCP Server Configuration
 
@@ -192,7 +205,7 @@ The MCP server is created via `createSdkMcpServer` from the Agent SDK. It expose
 {
   name: 'magically',
   version: '1.0.0',
-  tools: [ /* 7 tools above */ ]
+  tools: [ /* 9 tools above */ ]
 }
 ```
 

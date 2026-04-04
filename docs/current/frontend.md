@@ -277,6 +277,30 @@ Blocks arrive flat and are assembled into a tree via `parentToolUseId`. Text blo
 - Renders `AgentDetail` component with back/open/edit/install callbacks
 - Install handler is currently a no-op
 
+## Home Screen (2026-04-04 rewrite)
+
+`HomeView.tsx` was rewritten to render agent-emitted HTML widgets from `GET /api/widgets`.
+
+### Layout
+
+- **Background**: Mesh gradient (dark, subtle color transitions)
+- **Greeting**: Personalized greeting with current date and active agent count
+- **Feed ticker**: Live ticker bar at top showing latest agent feed event with pulsing dot indicator
+- **Widget grid**: 12-column CSS grid layout (matching Dreamer OS design)
+  - `small` widgets = 4 columns
+  - `medium` widgets = 6 columns
+  - `large` widgets = 8 columns
+- **Animations**: Staggered widget entrance animations, hover elevation effects
+
+### Data Flow
+
+1. On mount, fetches `GET /api/widgets` for current user
+2. Renders each widget's raw HTML via `dangerouslySetInnerHTML`
+3. Widgets contain inline SVG charts, styled with inline CSS — the agent owns presentation entirely
+4. Feed ticker fetches latest feed event for the live indicator
+
+---
+
 ## Agent View (`/agents/:agentId`)
 
 - Looks up agent from Zustand store (live agents only)

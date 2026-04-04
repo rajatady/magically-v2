@@ -257,6 +257,53 @@ All conversations are filtered by the authenticated user's ID. Search matches ag
 
 ---
 
+## Widgets (`/api/widgets`)
+
+*Added 2026-04-04*
+
+Controller: `packages/runtime/src/events/widget.controller.ts`
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/widgets` | Required | List current user's widgets |
+| POST | `/api/widgets` | Required | Upsert widget (by userId + agentId) |
+| DELETE | `/api/widgets/:agentId` | Required | Remove widget for agent |
+
+### GET /api/widgets
+
+Returns all widgets for the authenticated user.
+
+**Response** `200`:
+```json
+[
+  {
+    "id": "...",
+    "userId": "...",
+    "agentId": "hello-world",
+    "size": "small",
+    "html": "<div>...</div>",
+    "position": 0,
+    "updatedAt": "2026-04-04T10:00:00Z"
+  }
+]
+```
+
+### POST /api/widgets
+
+Upserts a widget. If a widget already exists for the same userId + agentId, it is updated.
+
+**Body**: `{ agentId: string, size: 'small' | 'medium' | 'large', html: string }`
+
+**Response** `200`: The upserted widget object.
+
+### DELETE /api/widgets/:agentId
+
+Removes the widget for the specified agent belonging to the authenticated user.
+
+**Response** `204`
+
+---
+
 ## Uploads (`/api/uploads`)
 
 Controller: `packages/runtime/src/uploads/uploads.controller.ts`
@@ -356,6 +403,10 @@ zeus.deleteConversation(id)
 zeus.memory()
 zeus.tasks()
 zeus.getWorkspace()        // ← DEAD CODE: endpoint removed, method still in client
+
+// Widgets (added 2026-04-04)
+widgets.list()
+widgets.remove(agentId)
 
 // Config
 config.get()

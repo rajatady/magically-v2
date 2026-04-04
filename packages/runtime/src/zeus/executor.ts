@@ -169,6 +169,8 @@ export interface ExecutorZeusDelegate {
   deleteMemory(key: string): Promise<void>;
   createTask(params: { requesterId: string; goal: string; priority?: 'low' | 'normal' | 'high' }): Promise<string>;
   getTasks(): Promise<Array<{ id: string; status: string; goal: string; priority: string; requesterId: string }>>;
+  getFeed(limit?: number): Promise<Array<{ id: string; agentId: string | null; type: string; title: string; body: string | null; data: unknown; createdAt: Date }>>;
+  getWidgets(userId: string): Promise<Array<{ agentId: string; size: string; html: string; updatedAt: Date }>>;
 }
 
 /** Interface the executor + tools need from AgentsService */

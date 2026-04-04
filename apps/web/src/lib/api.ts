@@ -9,6 +9,7 @@ export type {
   ZeusTask,
   RunResult,
   AuthResult,
+  UserWidget,
 } from '@magically/shared/types';
 
 export const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:4321';
@@ -23,4 +24,4 @@ export const api = new ApiClient({
 });
 
 // Re-export for convenience
-export const { auth, agents, feed, zeus, config } = api;
+export const { auth, agents, feed, zeus, config, widgets } = api;

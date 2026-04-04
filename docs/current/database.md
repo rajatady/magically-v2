@@ -204,6 +204,26 @@ Individual messages in a Zeus conversation. Replaces the old JSONB blob. Support
 | created_at | timestamp | NOT NULL | |
 | updated_at | timestamp | NOT NULL | |
 
+### user_widgets
+
+*Added 2026-04-04 (migration 0004)*
+
+Agent-emitted HTML widgets displayed on the user's home screen. Upserted by userId + agentId.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | text | PK | Widget record ID |
+| user_id | text | NOT NULL, FK → users.id CASCADE | Owner |
+| agent_id | text | NOT NULL, FK → agents.id CASCADE | Source agent |
+| size | text | NOT NULL | `'small'` \| `'medium'` \| `'large'` |
+| html | text | NOT NULL | Raw HTML content (inline CSS, inline SVG) |
+| position | integer | NOT NULL, default 0 | Display order on home screen |
+| updated_at | timestamp | NOT NULL | Last upsert time |
+
+Service: `packages/runtime/src/events/widget.service.ts` — `upsert(userId, agentId, size, html)`, `findByUser(userId)`, `remove(userId, agentId)`
+
+Controller: `packages/runtime/src/events/widget.controller.ts` — `GET /api/widgets`, `POST /api/widgets`, `DELETE /api/widgets/:agentId`
+
 ## Migrations
 
 | Migration | File | Changes |
@@ -212,6 +232,7 @@ Individual messages in a Zeus conversation. Replaces the old JSONB blob. Support
 | 0001 | `0001_yummy_mole_man.sql` | Add title, agent_session_id, user_id to zeus_conversations |
 | 0002 | `0002_gorgeous_amazoness.sql` | Create zeus_messages table, make conversations.messages nullable, add rewind_to_sdk_uuid |
 | 0003 | `0003_rich_ben_urich.sql` | Add `files` column to zeus_messages |
+| 0004 | *(migration 0004)* | Create `user_widgets` table (id, userId, agentId, size, html, position, updatedAt) |
 
 ## Test Database
 

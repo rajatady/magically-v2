@@ -214,6 +214,45 @@ Scaffold a new Magically agent with AI-ready project structure.
 
 **Claude Code skills scaffolded:** publish, run, validate, add-function, add-trigger, status. Each skill has a `SKILL.md` file with instructions for Claude Code.
 
+### `magically dev <functionName> [dir]`
+
+*Added 2026-04-04*
+
+Run an agent function locally without Docker, server, or publish pipeline. Reads the manifest, loads the JS function from `functions/`, builds a `ctx` object, and calls the function directly in-process.
+
+| Argument | Default | Description |
+|----------|---------|-------------|
+| `functionName` (required) | — | Name of the function to run (must be declared in manifest) |
+| `dir` | `.` (current directory) | Agent directory path |
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--base <url>` | `http://localhost:4321` | Runtime base URL |
+| `--payload <json>` | `{}` | JSON payload passed as function parameters |
+
+**File:** `packages/cli/src/commands/dev.ts`
+
+**Flow:**
+
+1. Reads `manifest.json` from agent directory
+2. Validates that the named function exists in the manifest
+3. Loads the JS function file from `functions/<functionName>.js`
+4. Loads secrets from environment variables (manifest `secrets` array declares which env vars are needed)
+5. Builds a `ctx` object with:
+   - `ctx.log` — structured logging (info/warn/error)
+   - `ctx.secrets` — declared secrets loaded from env
+   - `ctx.emit('feed', { type, title, body })` — persists to `POST /api/feed` using stored CLI auth token
+   - `ctx.emit('widget', { size, html })` — persists to `POST /api/widgets` (upsert by agentId)
+   - `ctx.agentDir` — agent directory path
+6. Calls the function with `(ctx, payload)`
+7. Prints result or error
+
+**Secrets:** The manifest `secrets` array declares required secret names. `magically dev` loads their values from the current shell environment variables (e.g., if manifest declares `["IG_CT_ACCESS_TOKEN"]`, it reads `process.env.IG_CT_ACCESS_TOKEN`).
+
+**Widget emission:** `ctx.emit('widget', { size: 'small'|'medium'|'large', html: '<div>...</div>' })` sends a `POST /api/widgets` request that upserts the widget for the current agent and user.
+
+**Feed emission:** `ctx.emit('feed', { type, title, body })` sends a `POST /api/feed` request using the stored CLI auth token from `~/.magically/credentials.json`.
+
 ### `magically logs` (utility only)
 
 The `logsCommand` object in `commands/logs.ts` exports a `formatLog()` utility for formatting log entries. It is not registered as a CLI command in `index.ts`.

@@ -10,6 +10,8 @@ import { InjectDB, type DrizzleDB } from '../db';
 import { zeusConversations, zeusMessages, zeusMemory, zeusTasks, agents, agentVersions } from '../db/schema';
 import { AgentsService } from '../agents/agents.service';
 import { EventsGateway } from '../events/events.gateway';
+import { FeedService } from '../events/feed.service';
+import { WidgetService } from '../events/widget.service';
 import type { FileAttachment } from '@magically/shared/types';
 import { executePrompt, type ExecutionCallbacks, type ContentBlock } from './executor';
 
@@ -53,6 +55,8 @@ export class ZeusService {
     private readonly agents: AgentsService,
     private readonly events: EventsGateway,
     private readonly emitter: EventEmitter2,
+    private readonly feedService: FeedService,
+    private readonly widgetService: WidgetService,
   ) {}
 
   // ─── Execution ──────────────────────────────────────────────────────
@@ -433,5 +437,13 @@ Do NOT create functions or triggers yet — just fill in the identity fields. Th
       .select()
       .from(zeusTasks)
       .orderBy(desc(zeusTasks.createdAt));
+  }
+
+  async getFeed(limit = 50) {
+    return this.feedService.findAll(limit);
+  }
+
+  async getWidgets(userId: string) {
+    return this.widgetService.findByUser(userId);
   }
 }

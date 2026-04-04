@@ -10,6 +10,7 @@ import type {
   ZeusTask,
   ConversationSummary,
   ConversationWithMessages,
+  UserWidget,
 } from './types';
 
 export interface ApiClientConfig {
@@ -126,6 +127,13 @@ export class ApiClient {
     memory: () => this.req<MemoryEntry[]>('/zeus/memory'),
     tasks: () => this.req<ZeusTask[]>('/zeus/tasks'),
     getWorkspace: () => this.req<{ agent: Record<string, string> | null }>('/zeus/workspace'),
+  };
+
+  // ─── Widgets ──────────────────────────────────────────────────────────────
+
+  widgets = {
+    list: () => this.req<UserWidget[]>('/widgets'),
+    remove: (agentId: string) => this.req('/widgets/' + agentId, { method: 'DELETE' }),
   };
 
   // ─── Config ────────────────────────────────────────────────────────────────

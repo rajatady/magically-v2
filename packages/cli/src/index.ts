@@ -9,6 +9,7 @@ import { authCommand } from './commands/auth';
 import { publishCommand } from './commands/publish';
 import { statusCommand } from './commands/status';
 import { initCommand } from './commands/init';
+import { devCommand } from './commands/dev';
 
 const program = new Command();
 
@@ -146,6 +147,15 @@ program
       console.error(`Error: ${message}`);
       process.exit(1);
     }
+  });
+
+program
+  .command('dev <functionName> [dir]')
+  .description('Run an agent function locally — no server, no Docker, no publish')
+  .option('--base <url>', 'Runtime base URL (for feed events)', 'http://localhost:4321')
+  .option('--payload <json>', 'JSON payload to pass to the function')
+  .action((functionName: string, dir: string | undefined, opts: { base: string; payload?: string }) => {
+    devCommand.exec(resolve(dir ?? '.'), functionName, opts);
   });
 
 program.parse();
